@@ -6,7 +6,7 @@ import { Bookmark, Category } from '../../../interfaces';
 import { actionCreators } from '../../../store';
 import { State } from '../../../store/reducers';
 import { iconParser, isImage, isSvg, isUrl, urlParser } from '../../../utility';
-import { Icon } from '../../UI';
+import { Icon, SvgIcon } from '../../UI';
 import classes from './BookmarkCard.module.css';
 
 interface Props {
@@ -66,11 +66,12 @@ export const BookmarkCard = (props: Props): JSX.Element => {
 
               iconEl = (
                 <div className={classes.BookmarkIcon}>
-                  <svg
-                    data-src={source}
+                  <SvgIcon
+                    src={source}
+                    alt={`${name} icon`}
                     fill="var(--color-primary)"
                     className={classes.BookmarkIconSvg}
-                  ></svg>
+                  />
                 </div>
               );
             } else {

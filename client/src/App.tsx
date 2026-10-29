@@ -1,5 +1,3 @@
-import 'external-svg-loader';
-
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';

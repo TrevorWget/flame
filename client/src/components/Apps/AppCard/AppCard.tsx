@@ -6,7 +6,7 @@ import { App, Category } from '../../../interfaces';
 import { actionCreators } from '../../../store';
 import { State } from '../../../store/reducers';
 import { iconParser, isImage, isSvg, isUrl, urlParser } from '../../../utility';
-import { Icon } from '../../UI';
+import { Icon, SvgIcon } from '../../UI';
 import classes from './AppCard.module.css';
 
 interface Props {
@@ -67,11 +67,12 @@ export const AppCard = (props: Props): JSX.Element => {
 
               iconEl = (
                 <div className={classes.AppIcon}>
-                  <svg
-                    data-src={source}
+                  <SvgIcon
+                    src={source}
+                    alt={`${name} icon`}
                     fill="var(--color-primary)"
                     className={classes.AppIconSvg}
-                  ></svg>
+                  />
                 </div>
               );
             } else {
