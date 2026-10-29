@@ -4,7 +4,6 @@ module.exports = {
   errorHandler: require('./errorHandler'),
   upload: require('./multer'),
   requireAuth: require('./requireAuth'),
-  requireBody: require('./requireBody'),
   requireCsrf: require('./requireCsrf'),
   validate: require('./validate'),
 };
