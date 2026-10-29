@@ -3,24 +3,14 @@ const express = require('express');
 const { errorHandler } = require('./middleware');
 const securityHeaders = require('./middleware/securityHeaders');
 const { ICON_EXTENSION_REGEX } = require('./utils/icons');
+const { parseTrustProxy } = require('./utils/trustProxy');
 
 const api = express();
 
 // Behind a reverse proxy, lets req.ip (used by the login rate limit) resolve to
-// the real client. Accepts true, a hop count, or Express' subnet list syntax.
+// the real client. Forward-auth headers are only accepted from these proxies.
 if (process.env.TRUST_PROXY) {
-  const trustProxy = process.env.TRUST_PROXY.trim();
-
-  api.set(
-    'trust proxy',
-    trustProxy === 'true'
-      ? true
-      : trustProxy === 'false'
-      ? false
-      : /^\d+$/.test(trustProxy)
-      ? Number(trustProxy)
-      : trustProxy
-  );
+  api.set('trust proxy', parseTrustProxy(process.env.TRUST_PROXY));
 }
 
 api.use(securityHeaders);
