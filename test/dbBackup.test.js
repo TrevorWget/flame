@@ -24,7 +24,11 @@ const { connectDB, sequelize, umzug } = require('../db');
 const backupDB = require('../db/utils/backupDb');
 const { slugify } = require('../db/utils/slugify');
 
-const LAST_MIGRATION = '09_app-status-check.js';
+const LAST_MIGRATION = fs
+  .readdirSync(join(repoRoot, 'db/migrations'))
+  .filter((file) => file.endsWith('.js'))
+  .sort()
+  .at(-1);
 
 test.after(async () => {
   await sequelize.close();

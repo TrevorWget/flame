@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
@@ -47,7 +48,7 @@ const renderGrid = (categories: Category[]) =>
     </Provider>
   );
 
-const card = (name: string) => screen.getByText(name).parentElement!;
+const card = (name: string) => screen.getByText(name).closest('h3')!.parentElement!;
 
 describe('AppGrid', () => {
   it('spreads a long category over the whole grid', () => {
@@ -80,5 +81,30 @@ describe('AppGrid', () => {
     expect(card('Category 1').className).not.toMatch(/WideAppCard/);
     expect(card('Category 2').className).toMatch(/WideAppCard/);
     expect(card('Category 3').className).not.toMatch(/WideAppCard/);
+  });
+
+  it('keeps a collapsed long category spread over the whole grid', async () => {
+    localStorage.clear();
+    renderGrid([category(1, WIDE_CATEGORY_MIN_APPS), category(2, 2)]);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Category 1' }));
+
+    expect(card('Category 1').className).toMatch(/WideAppCard/);
+    expect(card('Category 1').className).toMatch(/Collapsed/);
+    expect(card('Category 2').className).not.toMatch(/Collapsed/);
+    localStorage.clear();
+  });
+
+  it('only collapses categories on the homepage', () => {
+    render(
+      <Provider store={store}>
+        <MemoryRouter>
+          <AppGrid categories={[category(1, 2)]} searching={false} />
+        </MemoryRouter>
+      </Provider>
+    );
+
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Category 1' })).toBeInTheDocument();
   });
 });

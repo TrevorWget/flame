@@ -3,6 +3,8 @@ import { App, NewApp } from '../../interfaces';
 export const newAppTemplate: NewApp = {
   name: '',
   url: '',
+  externalUrl: '',
+  preferredUrl: 'internal',
   icon: '',
   categoryId: -1,
   isPublic: true,

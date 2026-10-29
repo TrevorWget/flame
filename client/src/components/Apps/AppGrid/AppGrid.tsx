@@ -44,6 +44,7 @@ export const AppGrid = (props: Props): JSX.Element => {
                 category={category}
                 fromHomepage={fromHomepage}
                 statuses={statuses}
+                collapsible={fromHomepage && !searching}
                 key={category.id}
               />
             )

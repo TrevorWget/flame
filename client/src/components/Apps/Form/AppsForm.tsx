@@ -80,7 +80,18 @@ export const AppsForm = ({
     if (!normalizeUrl(formData.url, config.extraUrlSchemes)) {
       createNotification({
         title: 'Error',
-        message: 'URL is invalid or its scheme is not allowed',
+        message: 'Internal URL is invalid or its scheme is not allowed',
+      });
+
+      return;
+    }
+
+    const externalUrl = formData.externalUrl?.trim() ?? '';
+
+    if (externalUrl && !normalizeUrl(externalUrl, config.extraUrlSchemes)) {
+      createNotification({
+        title: 'Error',
+        message: 'External URL is invalid or its scheme is not allowed',
       });
 
       return;
@@ -95,6 +106,8 @@ export const AppsForm = ({
       data.append('name', formData.name);
       data.append('description', formData.description);
       data.append('url', formData.url);
+      data.append('externalUrl', externalUrl);
+      data.append('preferredUrl', formData.preferredUrl ?? 'internal');
       data.append('categoryId', `${formData.categoryId}`);
       data.append('isPublic', `${formData.isPublic ? 1 : 0}`);
       data.append('statusCheck', `${formData.statusCheck ? 1 : 0}`);
@@ -132,7 +145,7 @@ export const AppsForm = ({
         const data = createFormData();
         addApp(data);
       } else {
-        addApp(formData);
+        addApp({ ...formData, externalUrl });
       }
 
       setFormData({
@@ -151,7 +164,7 @@ export const AppsForm = ({
           curr: formData.categoryId,
         });
       } else {
-        updateApp(app.id, formData, {
+        updateApp(app.id, { ...formData, externalUrl }, {
           prev: app.categoryId,
           curr: formData.categoryId,
         });
@@ -182,16 +195,48 @@ export const AppsForm = ({
 
       {/* URL */}
       <InputGroup>
-        <label htmlFor="url">App URL</label>
+        <label htmlFor="url">Internal URL</label>
         <input
           type="text"
           name="url"
           id="url"
-          placeholder="reddit.com"
+          placeholder="192.168.1.2:8096"
           required
           value={formData.url}
           onChange={(e) => inputChangeHandler(e)}
         />
+      </InputGroup>
+
+      {/* EXTERNAL URL */}
+      <InputGroup>
+        <label htmlFor="externalUrl">External URL</label>
+        <input
+          type="text"
+          name="externalUrl"
+          id="externalUrl"
+          placeholder="jellyfin.example.com"
+          value={formData.externalUrl ?? ''}
+          onChange={(e) => inputChangeHandler(e)}
+        />
+        <span>Optional - e.g. the address used outside your network</span>
+      </InputGroup>
+
+      {/* PREFERRED URL */}
+      <InputGroup>
+        <label htmlFor="preferredUrl">Open with</label>
+        <select
+          id="preferredUrl"
+          name="preferredUrl"
+          value={formData.preferredUrl ?? 'internal'}
+          onChange={(e) => inputChangeHandler(e)}
+        >
+          <option value="internal">Internal URL</option>
+          <option value="external">External URL</option>
+        </select>
+        <span>
+          The URL that is displayed and opened. If it is empty, the other one
+          is used
+        </span>
       </InputGroup>
 
       {/* CATEGORY */}
@@ -227,7 +272,8 @@ export const AppsForm = ({
           onChange={(e) => inputChangeHandler(e)}
         />
         <span>
-          Optional - If description is not set, app URL will be displayed
+          Optional - If description is not set, the URL it opens will be
+          displayed
         </span>
       </InputGroup>
 
