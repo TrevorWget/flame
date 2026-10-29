@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 
+// middleware
+const { auth, requireAuth } = require('../middleware');
+
 const {
   getWeather, updateWeather
 } = require('../controllers/weather');
@@ -11,7 +14,7 @@ router
 
 router
   .route('/update')
-  .get(updateWeather);
+  .get(auth, requireAuth, updateWeather);
 
 
 module.exports = router;

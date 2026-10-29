@@ -6,7 +6,11 @@ import { bindActionCreators } from 'redux';
 import { ApiResponse, Weather, WeatherForm } from '../../../interfaces';
 import { actionCreators } from '../../../store';
 import { State } from '../../../store/reducers';
-import { inputHandler, weatherSettingsTemplate } from '../../../utility';
+import {
+  applyAuth,
+  inputHandler,
+  weatherSettingsTemplate,
+} from '../../../utility';
 import { Button, InputGroup, SettingsHeadline } from '../../UI';
 
 // Redux
@@ -31,6 +35,8 @@ export const WeatherSettings = (): JSX.Element => {
   const [apiKey, setApiKey] = useState('');
   const [removeApiKey, setRemoveApiKey] = useState(false);
 
+  const requiresKey = formData.weatherProvider !== 'open-meteo';
+
   // Get config
   useEffect(() => {
     setFormData({
@@ -43,9 +49,10 @@ export const WeatherSettings = (): JSX.Element => {
     e.preventDefault();
 
     const willHaveKey = apiKey !== '' || (config.hasWeatherKey && !removeApiKey);
+    const willBeEnabled = !requiresKey || willHaveKey;
 
     // Check for api key input
-    if ((formData.lat || formData.long) && !willHaveKey) {
+    if ((formData.lat || formData.long) && !willBeEnabled) {
       createNotification({
         title: 'Warning',
         message: 'API key is missing. Weather Module will NOT work',
@@ -66,9 +73,15 @@ export const WeatherSettings = (): JSX.Element => {
     setApiKey('');
     setRemoveApiKey(false);
 
+    if (!willBeEnabled) {
+      return;
+    }
+
     // Update weather
     axios
-      .get<ApiResponse<Weather>>('/api/weather/update')
+      .get<ApiResponse<Weather>>('/api/weather/update', {
+        headers: applyAuth(),
+      })
       .then(() => {
         createNotification({
           title: 'Success',
@@ -78,7 +91,7 @@ export const WeatherSettings = (): JSX.Element => {
       .catch((err) => {
         createNotification({
           title: 'Error',
-          message: err.response.data.error,
+          message: err.response?.data.error || 'Weather update failed',
         });
       });
   };
@@ -112,47 +125,73 @@ export const WeatherSettings = (): JSX.Element => {
   return (
     <form onSubmit={(e) => formSubmitHandler(e)}>
       <SettingsHeadline text="API" />
-      {/* API KEY */}
+      {/* PROVIDER */}
       <InputGroup>
-        <label htmlFor="WEATHER_API_KEY">API key</label>
-        <input
-          type="text"
-          id="WEATHER_API_KEY"
-          name="WEATHER_API_KEY"
-          placeholder={
-            config.hasWeatherKey && !removeApiKey
-              ? 'Saved key hidden - leave blank to keep it'
-              : 'secret'
-          }
-          autoComplete="off"
-          value={apiKey}
-          onChange={(e) => {
-            setApiKey(e.target.value);
-            setRemoveApiKey(false);
-          }}
-        />
-        <span>
-          Using
-          <a href="https://www.weatherapi.com/pricing.aspx" target="blank">
-            {' '}
-            Weather API
-          </a>
-          . Key is required for weather module to work.
-        </span>
-        {config.hasWeatherKey && !removeApiKey && (
-          <span
-            onClick={() => {
-              setApiKey('');
-              setRemoveApiKey(true);
-            }}
-          >
-            <a href="#">Remove saved key</a>
+        <label htmlFor="weatherProvider">Weather provider</label>
+        <select
+          id="weatherProvider"
+          name="weatherProvider"
+          value={formData.weatherProvider}
+          onChange={(e) => inputChangeHandler(e)}
+        >
+          <option value="weatherapi">Weather API (API key required)</option>
+          <option value="open-meteo">Open-Meteo (no API key)</option>
+        </select>
+        {!requiresKey && (
+          <span>
+            Weather data by
+            <a href="https://open-meteo.com/" target="blank">
+              {' '}
+              Open-Meteo.com
+            </a>
+            . Free for non-commercial use, no key needed.
           </span>
         )}
-        {removeApiKey && (
-          <span>Saved key will be removed when you save changes.</span>
-        )}
       </InputGroup>
+
+      {/* API KEY */}
+      {requiresKey && (
+        <InputGroup>
+          <label htmlFor="WEATHER_API_KEY">API key</label>
+          <input
+            type="text"
+            id="WEATHER_API_KEY"
+            name="WEATHER_API_KEY"
+            placeholder={
+              config.hasWeatherKey && !removeApiKey
+                ? 'Saved key hidden - leave blank to keep it'
+                : 'secret'
+            }
+            autoComplete="off"
+            value={apiKey}
+            onChange={(e) => {
+              setApiKey(e.target.value);
+              setRemoveApiKey(false);
+            }}
+          />
+          <span>
+            Using
+            <a href="https://www.weatherapi.com/pricing.aspx" target="blank">
+              {' '}
+              Weather API
+            </a>
+            . Key is required for weather module to work.
+          </span>
+          {config.hasWeatherKey && !removeApiKey && (
+            <span
+              onClick={() => {
+                setApiKey('');
+                setRemoveApiKey(true);
+              }}
+            >
+              <a href="#">Remove saved key</a>
+            </span>
+          )}
+          {removeApiKey && (
+            <span>Saved key will be removed when you save changes.</span>
+          )}
+        </InputGroup>
+      )}
 
       <SettingsHeadline text="Location" />
       {/* LAT */}

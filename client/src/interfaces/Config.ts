@@ -1,7 +1,9 @@
-import { WeatherData } from '../types';
+import { WeatherData, WeatherProvider } from '../types';
 
 export interface Config {
   hasWeatherKey: boolean;
+  weatherEnabled: boolean;
+  weatherProvider: WeatherProvider;
   lat: number;
   long: number;
   isCelsius: boolean;

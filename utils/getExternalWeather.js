@@ -1,34 +1,38 @@
 const Weather = require('../models/Weather');
 const axios = require('axios');
 const loadConfig = require('./loadConfig');
+const ErrorResponse = require('./ErrorResponse');
+const {
+  getWeatherProvider,
+  isWeatherEnabled,
+} = require('./weatherProviders');
 
 const getExternalWeather = async () => {
-  const { WEATHER_API_KEY: secret, lat, long } = await loadConfig();
+  const config = await loadConfig();
+  const provider = getWeatherProvider(config);
 
-  // Fetch data from external API
-  try {
-    const res = await axios.get(
-      `http://api.weatherapi.com/v1/current.json?key=${secret}&q=${lat},${long}`
-    );
-
-    // Save weather data
-    const cursor = res.data.current;
-    const weatherData = await Weather.create({
-      externalLastUpdate: cursor.last_updated,
-      tempC: cursor.temp_c,
-      tempF: cursor.temp_f,
-      isDay: cursor.is_day,
-      cloud: cursor.cloud,
-      conditionText: cursor.condition.text,
-      conditionCode: cursor.condition.code,
-      humidity: cursor.humidity,
-      windK: cursor.wind_kph,
-      windM: cursor.wind_mph,
-    });
-    return weatherData;
-  } catch (err) {
-    throw new Error('External API request failed');
+  if (!isWeatherEnabled(config)) {
+    throw new ErrorResponse('Weather is not configured', 400);
   }
+
+  const url = provider.buildUrl(config);
+
+  let weather;
+  try {
+    const res = await axios.get(url, { timeout: 10000 });
+    weather = provider.parse(res.data);
+  } catch (err) {
+    // Never include the error itself: its config.url carries the API key
+    const reason = provider.errorReason(err.response?.data);
+    const error = new ErrorResponse(
+      `${provider.name} request failed${reason ? `: ${reason}` : ''}`,
+      502
+    );
+    error.isUpstream = true;
+    throw error;
+  }
+
+  return await Weather.create(weather);
 };
 
 module.exports = getExternalWeather;

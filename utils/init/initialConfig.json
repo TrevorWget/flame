@@ -1,4 +1,5 @@
 {
+  "weatherProvider": "weatherapi",
   "WEATHER_API_KEY": "",
   "lat": 0,
   "long": 0,

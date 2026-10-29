@@ -1,3 +1,5 @@
+const { hasWeatherKey, isWeatherEnabled } = require('./weatherProviders');
+
 // Keys safe to expose to unauthenticated visitors. Anything not listed here
 // (including keys added in the future) is admin-only by default.
 const PUBLIC_KEYS = [
@@ -22,6 +24,7 @@ const PUBLIC_KEYS = [
   'defaultTheme',
   'isCelsius',
   'isKilometer',
+  'weatherProvider',
   'weatherData',
   'hideDate',
   'extraUrlSchemes',
@@ -31,10 +34,12 @@ const PUBLIC_KEYS = [
 const SECRET_KEYS = ['WEATHER_API_KEY'];
 
 // Computed by the server; must never be written back to config.json.
-const DERIVED_KEYS = ['hasWeatherKey'];
+const DERIVED_KEYS = ['hasWeatherKey', 'weatherEnabled'];
 
-const hasWeatherKey = (config) =>
-  typeof config.WEATHER_API_KEY === 'string' && config.WEATHER_API_KEY !== '';
+const addDerivedKeys = (target, config) => {
+  target.hasWeatherKey = hasWeatherKey(config);
+  target.weatherEnabled = isWeatherEnabled(config);
+};
 
 const toPublicConfig = (config) => {
   const publicConfig = {};
@@ -45,7 +50,7 @@ const toPublicConfig = (config) => {
     }
   }
 
-  publicConfig.hasWeatherKey = hasWeatherKey(config);
+  addDerivedKeys(publicConfig, config);
 
   return publicConfig;
 };
@@ -57,7 +62,7 @@ const toAdminConfig = (config) => {
     delete adminConfig[key];
   }
 
-  adminConfig.hasWeatherKey = hasWeatherKey(config);
+  addDerivedKeys(adminConfig, config);
 
   return adminConfig;
 };

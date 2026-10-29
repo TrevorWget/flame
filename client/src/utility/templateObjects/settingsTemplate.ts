@@ -18,6 +18,7 @@ export const uiSettingsTemplate: UISettingsForm = {
 };
 
 export const weatherSettingsTemplate: WeatherForm = {
+  weatherProvider: 'weatherapi',
   lat: 0,
   long: 0,
   isCelsius: true,
