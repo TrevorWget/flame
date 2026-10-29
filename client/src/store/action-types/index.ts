@@ -41,6 +41,7 @@ export enum ActionType {
   sortCategories = 'SORT_CATEGORIES',
   reorderCategories = 'REORDER_CATEGORIES',
   setEditCategory = 'SET_EDIT_CATEGORY',
+  arrangeItems = 'ARRANGE_ITEMS',
   // BOOKMARKS
   addBookmark = 'ADD_BOOKMARK',
   deleteBookmark = 'DELETE_BOOKMARK',
