@@ -43,3 +43,12 @@ export interface SetEditCategoryAction {
   type: ActionType.setEditCategory;
   payload: Category | null;
 }
+
+/** Replaces the app or bookmark categories after items were dragged around */
+export interface ArrangeItemsAction {
+  type: ActionType.arrangeItems;
+  payload: {
+    type: 'apps' | 'bookmarks';
+    categories: Category[];
+  };
+}

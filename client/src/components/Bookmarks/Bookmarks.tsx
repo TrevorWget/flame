@@ -5,7 +5,9 @@ import { bindActionCreators } from 'redux';
 
 import { Bookmark, Category } from '../../interfaces';
 import { actionCreators } from '../../store';
+import { moveBookmark } from '../../store/action-creators';
 import { State } from '../../store/reducers';
+import { ArrangeGrid } from '../Arrange/ArrangeGrid';
 import { ActionButton, Container, Headline, Message, Modal, Spinner } from '../UI';
 import { BookmarkGrid } from './BookmarkGrid/BookmarkGrid';
 import classes from './Bookmarks.module.css';
@@ -27,6 +29,9 @@ export const Bookmarks = (props: Props): JSX.Element => {
   const loading = useSelector((state: State) => state.bookmarks.loading);
   const categoryInEdit = useSelector((state: State) => state.bookmarks.categoryInEdit);
   const isAuthenticated = useSelector((state: State) => state.auth.isAuthenticated);
+  const customOrder = useSelector(
+    (state: State) => state.config.config.useOrdering === 'orderId'
+  );
 
   // Get Redux action creators
   const dispatch = useDispatch();
@@ -44,16 +49,21 @@ export const Bookmarks = (props: Props): JSX.Element => {
     ContentType.category
   );
 
+  // Drag and drop
+  const [isArranging, setIsArranging] = useState(false);
+
   // Observe if user is authenticated -> set default view (grid) if not
   useEffect(() => {
     if (!isAuthenticated) {
       setShowTable(false);
       setModalIsOpen(false);
+      setIsArranging(false);
     }
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (categoryInEdit && !modalIsOpen) {
+    // Saving a bookmark sets categoryInEdit, which must not leave the arrange view
+    if (categoryInEdit && !modalIsOpen && !isArranging) {
       setTableContentType(ContentType.bookmark);
       setShowTable(true);
     }
@@ -100,6 +110,8 @@ export const Bookmarks = (props: Props): JSX.Element => {
 
   // Table actions
   const showTableForEditing = (contentType: ContentType) => {
+    setIsArranging(false);
+
     // We're in the edit mode and the same button was clicked - go back to list
     if (showTable && contentType === tableContentType) {
       setEditCategory(null);
@@ -111,6 +123,12 @@ export const Bookmarks = (props: Props): JSX.Element => {
   };
 
   const finishEditing = () => {
+    setShowTable(false);
+    setEditCategory(null);
+  };
+
+  const toggleArranging = () => {
+    setIsArranging(!isArranging);
     setShowTable(false);
     setEditCategory(null);
   };
@@ -144,6 +162,13 @@ export const Bookmarks = (props: Props): JSX.Element => {
             icon="mdiPencil"
             handler={() => showTableForEditing(ContentType.category)}
           />
+          {categories.length > 0 && (
+            <ActionButton
+              name={isArranging ? 'Done Arranging' : 'Arrange Bookmarks'}
+              icon={isArranging ? 'mdiCheck' : 'mdiCursorMove'}
+              handler={toggleArranging}
+            />
+          )}
           {showTable && tableContentType === ContentType.bookmark && (
             <ActionButton
               name="Finish Editing"
@@ -154,7 +179,19 @@ export const Bookmarks = (props: Props): JSX.Element => {
         </div>
       )}
 
-      {categories.length && isAuthenticated && !showTable ? (
+      {categories.length && isAuthenticated && isArranging ? (
+        <Message isPrimary={false}>
+          {customOrder ? (
+            'Drag bookmarks to reorder them or move them to another category'
+          ) : (
+            <div style={{ textAlign: 'center' }}>
+              Drag bookmarks onto another category to move them. Use{' '}
+              <Link to="/settings/general">custom order</Link> to reorder
+              them too
+            </div>
+          )}
+        </Message>
+      ) : categories.length && isAuthenticated && !showTable ? (
         <Message isPrimary={false}>
           Click on category name to edit its bookmarks
         </Message>
@@ -164,6 +201,15 @@ export const Bookmarks = (props: Props): JSX.Element => {
 
       {loading ? (
         <Spinner />
+      ) : isArranging && isAuthenticated ? (
+        <ArrangeGrid
+          kind="bookmarks"
+          categories={categories}
+          onMove={(id, categoryId, index) =>
+            dispatch<any>(moveBookmark(id, categoryId, index))
+          }
+          onEdit={(bookmark) => openFormForUpdating(bookmark as Bookmark)}
+        />
       ) : !showTable ? (
         <BookmarkGrid categories={categories} searching={props.searching} />
       ) : (
