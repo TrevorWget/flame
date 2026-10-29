@@ -144,6 +144,80 @@ export const GeneralSettings = (): JSX.Element => {
           </select>
         </InputGroup>
 
+        {/* === STATUS INDICATORS === */}
+        <SettingsHeadline text="Status indicators" />
+        <InputGroup>
+          <label htmlFor="statusChecks">Show app status indicators</label>
+          <select
+            id="statusChecks"
+            name="statusChecks"
+            value={formData.statusChecks ? 1 : 0}
+            onChange={(e) => inputChangeHandler(e, { isBool: true })}
+          >
+            <option value={1}>True</option>
+            <option value={0}>False</option>
+          </select>
+          <span>
+            The Flame server checks every app and shows a green or red dot next
+            to it. Any HTTP answer below 500 counts as up. Apps can be excluded
+            or given another check URL in their settings
+          </span>
+        </InputGroup>
+
+        {formData.statusChecks && (
+          <Fragment>
+            <InputGroup>
+              <label htmlFor="statusCheckInterval">
+                Check interval (seconds)
+              </label>
+              <input
+                type="number"
+                id="statusCheckInterval"
+                name="statusCheckInterval"
+                min={10}
+                max={86400}
+                value={formData.statusCheckInterval}
+                onChange={(e) => inputChangeHandler(e, { isNumber: true })}
+              />
+            </InputGroup>
+
+            <InputGroup>
+              <label htmlFor="statusCheckTimeout">
+                Check timeout (seconds)
+              </label>
+              <input
+                type="number"
+                id="statusCheckTimeout"
+                name="statusCheckTimeout"
+                min={1}
+                max={60}
+                value={formData.statusCheckTimeout}
+                onChange={(e) => inputChangeHandler(e, { isNumber: true })}
+              />
+            </InputGroup>
+
+            <InputGroup>
+              <label htmlFor="statusCheckDocker">
+                Use the container state of Docker apps
+              </label>
+              <select
+                id="statusCheckDocker"
+                name="statusCheckDocker"
+                value={formData.statusCheckDocker ? 1 : 0}
+                onChange={(e) => inputChangeHandler(e, { isBool: true })}
+              >
+                <option value={1}>True</option>
+                <option value={0}>False</option>
+              </select>
+              <span>
+                Apps found by the Docker integration are up while their
+                container runs and isn't unhealthy, instead of getting an HTTP
+                check. Reads GET /containers/json from the Docker host
+              </span>
+            </InputGroup>
+          </Fragment>
+        )}
+
         {/* === BOOKMARKS OPTIONS === */}
         <SettingsHeadline text="Bookmarks" />
         {/* PIN CATEGORIES */}

@@ -7,6 +7,8 @@ export const newAppTemplate: NewApp = {
   categoryId: -1,
   isPublic: true,
   description: '',
+  statusCheck: true,
+  statusUrl: '',
 };
 
 export const appTemplate: App = {

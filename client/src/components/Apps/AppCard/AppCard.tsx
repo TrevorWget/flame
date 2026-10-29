@@ -2,16 +2,18 @@ import { Fragment } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { bindActionCreators } from 'redux';
 
-import { App, Category } from '../../../interfaces';
+import { App, AppStatuses, Category } from '../../../interfaces';
 import { actionCreators } from '../../../store';
 import { State } from '../../../store/reducers';
 import { iconParser, isImage, isSvg, isUrl, urlParser } from '../../../utility';
 import { Icon, SvgIcon } from '../../UI';
+import { StatusDot } from '../AppStatus/StatusDot';
 import classes from './AppCard.module.css';
 
 interface Props {
   category: Category;
   fromHomepage?: boolean;
+  statuses?: AppStatuses;
 }
 
 // Longer categories span the whole AppGrid and lay their apps out in as many
@@ -19,7 +21,7 @@ interface Props {
 export const WIDE_CATEGORY_MIN_APPS = 9;
 
 export const AppCard = (props: Props): JSX.Element => {
-  const { category, fromHomepage = false } = props;
+  const { category, fromHomepage = false, statuses = {} } = props;
 
   const config = useSelector((state: State) => state.config.config);
   const isAuthenticated = useSelector((state: State) => state.auth.isAuthenticated);
@@ -103,7 +105,10 @@ export const AppCard = (props: Props): JSX.Element => {
             >
               {app.icon && iconEl}              
               <div className={classes.AppCardDetails}>
-                  <h5>{app.name}</h5>
+                  <h5>
+                    {app.name}
+                    <StatusDot status={statuses[app.id]} />
+                  </h5>
                   <span>{!app.description.length ? displayUrl : app.description}</span>
                 </div>
             </a>

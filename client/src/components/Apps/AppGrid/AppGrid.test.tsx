@@ -20,6 +20,8 @@ const apps = (categoryId: number, count: number): App[] =>
     icon: '',
     isPublic: true,
     description: '',
+    statusCheck: true,
+    statusUrl: null,
     orderId: i,
     isPinned: true,
   }));
