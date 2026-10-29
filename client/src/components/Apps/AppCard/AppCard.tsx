@@ -7,12 +7,14 @@ import { actionCreators } from '../../../store';
 import { State } from '../../../store/reducers';
 import { iconParser, isImage, isSvg, isUrl, urlParser } from '../../../utility';
 import { resolveAppUrl } from '../../../utility/appUrl';
+import { useCollapsibleCategory } from '../../Home/CollapsibleCategory/CollapsibleCategory';
 import { Icon, SvgIcon } from '../../UI';
 import classes from './AppCard.module.css';
 
 interface Props {
   category: Category;
   fromHomepage?: boolean;
+  collapsible?: boolean;
 }
 
 // Longer categories span the whole AppGrid and lay their apps out in as many
@@ -20,7 +22,7 @@ interface Props {
 export const WIDE_CATEGORY_MIN_APPS = 9;
 
 export const AppCard = (props: Props): JSX.Element => {
-  const { category, fromHomepage = false } = props;
+  const { category, fromHomepage = false, collapsible = false } = props;
 
   const config = useSelector((state: State) => state.config.config);
   const isAuthenticated = useSelector((state: State) => state.auth.isAuthenticated);
@@ -28,13 +30,19 @@ export const AppCard = (props: Props): JSX.Element => {
   const dispatch = useDispatch();
   const { setEditCategory } = bindActionCreators(actionCreators, dispatch);
 
+  const collapse = useCollapsibleCategory(category, collapsible);
+
   const isWide = category.apps.length >= WIDE_CATEGORY_MIN_APPS;
 
   return (
     <div
-      className={
-        isWide ? `${classes.AppCard} ${classes.WideAppCard}` : classes.AppCard
-      }
+      className={[
+        classes.AppCard,
+        isWide && classes.WideAppCard,
+        collapse.className,
+      ]
+        .filter(Boolean)
+        .join(' ')}
     >
       <h3
         className={
@@ -46,10 +54,13 @@ export const AppCard = (props: Props): JSX.Element => {
           }
         }}
       >
-        {category.name}
+        {collapse.title}
       </h3>
 
-      <div className={classes.Apps}>
+      <div
+        className={`${classes.Apps} ${collapse.contentClassName}`}
+        id={collapse.contentId}
+      >
         {category.apps.map((app: App) => {
           const [displayUrl, redirectUrl] = urlParser(
             resolveAppUrl(app).url,
