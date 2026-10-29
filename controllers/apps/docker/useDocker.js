@@ -91,6 +91,7 @@ const useDocker = async (apps) => {
             if (value.indexOf('Host') !== -1) {
               const regex = /\`([a-zA-Z0-9\.\-]+)\`/g;
               const domains = [];
+              let match;
 
               while ((match = regex.exec(value)) != null) {
                 domains.push('http://' + match[1]);

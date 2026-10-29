@@ -12,6 +12,7 @@
 - Fixed weather never updating when the API key was added after Flame started; weather updates now start and stop as soon as the settings are saved ([#306](https://github.com/pawelmalak/flame/issues/306), [#346](https://github.com/pawelmalak/flame/issues/346))
 - Security: weather requests use HTTPS with encoded parameters, and `GET /api/weather/update` now requires login
 - Weather update errors now show the provider's reason (e.g. an invalid API key) instead of a generic failure
+- Fixed `GET /api/categories/:id` building an invalid sort order unless ordering is set to name
 
 ### v2.4.0 (2026-04-24)
 - Fixed high severity authentication security issues ([#465](https://github.com/pawelmalak/flame/issues/465))

@@ -1,0 +1,55 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:recommended',
+    'helpers:pinGitHubActionDigests',
+    ':maintainLockFilesMonthly',
+  ],
+  schedule: ['before 6am on monday'],
+  labels: ['dependencies'],
+  prConcurrentLimit: 5,
+  // Give the registry time to pull compromised or broken releases
+  minimumReleaseAge: '3 days',
+  vulnerabilityAlerts: {
+    labels: ['dependencies', 'security'],
+    schedule: ['at any time'],
+    minimumReleaseAge: null,
+  },
+  osvVulnerabilityAlerts: true,
+  packageRules: [
+    {
+      // Majors are opened from the Dependency Dashboard on demand
+      matchUpdateTypes: ['major'],
+      dependencyDashboardApproval: true,
+    },
+    {
+      groupName: 'GitHub Actions',
+      matchManagers: ['github-actions'],
+      matchUpdateTypes: ['minor', 'patch', 'digest', 'pinDigest'],
+    },
+    {
+      groupName: 'server dev dependencies (non-major)',
+      matchFileNames: ['package.json'],
+      matchDepTypes: ['devDependencies'],
+      matchUpdateTypes: ['minor', 'patch'],
+    },
+    {
+      groupName: 'client @types (non-major)',
+      matchFileNames: ['client/package.json'],
+      matchPackageNames: ['@types/**'],
+      matchUpdateTypes: ['minor', 'patch'],
+    },
+    {
+      // react-scripts 5 only supports TypeScript 4; revisit with the Vite migration
+      matchFileNames: ['client/package.json'],
+      matchPackageNames: ['typescript'],
+      allowedVersions: '<5',
+    },
+    {
+      // The client stays on React 18 until the Vite migration
+      matchFileNames: ['client/package.json'],
+      matchPackageNames: ['react', 'react-dom', '@types/react', '@types/react-dom'],
+      allowedVersions: '<19',
+    },
+  ],
+}
