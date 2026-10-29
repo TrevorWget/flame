@@ -3,23 +3,28 @@ import { Dispatch } from 'redux';
 
 import { getAdminConfig, getCategories, getConfig } from '.';
 import { ApiResponse } from '../../interfaces';
+import { applyAuth } from '../../utility';
 import { ActionType } from '../action-types';
 import { AuthErrorAction, AutoLoginAction, LoginAction, LogoutAction } from '../actions/auth';
+
+interface Session {
+  isAuthenticated: boolean;
+  expiresAt: number | null;
+}
 
 export const login =
   (formData: { password: string; duration: string }) =>
   async (dispatch: Dispatch<LoginAction>) => {
     try {
-      const res = await axios.post<ApiResponse<{ token: string }>>(
+      const res = await axios.post<ApiResponse<Session>>(
         '/api/auth',
-        formData
+        formData,
+        { headers: applyAuth() }
       );
-
-      localStorage.setItem('token', res.data.data.token);
 
       dispatch({
         type: ActionType.login,
-        payload: res.data.data.token,
+        payload: res.data.data.expiresAt as number,
       });
 
       dispatch<any>(getCategories());
@@ -29,9 +34,7 @@ export const login =
     }
   };
 
-export const logout = () => (dispatch: Dispatch<LogoutAction>) => {
-  localStorage.removeItem('token');
-
+const clearSession = (dispatch: Dispatch<LogoutAction>) => {
   dispatch({
     type: ActionType.logout,
   });
@@ -40,23 +43,58 @@ export const logout = () => (dispatch: Dispatch<LogoutAction>) => {
   dispatch<any>(getConfig());
 };
 
-export const autoLogin = () => async (dispatch: Dispatch<AutoLoginAction>) => {
-  const token: string = localStorage.token;
+// Also used when the session has expired, so a failed request to clear the
+// cookie must not keep the user logged in
+export const logout = () => async (dispatch: Dispatch<LogoutAction>) => {
+  await axios
+    .post('/api/auth/logout', {}, { headers: applyAuth() })
+    .catch(() => {});
 
+  clearSession(dispatch);
+};
+
+export const logoutAll = () => async (dispatch: Dispatch<LogoutAction>) => {
   try {
-    await axios.post<ApiResponse<{ token: { isValid: boolean } }>>(
-      '/api/auth/validate',
-      { token }
-    );
+    await axios.post('/api/auth/logout-all', {}, { headers: applyAuth() });
+
+    dispatch<any>({
+      type: ActionType.createNotification,
+      payload: {
+        title: 'Success',
+        message: 'Logged out of all sessions',
+      },
+    });
+  } catch (err) {
+    dispatch<any>(authError(err, true));
+
+    // Other sessions are still valid unless this one was already rejected
+    if ((err as AxiosError).response?.status !== 401) {
+      return;
+    }
+  }
+
+  clearSession(dispatch);
+};
+
+export const autoLogin = () => async (dispatch: Dispatch<AutoLoginAction>) => {
+  try {
+    const res = await axios.get<ApiResponse<Session>>('/api/auth');
+    const { isAuthenticated, expiresAt } = res.data.data;
+
+    if (!isAuthenticated) {
+      dispatch<any>({ type: ActionType.authError });
+      return;
+    }
 
     dispatch({
       type: ActionType.autoLogin,
-      payload: token,
+      payload: expiresAt as number,
     });
 
     dispatch<any>(getCategories());
     dispatch<any>(getAdminConfig());
   } catch (err) {
+    dispatch<any>({ type: ActionType.authError });
     dispatch<any>(authError(err, false));
   }
 };

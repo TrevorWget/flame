@@ -1,15 +1,7 @@
-import jwtDecode from 'jwt-decode';
 import { parseTime } from '.';
-import { Token } from '../interfaces';
 
-export const decodeToken = (token: string): Token => {
-  const decoded = jwtDecode(token) as Token;
-
-  return decoded;
-};
-
-export const parseTokenExpire = (expiresIn: number): string => {
-  const d = new Date(expiresIn * 1000);
+export const parseTokenExpire = (expiresAt: number): string => {
+  const d = new Date(expiresAt);
   const p = parseTime;
 
   const useAmericanDate = localStorage.useAmericanDate === 'true';
