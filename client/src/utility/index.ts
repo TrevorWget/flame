@@ -12,6 +12,7 @@ export * from './validators';
 export * from './parseTime';
 export * from './parseTokenExpire';
 export * from './applyAuth';
+export * from './sso';
 export * from './escapeRegex';
 export * from './parseTheme';
 export * from './arrayPartition';

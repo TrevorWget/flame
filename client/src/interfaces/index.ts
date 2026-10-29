@@ -1,6 +1,7 @@
 export * from './App';
 export * from './Theme';
 export * from './Api';
+export * from './Auth';
 export * from './Weather';
 export * from './Bookmark';
 export * from './Category';

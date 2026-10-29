@@ -2,11 +2,11 @@ const jwt = require('jsonwebtoken');
 const asyncWrapper = require('../../middleware/asyncWrapper');
 const ErrorResponse = require('../../utils/ErrorResponse');
 const signToken = require('../../utils/signToken');
+const sessionInfo = require('../../utils/sessionInfo');
 const { setTokenCookie } = require('../../utils/authCookie');
 const { isLoginEnabled, checkPassword } = require('../../utils/password');
 
-// Must match the session duration options in the client's AuthForm
-const ALLOWED_DURATIONS = ['1h', '1d', '14d', '30d', '1y'];
+const { SESSION_DURATIONS } = signToken;
 
 // @desc      Login user
 // @route     POST /api/auth/
@@ -23,7 +23,7 @@ const login = asyncWrapper(async (req, res, next) => {
     );
   }
 
-  if (!ALLOWED_DURATIONS.includes(duration)) {
+  if (!SESSION_DURATIONS.includes(duration)) {
     return next(new ErrorResponse('Invalid session duration', 400));
   }
 
@@ -32,13 +32,13 @@ const login = asyncWrapper(async (req, res, next) => {
   }
 
   const token = signToken(duration);
-  const expiresAt = jwt.decode(token).exp * 1000;
+  const tokenPayload = jwt.decode(token);
 
-  setTokenCookie(req, res, token, new Date(expiresAt));
+  setTokenCookie(req, res, token, new Date(tokenPayload.exp * 1000));
 
   res.status(200).json({
     success: true,
-    data: { isAuthenticated: true, expiresAt },
+    data: sessionInfo({ tokenPayload }),
   });
 });
 
