@@ -1,6 +1,7 @@
 .AppGrid {
   display: grid;
   grid-template-columns: repeat(1, 1fr);
+  grid-auto-flow: row dense;
 }
 
 @media (min-width: 430px) {
