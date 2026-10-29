@@ -252,6 +252,8 @@ metadata:
 
 > "Use Kubernetes Ingress API" option must be enabled for this to work. You can find it in Settings > Docker
 
+Like Docker labels, annotations can describe several apps separated by `;`. Flame uses the pod's service account by default (it needs `list` on `ingresses`, see `k8s/base/rbac.yaml`); set `KUBECONFIG` to use a kubeconfig file instead, e.g. when Flame runs outside the cluster.
+
 ### Import HTML Bookmarks (Experimental)
 
 - Requirements
