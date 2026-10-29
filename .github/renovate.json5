@@ -40,13 +40,13 @@
       matchUpdateTypes: ['minor', 'patch'],
     },
     {
-      // react-scripts 5 only supports TypeScript 4; revisit with the Vite migration
+      // typescript-eslint 8 supports TypeScript <6.1
       matchFileNames: ['client/package.json'],
       matchPackageNames: ['typescript'],
-      allowedVersions: '<5',
+      allowedVersions: '<6.1',
     },
     {
-      // The client stays on React 18 until the Vite migration
+      // react-beautiful-dnd doesn't support React 19
       matchFileNames: ['client/package.json'],
       matchPackageNames: ['react', 'react-dom', '@types/react', '@types/react-dom'],
       allowedVersions: '<19',

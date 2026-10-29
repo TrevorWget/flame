@@ -145,6 +145,7 @@ Follow instructions from wiki: [Installation without Docker](https://github.com/
   - React
   - Redux
   - TypeScript
+  - Vite (dev server and build), Vitest (tests)
 - Deployment
   - Docker
   - Kubernetes
@@ -162,6 +163,19 @@ npm run dev-init
 # start backend and frontend development servers
 npm run dev
 ```
+
+The backend listens on port 5005 and the Vite dev server on [http://localhost:3000](http://localhost:3000), proxying `/api`, `/uploads` and the `/socket` WebSocket to the backend. Set `FLAME_SERVER_URL` to proxy to a backend elsewhere, e.g. `FLAME_SERVER_URL=http://localhost:5160 npm run dev --prefix client -- --port 3160`.
+
+Client checks, run from `client/`:
+
+```sh
+npm run lint
+npm run typecheck
+npm test        # Vitest
+npm run build   # production bundle in client/dist
+```
+
+The app version shown in Settings comes from `VITE_APP_VERSION` in `client/.env`; the Docker image also derives the server's `VERSION` from it.
 
 ## Screenshots
 

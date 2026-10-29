@@ -34,7 +34,7 @@ WORKDIR /app
 COPY . .
 
 # The root .env is excluded from the build context; VERSION is still required (DB backup names)
-RUN version="$(sed -n 's/^REACT_APP_VERSION=//p' client/.env | tr -d '\r')" \
+RUN version="$(sed -n 's/^VITE_APP_VERSION=//p' client/.env | tr -d '\r')" \
     && test -n "$version" \
     && printf 'VERSION=%s\n' "$version" > .env \
     && rm -rf client .docker
@@ -48,7 +48,7 @@ WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=source /app ./
-COPY --from=client /client/build ./public
+COPY --from=client /client/dist ./public
 COPY .docker/entrypoint.sh /usr/local/bin/flame-entrypoint
 
 # App code stays root-owned and read-only for the runtime user. public/flame.css is

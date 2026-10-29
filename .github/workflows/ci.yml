@@ -41,7 +41,7 @@ jobs:
         run: npm test
 
   client:
-    name: Client (lint, typecheck, build)
+    name: Client (lint, typecheck, tests, build)
     if: github.event_name == 'push' || github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
     defaults:
@@ -67,12 +67,11 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      # With CI=true, react-scripts' built-in ESLint turns warnings into build
-      # errors; the Lint step above already covers ESLint
+      - name: Tests
+        run: npm test
+
       - name: Build
         run: npm run build
-        env:
-          DISABLE_ESLINT_PLUGIN: 'true'
 
   audit:
     name: npm audit (production deps)

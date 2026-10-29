@@ -1,6 +1,5 @@
-// Server-side lint, run with `npm run lint`. The client is linted by
-// react-scripts' own ESLint 8 setup, which switches to flat config if it finds
-// an eslint.config.js in a parent directory, hence the non-default name.
+// Server-side lint, run with `npm run lint`. The client has its own config in
+// client/eslint.config.js.
 const js = require('@eslint/js');
 const globals = require('globals');
 

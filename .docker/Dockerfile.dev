@@ -6,7 +6,7 @@ WORKDIR /app
 
 COPY ./client .
 
-RUN npm install --production \
+RUN npm ci \
     && npm run build
 
 FROM node:lts-alpine
@@ -15,7 +15,7 @@ WORKDIR /app
 
 RUN mkdir -p ./public
 
-COPY --from=build-front /app/build/ ./public
+COPY --from=build-front /app/dist/ ./public
 
 COPY package*.json ./
 
