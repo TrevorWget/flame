@@ -1,0 +1,28 @@
+.FetchIcon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+
+.Preview {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.FetchButton {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  color: var(--color-primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.FetchButton:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}

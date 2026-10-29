@@ -6,7 +6,7 @@ import { App, Category, NewApp } from '../../../interfaces';
 import { actionCreators } from '../../../store';
 import { State } from '../../../store/reducers';
 import { inputHandler, newAppTemplate, normalizeUrl } from '../../../utility';
-import { Button, InputGroup, ModalForm } from '../../UI';
+import { Button, FetchIcon, InputGroup, ModalForm } from '../../UI';
 import classes from './Form.module.css';
 
 // Redux
@@ -249,6 +249,11 @@ export const AppsForm = ({
               Click here for reference
             </a>
           </span>
+          <FetchIcon
+            url={formData.url}
+            icon={formData.icon}
+            onFetched={(icon) => setFormData((prev) => ({ ...prev, icon }))}
+          />
           <span
             onClick={() => toggleUseCustomIcon(!useCustomIcon)}
             className={classes.Switch}

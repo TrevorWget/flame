@@ -36,6 +36,8 @@ export const generalSettingsTemplate: GeneralForm = {
   appsSameTab: false,
   bookmarksSameTab: false,
   extraUrlSchemes: '',
+  autoFetchIcons: false,
+  iconFetchAllowPrivate: false,
 };
 
 export const dockerSettingsTemplate: DockerSettingsForm = {

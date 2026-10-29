@@ -20,6 +20,8 @@ export interface GeneralForm {
   appsSameTab: boolean;
   bookmarksSameTab: boolean;
   extraUrlSchemes: string;
+  autoFetchIcons: boolean;
+  iconFetchAllowPrivate: boolean;
 }
 
 export interface UISettingsForm {

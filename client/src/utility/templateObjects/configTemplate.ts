@@ -38,4 +38,6 @@ export const configTemplate: Config = {
   weatherData: 'cloud',
   hideDate: false,
   extraUrlSchemes: '',
+  autoFetchIcons: false,
+  iconFetchAllowPrivate: false,
 };
