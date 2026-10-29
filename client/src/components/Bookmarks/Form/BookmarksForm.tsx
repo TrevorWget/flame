@@ -10,7 +10,7 @@ import { actionCreators } from '../../../store';
 import { Bookmark, Category, NewBookmark } from '../../../interfaces';
 
 // UI
-import { ModalForm, InputGroup, Button } from '../../UI';
+import { ModalForm, InputGroup, Button, FetchIcon } from '../../UI';
 
 // CSS
 import classes from './Form.module.css';
@@ -239,6 +239,11 @@ export const BookmarksForm = ({
               Click here for reference
             </a>
           </span>
+          <FetchIcon
+            url={formData.url}
+            icon={formData.icon}
+            onFetched={(icon) => setFormData((prev) => ({ ...prev, icon }))}
+          />
           <span
             onClick={() => toggleUseCustomIcon(!useCustomIcon)}
             className={classes.Switch}

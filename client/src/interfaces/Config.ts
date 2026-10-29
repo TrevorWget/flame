@@ -40,4 +40,10 @@ export interface Config {
   extraUrlSchemes: string;
   backupSchedule: BackupSchedule;
   backupRetention: number;
+  autoFetchIcons: boolean;
+  iconFetchAllowPrivate: boolean;
+  statusChecks: boolean;
+  statusCheckInterval: number;
+  statusCheckTimeout: number;
+  statusCheckDocker: boolean;
 }

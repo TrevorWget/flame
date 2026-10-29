@@ -45,6 +45,26 @@ const App = sequelize.define(
       allowNull: true,
       defaultValue: null,
     },
+    statusCheck: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+    },
+    statusUrl: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+    },
+    externalUrl: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: '',
+    },
+    preferredUrl: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'internal',
+    },
   },
   {
     tableName: 'apps',

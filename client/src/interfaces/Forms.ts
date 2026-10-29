@@ -21,6 +21,12 @@ export interface GeneralForm {
   appsSameTab: boolean;
   bookmarksSameTab: boolean;
   extraUrlSchemes: string;
+  autoFetchIcons: boolean;
+  iconFetchAllowPrivate: boolean;
+  statusChecks: boolean;
+  statusCheckInterval: number;
+  statusCheckTimeout: number;
+  statusCheckDocker: boolean;
 }
 
 export interface UISettingsForm {

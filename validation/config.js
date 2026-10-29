@@ -62,6 +62,13 @@ const SETTINGS = {
   extraUrlSchemes: text(500),
   backupSchedule: z.enum(['off', 'daily', 'weekly']),
   backupRetention: z.number().int().min(1).max(365),
+  autoFetchIcons: z.boolean(),
+  iconFetchAllowPrivate: z.boolean(),
+  statusChecks: z.boolean(),
+  // Seconds
+  statusCheckInterval: z.number().int().min(10).max(86400),
+  statusCheckTimeout: z.number().int().min(1).max(60),
+  statusCheckDocker: z.boolean(),
 };
 
 const isUnchanged = (value, stored) =>

@@ -1,6 +1,8 @@
 const asyncWrapper = require('../../middleware/asyncWrapper');
 const App = require('../../models/App');
 const ErrorResponse = require('../../utils/ErrorResponse');
+const { autoFetchIcon } = require('../../utils/autoFetchIcon');
+const { runStatusChecks } = require('../../utils/statusChecks');
 
 // @desc      Update app
 // @route     PUT /api/apps/:id
@@ -19,10 +21,12 @@ const updateApp = asyncWrapper(async (req, res, next) => {
     );
   }
 
-  const body = { ...req.body };
+  let body = { ...req.body };
 
   if (req.file) {
     body.icon = req.file.filename;
+  } else {
+    body = await autoFetchIcon(body, app);
   }
 
   app = await app.update(body);
@@ -31,6 +35,10 @@ const updateApp = asyncWrapper(async (req, res, next) => {
     success: true,
     data: app,
   });
+
+  if (['url', 'statusCheck', 'statusUrl'].some((key) => key in body)) {
+    runStatusChecks();
+  }
 });
 
 module.exports = updateApp;

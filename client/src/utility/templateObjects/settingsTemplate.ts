@@ -36,6 +36,12 @@ export const generalSettingsTemplate: GeneralForm = {
   appsSameTab: false,
   bookmarksSameTab: false,
   extraUrlSchemes: '',
+  autoFetchIcons: false,
+  iconFetchAllowPrivate: false,
+  statusChecks: false,
+  statusCheckInterval: 60,
+  statusCheckTimeout: 5,
+  statusCheckDocker: false,
 };
 
 export const dockerSettingsTemplate: DockerSettingsForm = {

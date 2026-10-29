@@ -14,6 +14,8 @@ const app = (id: number, isPinned: boolean): App => ({
   icon: '',
   isPublic: true,
   description: '',
+  statusCheck: true,
+  statusUrl: null,
   orderId: id,
   isPinned,
 });
