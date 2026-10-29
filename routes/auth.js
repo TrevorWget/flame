@@ -8,23 +8,26 @@ const {
   logout,
   logoutAll,
 } = require('../controllers/auth');
-const { auth, requireAuth, requireBody, requireCsrf } = require('../middleware');
+const { auth, requireAuth, requireCsrf } = require('../middleware');
+const validateRequest = require('../middleware/validate');
 const loginRateLimit = require('../middleware/loginRateLimit');
+const { auth: schemas } = require('../validation');
 
 router
   .route('/')
-  .get(auth, getSession)
-  .post(
-    requireCsrf,
-    loginRateLimit,
-    requireBody(['password', 'duration']),
-    login
-  );
+  .get(auth, validateRequest(schemas.getSession), getSession)
+  .post(requireCsrf, loginRateLimit, validateRequest(schemas.login), login);
 
-router.route('/validate').post(requireBody(['token']), validate);
+router
+  .route('/validate')
+  .post(validateRequest(schemas.validateToken), validate);
 
-router.route('/logout').post(requireCsrf, logout);
+router
+  .route('/logout')
+  .post(requireCsrf, validateRequest(schemas.logout), logout);
 
-router.route('/logout-all').post(auth, requireAuth, logoutAll);
+router
+  .route('/logout-all')
+  .post(auth, requireAuth, validateRequest(schemas.logoutAll), logoutAll);
 
 module.exports = router;
