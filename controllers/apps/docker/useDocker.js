@@ -1,10 +1,11 @@
-const App = require('../../../models/App');
-const axios = require('axios');
 const Logger = require('../../../utils/Logger');
 const logger = new Logger();
 const loadConfig = require('../../../utils/loadConfig');
 const Category = require('../../../models/Category');
 const { isAllowedUrl } = require('../../../utils/urlSchemes');
+const { listRunningContainers } = require('./dockerApi');
+const applyIntegrationApps = require('./applyIntegrationApps');
+const warnOnce = require('./warnOnce');
 
 const dockerDefaultCategory = {
   id: -2,
@@ -14,7 +15,7 @@ const dockerDefaultCategory = {
   orderId: 998,
 };
 
-const useDocker = async (apps) => {
+const useDocker = async () => {
   const {
     useOrdering: orderType,
     unpinStoppedApps,
@@ -24,37 +25,17 @@ const useDocker = async (apps) => {
 
   let containers = null;
 
-  // Get list of containers
   try {
-    if (host.includes('localhost')) {
-      // Use default host
-      let { data } = await axios.get(
-        `http://${host}/containers/json?{"status":["running"]}`,
-        {
-          socketPath: '/var/run/docker.sock',
-        }
-      );
-
-      containers = data;
-    } else {
-      // Use custom host
-      let { data } = await axios.get(
-        `http://${host}/containers/json?{"status":["running"]}`
-      );
-
-      containers = data;
-    }
-  } catch {
-    logger.log(`Can't connect to the Docker API on ${host}`, 'ERROR');
+    containers = await listRunningContainers(host);
+  } catch (err) {
+    logger.log(`Can't connect to the Docker API on ${host}: ${err.message}`, 'ERROR');
   }
 
   if (containers) {
-    apps = await App.findAll({
-      order: [[orderType, 'ASC']],
-    });
-
-    // Filter out containers without any annotations
-    containers = containers.filter((e) => Object.keys(e.Labels).length !== 0);
+    // Filter out containers without any labels
+    containers = containers.filter(
+      (e) => e.Labels && Object.keys(e.Labels).length !== 0
+    );
 
     const dockerApps = [];
 
@@ -122,9 +103,8 @@ const useDocker = async (apps) => {
           const url = urls[i] || urls[0];
 
           if (!isAllowedUrl(url, extraUrlSchemes)) {
-            logger.log(
-              `Skipping Docker app "${name}": URL is invalid or its scheme is not allowed`,
-              'WARN'
+            warnOnce(
+              `Skipping Docker app "${name}": URL is invalid or its scheme is not allowed`
             );
             continue;
           }
@@ -150,41 +130,10 @@ const useDocker = async (apps) => {
       }
     }
 
-    if (unpinStoppedApps) {
-      for (const app of apps) {
-        await app.update({ isPinned: false });
-      }
-    }
-    for (const item of dockerApps) {
-      // If app already exists, update it
-      if (apps.some((app) => app.name === item.name)) {
-        const app = apps.find((a) => a.name === item.name);
-
-        if (
-          item.icon === 'custom' ||
-          (item.icon === 'docker' && app.icon != 'docker')
-        ) {
-          // update without overriding icon
-          await app.update({
-            name: item.name,
-            url: item.url,
-            isPinned: true,
-          });
-        } else {
-          await app.update({
-            ...item,
-            isPinned: true,
-          });
-        }
-      } else {
-        // else create new app
-        await App.create({
-          ...item,
-          icon: item.icon === 'custom' ? 'docker' : item.icon,
-          isPinned: true,
-        });
-      }
-    }
+    await applyIntegrationApps('docker', dockerApps, {
+      defaultIcon: 'docker',
+      unpinMissing: unpinStoppedApps,
+    });
   }
 };
 

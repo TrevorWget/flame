@@ -2,7 +2,6 @@ const asyncWrapper = require('../../middleware/asyncWrapper');
 const App = require('../../models/App');
 const { Sequelize } = require('sequelize');
 const loadConfig = require('../../utils/loadConfig');
-const initIntegrationsApps = require('../../utils/init/initIntegrationsApps');
 
 // @desc      Get all apps
 // @route     GET /api/apps
@@ -11,9 +10,6 @@ const getAllApps = asyncWrapper(async (req, res, next) => {
   const {
     useOrdering: orderType
   } = await loadConfig();
-
-  // Load apps to create/update apps from integrations (Docker, Kubernetes, etc.)
-  await initIntegrationsApps();
 
   // apps visibility
   const where = req.isAuthenticated ? {} : { isPublic: true };

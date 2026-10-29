@@ -14,7 +14,7 @@ const Sockets = require('./Sockets');
 // Utils
 const initApp = require('./utils/init');
 const normalizeTheme = require('./utils/init/normalizeTheme');
-const initIntegrationsApps = require('./utils/init/initIntegrationsApps');
+const { startIntegrationSync } = require('./utils/integrationSync');
 const Logger = require('./utils/Logger');
 const logger = new Logger();
 
@@ -29,8 +29,8 @@ const logger = new Logger();
   await associateModels();  
   await jobs();
 
-  // Load apps to create/update apps from integrations (Docker, Kubernetes, etc.)
-  await initIntegrationsApps();
+  // Create/update apps from integrations (Docker, Kubernetes) in the background
+  startIntegrationSync();
 
   // Create server for Express API and WebSockets
   const server = http.createServer();
