@@ -17,6 +17,16 @@ const upload = multer({
   limits: { fileSize: MAX_ICON_SIZE_MB * 1024 * 1024, files: 1 },
 }).single('icon');
 
+// Controllers validate the rest of the request after the icon is written,
+// so a request that fails must not leave its icon behind
+const removeIconUnlessSuccessful = (res, path) => {
+  res.on('close', () => {
+    if (res.statusCode >= 400 || !res.writableFinished) {
+      fs.promises.unlink(path).catch(() => {});
+    }
+  });
+};
+
 const uploadIcon = (req, res, next) => {
   upload(req, res, async (err) => {
     if (err instanceof multer.MulterError) {
@@ -45,9 +55,9 @@ const uploadIcon = (req, res, next) => {
 
     try {
       const filename = `${randomUUID()}.${icon.ext}`;
-      await fs.promises.writeFile(join(UPLOADS_DIR, filename), icon.data, {
-        flag: 'wx',
-      });
+      const path = join(UPLOADS_DIR, filename);
+      await fs.promises.writeFile(path, icon.data, { flag: 'wx' });
+      removeIconUnlessSuccessful(res, path);
 
       req.file.filename = filename;
       delete req.file.buffer;
