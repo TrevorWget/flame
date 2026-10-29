@@ -33,7 +33,9 @@ const visibility = z
     ],
     { error: 'Expected true/false or 1/0' }
   )
-  .transform((value) => (value === true || value === 1 || value === '1' || value === 'true' ? 1 : 0));
+  .transform((value) =>
+    value === true || value === 1 || value === '1' || value === 'true' ? 1 : 0
+  );
 
 const flag = z
   .union([z.boolean(), z.literal(0), z.literal(1)], {

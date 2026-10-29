@@ -20,7 +20,10 @@ const validate = (schemas) =>
 
       if (!result.success) {
         return next(
-          new ErrorResponse(result.error.issues.map(formatIssue).join('; '), 400)
+          new ErrorResponse(
+            result.error.issues.map(formatIssue).join('; '),
+            400
+          )
         );
       }
 

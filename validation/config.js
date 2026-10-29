@@ -11,7 +11,10 @@ const dockerHost = text(255).superRefine((value, ctx) => {
   try {
     parseDockerHost(value);
   } catch (err) {
-    ctx.addIssue({ code: 'custom', message: `Invalid Docker host: ${err.message}` });
+    ctx.addIssue({
+      code: 'custom',
+      message: `Invalid Docker host: ${err.message}`,
+    });
   }
 });
 

@@ -31,7 +31,10 @@ fs.writeFileSync(
 );
 
 for (const file of initialFiles.filter((f) => f.isJSON)) {
-  fs.writeFileSync(join(workDir, 'data', file.name), JSON.stringify(file.template));
+  fs.writeFileSync(
+    join(workDir, 'data', file.name),
+    JSON.stringify(file.template)
+  );
 }
 
 process.chdir(workDir);
@@ -47,7 +50,9 @@ const { getTokenVersion } = require('../utils/tokenVersion');
 const { SETTINGS } = require('../validation/config');
 
 const UPLOADS_DIR = join(repoRoot, 'data/uploads');
-const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
+const PNG = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0,
+]);
 
 const token = jwt.sign(
   { app: 'flame', pwd: getPasswordFingerprint(), ver: getTokenVersion() },
@@ -112,11 +117,17 @@ test.describe('categories', () => {
     assert.strictEqual(res.body.data.isPublic, 1);
 
     assertRejected(
-      await authed('post', '/api/categories').send({ name: 'x', type: 'other' }),
+      await authed('post', '/api/categories').send({
+        name: 'x',
+        type: 'other',
+      }),
       /^type: /
     );
     assertRejected(
-      await authed('post', '/api/categories').send({ name: '   ', type: 'apps' }),
+      await authed('post', '/api/categories').send({
+        name: '   ',
+        type: 'apps',
+      }),
       /^name: /
     );
     assertRejected(
@@ -154,10 +165,15 @@ test.describe('categories', () => {
     assert.strictEqual(pinned.body.data.isPinned, false);
 
     assertRejected(
-      await authed('put', `/api/categories/${category.id}`).send({ isPinned: 'yes' }),
+      await authed('put', `/api/categories/${category.id}`).send({
+        isPinned: 'yes',
+      }),
       /^isPinned: /
     );
-    assertRejected(await authed('put', '/api/categories/abc').send({}), /^id: /);
+    assertRejected(
+      await authed('put', '/api/categories/abc').send({}),
+      /^id: /
+    );
     assertRejected(await authed('delete', '/api/categories/-1'), /^id: /);
   });
 
@@ -168,7 +184,9 @@ test.describe('categories', () => {
     assert.strictEqual(ok.status, 200);
 
     assertRejected(
-      await authed('put', '/api/categories/0/reorder').send({ categories: 'all' }),
+      await authed('put', '/api/categories/0/reorder').send({
+        categories: 'all',
+      }),
       /^categories: /
     );
     assertRejected(
@@ -238,7 +256,10 @@ test.describe('apps', () => {
       /^categoryId: /
     );
     assertRejected(
-      await authed('post', '/api/apps').send({ ...base, name: 'n'.repeat(256) }),
+      await authed('post', '/api/apps').send({
+        ...base,
+        name: 'n'.repeat(256),
+      }),
       /^name: /
     );
     assertRejected(
@@ -307,7 +328,9 @@ test.describe('apps', () => {
     createdUploads.push(multipart.body.data.icon);
 
     assertRejected(
-      await authed('put', `/api/apps/${app.id}`).send({ url: 'data:text/html,x' }),
+      await authed('put', `/api/apps/${app.id}`).send({
+        url: 'data:text/html,x',
+      }),
       /^url: /
     );
     assertRejected(
@@ -333,11 +356,16 @@ test.describe('apps', () => {
       apps: [{ id: created.body.data.id, orderId: 1 }],
     });
     assert.strictEqual(reorder.status, 200);
-    assertRejected(await authed('put', '/api/apps/0/reorder').send({}), /^apps: /);
+    assertRejected(
+      await authed('put', '/api/apps/0/reorder').send({}),
+      /^apps: /
+    );
 
     assertRejected(await authed('delete', '/api/apps/abc'), /^id: /);
     assertRejected(
-      await authed('delete', `/api/apps/${created.body.data.id}`).send({ cascade: true }),
+      await authed('delete', `/api/apps/${created.body.data.id}`).send({
+        cascade: true,
+      }),
       /Unrecognized key/
     );
     assert.strictEqual(
@@ -402,7 +430,9 @@ test.describe('bookmarks', () => {
       /^url: /
     );
     assertRejected(
-      await authed('put', `/api/bookmarks/${bookmark.id}`).send({ description: 'x' }),
+      await authed('put', `/api/bookmarks/${bookmark.id}`).send({
+        description: 'x',
+      }),
       /Unrecognized key: "description"/
     );
     assertRejected(
@@ -463,7 +493,10 @@ test.describe('config', () => {
       [{ lat: 91 }, /^lat: /],
       [{ long: '0' }, /^long: /],
       [{ useOrdering: 'random' }, /^useOrdering: /],
-      [{ weatherProvider: 'acme' }, /^weatherProvider: Unknown weather provider$/],
+      [
+        { weatherProvider: 'acme' },
+        /^weatherProvider: Unknown weather provider$/,
+      ],
       [{ dockerHost: 'ftp://docker:21' }, /^dockerHost: Invalid Docker host: /],
       [{ WEATHER_API_KEY: 42 }, /^WEATHER_API_KEY: /],
       [{ customTitle: 't'.repeat(256) }, /^customTitle: /],
@@ -546,7 +579,10 @@ test.describe('search queries', () => {
       /^template: /
     );
     assertRejected(
-      await authed('put', '/api/queries/kg').send({ ...query, isDefault: true }),
+      await authed('put', '/api/queries/kg').send({
+        ...query,
+        isDefault: true,
+      }),
       /Unrecognized key/
     );
   });
@@ -619,14 +655,17 @@ test.describe('auth body shape', () => {
       /^password: /
     );
     assertRejected(
-      await request(api).post('/api/auth/validate').send({ token: { $ne: 1 } }),
+      await request(api)
+        .post('/api/auth/validate')
+        .send({ token: { $ne: 1 } }),
       /^token: /
     );
-    assertRejected(await request(api).post('/api/auth/validate').send({}), /^token: /);
+    assertRejected(
+      await request(api).post('/api/auth/validate').send({}),
+      /^token: /
+    );
 
-    const ok = await request(api)
-      .post('/api/auth/validate')
-      .send({ token });
+    const ok = await request(api).post('/api/auth/validate').send({ token });
     assert.strictEqual(ok.status, 200);
   });
 
@@ -655,7 +694,10 @@ test.describe('auth body shape', () => {
     assert.strictEqual(session.status, 200);
     assert.strictEqual(session.body.data.isAuthenticated, true);
 
-    const logout = await request(api).post('/api/auth/logout').set(CSRF).send({});
+    const logout = await request(api)
+      .post('/api/auth/logout')
+      .set(CSRF)
+      .send({});
     assert.strictEqual(logout.status, 200);
   });
 });
