@@ -177,10 +177,12 @@ For list of supported search engines, shortcuts and more about searching functio
 
 ### Setting up weather module
 
-1. Obtain API Key from [Weather API](https://www.weatherapi.com/pricing.aspx).
-   > Free plan allows for 1M calls per month. Flame is making less then 3K API calls per month.
+1. Choose a weather provider in Settings > Weather:
+   - [Open-Meteo](https://open-meteo.com/) needs no API key (free for non-commercial use).
+   - [Weather API](https://www.weatherapi.com/pricing.aspx) needs an API key.
+     > Free plan allows for 1M calls per month. Flame is making less then 3K API calls per month.
 2. Get lat/long for your location. You can get them from [latlong.net](https://www.latlong.net/convert-address-to-lat-long.html).
-3. Enter and save data. Weather widget will now update and should be visible on Home page.
+3. Enter and save data. Weather widget will now update and should be visible on Home page. Weather refreshes every 15 minutes; saving a key or switching provider takes effect without a restart.
 
 ### Docker integration
 
