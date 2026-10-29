@@ -214,28 +214,49 @@ labels:
   - flame.icon=icon-name1;icon-name2
 ```
 
-If you want to use a remote docker host follow this instructions in the host:
+#### Connecting to Docker
 
-- Open the file `/lib/systemd/system/docker.service`, search for `ExecStart` and edit the value
+Set Settings > Docker > Docker host to one of:
 
-```text
-ExecStart=/usr/bin/dockerd -H tcp://0.0.0.0:${PORT} -H unix:///var/run/docker.sock
+| Value | Connection |
+| --- | --- |
+| `unix:///var/run/docker.sock` (or `localhost`, the default) | Local socket mounted into the container |
+| `tcp://socket-proxy:2375` / `http://host:2375` | Plain HTTP, e.g. to a socket proxy on a private Docker network |
+| `https://host:2376` | TLS; `tcp://` also uses TLS when `DOCKER_TLS_VERIFY=1` or `DOCKER_CERT_PATH` is set |
+| `npipe:////./pipe/docker_engine` | Docker Desktop named pipe (Flame running on Windows) |
+
+Flame only reads `GET /containers/json` and `GET /events`, but whoever can reach the Docker API (or socket) has root on the host. Mounting the socket `:ro` does not make the API read-only. Prefer a socket proxy that only allows those calls, for example [tecnativa/docker-socket-proxy](https://github.com/Tecnativa/docker-socket-proxy):
+
+```yaml
+services:
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy
+    environment:
+      - CONTAINERS=1 # GET /containers/*; POST and everything else stay denied
+      - EVENTS=1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    # no ports: only reachable from this compose network
+
+  flame:
+    # ... as above, without the docker.sock volume
+    depends_on:
+      - socket-proxy
 ```
 
->The above command will bind the docker engine server to the Unix socket as well as TCP port of your choice. “0.0.0.0” means docker-engine accepts connections from all IP addresses.
+and set the Docker host to `tcp://socket-proxy:2375`.
 
-- Restart the daemon and Docker service
+For a remote Docker host, never start `dockerd` with `-H tcp://0.0.0.0:2375`: that gives unauthenticated root access to anyone who can reach the port. Either run a socket proxy on that host, reachable only from Flame's network, or [protect the daemon with TLS](https://docs.docker.com/engine/security/protect-access/) and give Flame a client certificate. Mount the `ca.pem`, `cert.pem` and `key.pem` files and point `DOCKER_CERT_PATH` at them:
 
-```shell
-sudo systemctl daemon-reload
-sudo service docker restart
+```yaml
+    volumes:
+      - /path/to/docker-certs:/certs:ro
+    environment:
+      - DOCKER_CERT_PATH=/certs
 ```
 
-- Test if it is working
-
-```shell
-curl http://${IP}:${PORT}/version
-```
+The daemon's certificate is always verified against `ca.pem`.
 
 ### Kubernetes integration
 

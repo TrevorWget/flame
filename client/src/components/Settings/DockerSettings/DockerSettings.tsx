@@ -64,10 +64,16 @@ export const DockerSettings = (): JSX.Element => {
           type="text"
           id="dockerHost"
           name="dockerHost"
-          placeholder="dockerHost:port"
+          placeholder="unix:///var/run/docker.sock"
           value={formData.dockerHost}
           onChange={(e) => inputChangeHandler(e)}
         />
+        <span>
+          unix:///path/to/docker.sock (localhost means the default socket),
+          tcp://host:2375 for a socket proxy, or https://host:2376 for a TLS
+          protected daemon (certificates from DOCKER_CERT_PATH). Never expose
+          the Docker API without TLS outside a private network
+        </span>
       </InputGroup>
 
       {/* USE DOCKER API */}

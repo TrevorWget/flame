@@ -8,6 +8,7 @@
 - Security: Docker and Kubernetes apps are synced by a background job (every 30 seconds, and on Docker container start/stop events) instead of on every `GET /api/apps` / `GET /api/categories`
 - Fixed "Unpin stopped containers" unpinning every app, including ones added manually; it now only unpins apps from stopped containers or removed ingresses
 - Fixed the Docker integration sending an invalid container filter
+- Docker host accepts `unix://`, `tcp://`, `http://`, `https://` (TLS client certificates from `DOCKER_CERT_PATH`) and `npipe://` ([#386](https://github.com/pawelmalak/flame/issues/386)); other values are rejected when saving settings, requests time out after 10 seconds and don't follow redirects. README now documents a socket proxy instead of exposing the Docker API on `0.0.0.0`
 - Fixed `GET /api/apps` failing with a server error, and the Applications / Bookmarks pages staying on "Loading..." when opened directly while logged out
 - Fixed the default theme not being applied on a fresh install until the next restart
 - Fixed reordering apps, bookmarks and categories responding before the new order was saved
