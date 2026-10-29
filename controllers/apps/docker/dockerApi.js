@@ -1,12 +1,38 @@
 const axios = require('axios');
+const https = require('https');
+const { parseDockerHost, loadTlsOptions } = require('./dockerHost');
 
 const REQUEST_TIMEOUT = 10000;
 const CONTAINER_EVENTS = ['start', 'die', 'destroy', 'pause', 'unpause'];
 
-const connectionOptions = (host) =>
-  host.includes('localhost')
-    ? { baseURL: `http://${host}`, socketPath: '/var/run/docker.sock' }
-    : { baseURL: `http://${host}` };
+let tlsAgent = null;
+let tlsAgentKey = null;
+
+const getTlsAgent = () => {
+  const options = loadTlsOptions();
+  const key = [options.ca, options.cert, options.key].map((b) => (b ? b.toString('base64') : '')).join('|');
+
+  if (key !== tlsAgentKey) {
+    tlsAgent = new https.Agent({ ...options, keepAlive: true });
+    tlsAgentKey = key;
+  }
+
+  return tlsAgent;
+};
+
+const connectionOptions = (host) => {
+  const target = parseDockerHost(host);
+
+  if (target.type === 'socket') {
+    return { baseURL: 'http://docker', socketPath: target.socketPath, maxRedirects: 0 };
+  }
+
+  return {
+    baseURL: target.baseURL,
+    maxRedirects: 0,
+    ...(target.tls ? { httpsAgent: getTlsAgent() } : {}),
+  };
+};
 
 const listRunningContainers = async (host) => {
   const { data } = await axios.get('/containers/json', {
@@ -18,18 +44,30 @@ const listRunningContainers = async (host) => {
   return data;
 };
 
-// Resolves with a readable stream of newline-delimited JSON events; abort with `signal`
+// Resolves with a readable stream of newline-delimited JSON events; abort with `signal`.
+// The timeout only covers connecting, an idle stream stays open.
 const streamContainerEvents = async (host, signal) => {
-  const { data } = await axios.get('/events', {
-    ...connectionOptions(host),
-    params: {
-      filters: JSON.stringify({ type: ['container'], event: CONTAINER_EVENTS }),
-    },
-    responseType: 'stream',
-    signal,
-  });
+  const options = connectionOptions(host);
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  const connectTimer = setTimeout(abort, REQUEST_TIMEOUT);
 
-  return data;
+  signal.addEventListener('abort', abort, { once: true });
+
+  try {
+    const { data } = await axios.get('/events', {
+      ...options,
+      params: {
+        filters: JSON.stringify({ type: ['container'], event: CONTAINER_EVENTS }),
+      },
+      responseType: 'stream',
+      signal: controller.signal,
+    });
+
+    return data;
+  } finally {
+    clearTimeout(connectTimer);
+  }
 };
 
 module.exports = {
