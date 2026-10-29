@@ -1,4 +1,8 @@
-### Unreleased
+### v2.5.0 (2026-10-29)
+- Fixed every app disappearing after upgrading from upstream Flame (pawelmalak, v2.4.0 and older): apps without an app category are moved into a new pinned "Applications" category (apps that were pinned) or an unpinned "Other apps" category (the rest), so the home page shows the same apps as before
+- Fixed the database backup before migrations being skipped when a backup for the same version already existed. Backups are now named `db-<version>-<timestamp>-backup.sqlite`, are only taken when migrations are pending, and Flame exits without migrating if the backup fails
+- `PASSWORD_FILE`, `SECRET_FILE` and any other `<VARIABLE>_FILE` now read the variable from that file, as the README described; previously only files in `/run/secrets` worked
+- The update check now compares against this fork's version instead of upstream's
 - Security: login now fails closed. If `PASSWORD` is unset or a known default (`flame_password`, `change_me`, ...), login is disabled and an error is logged; the images no longer ship a default password
 - Security: Flame refuses to start if `SECRET` is the value leaked in this repository's `.env` before v2.4.0, and warns if `SECRET` is shorter than 32 bytes
 - Security: timing-safe password comparison, login rate limit (10 failed attempts per 15 minutes per IP; set `TRUST_PROXY` behind a reverse proxy), session duration restricted to the options offered in the UI
