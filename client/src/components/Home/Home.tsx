@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { bindActionCreators } from 'redux';
@@ -6,7 +6,7 @@ import { bindActionCreators } from 'redux';
 import { Category } from '../../interfaces';
 import { actionCreators } from '../../store';
 import { State } from '../../store/reducers';
-import { escapeRegex } from '../../utility';
+import { escapeRegex, pinnedApps } from '../../utility';
 import { AppGrid } from '../Apps/AppGrid/AppGrid';
 import { BookmarkGrid } from '../Bookmarks/BookmarkGrid/BookmarkGrid';
 import { SearchBar } from '../SearchBar/SearchBar';
@@ -22,6 +22,9 @@ export const Home = (): JSX.Element => {
   const bookmarksLoading = useSelector((state: State) => state.bookmarks.loading);
   const config = useSelector((state: State) => state.config.config);
   const isAuthenticated = useSelector((state: State) => state.auth.isAuthenticated);
+
+  const pinnedAppCategories = useMemo(() => pinnedApps(appCategories), [appCategories]);
+  const hasPinnedApps = pinnedAppCategories.some(({ apps }) => apps.length > 0);
 
   const dispatch = useDispatch();
   const { getCategories } = bindActionCreators(
@@ -98,7 +101,7 @@ export const Home = (): JSX.Element => {
       <Header />
 
       {!isAuthenticated &&
-      !appCategories.some((a) => a.isPinned) &&
+      !hasPinnedApps &&
       !bookmarkCategories.some((c) => c.isPinned) ? (
         <Message>
           Welcome to Flame! Go to <Link to="/settings/app">/settings</Link>,
@@ -108,7 +111,7 @@ export const Home = (): JSX.Element => {
         <></>
       )}
 
-      {!config.hideApps && (isAuthenticated || appCategories.some((a) => a.isPinned)) ? (
+      {!config.hideApps && (isAuthenticated || hasPinnedApps) ? (
         <Fragment>
           <SectionHeadline title="Applications" link="/applications" />
           {appsLoading ? (
@@ -117,7 +120,7 @@ export const Home = (): JSX.Element => {
             <AppGrid
               categories={
                 !appSearchResult
-                  ? appCategories.filter(({ isPinned }) => isPinned)
+                  ? pinnedAppCategories
                   : appSearchResult
               }
               totalCategories={appCategories.length}

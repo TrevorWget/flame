@@ -25,6 +25,7 @@ export const AppsTable = ({ openFormForUpdating }: Props): JSX.Element => {
   const {
     deleteApp,
     updateApp,
+    pinApp,
     createNotification,
     reorderApps,
   } = bindActionCreators(actionCreators, dispatch);
@@ -77,6 +78,13 @@ export const AppsTable = ({ openFormForUpdating }: Props): JSX.Element => {
       categoryInEdit?.apps.find((b) => b.id === id) || appTemplate;
 
     openFormForUpdating(app);
+  };
+
+  const pinAppHandler = (id: number) => {
+    const app =
+      categoryInEdit?.apps.find((b) => b.id === id) || appTemplate;
+
+    pinApp(app);
   };
 
   const changeAppVisibiltyHandler = (id: number) => {
@@ -159,8 +167,8 @@ export const AppsTable = ({ openFormForUpdating }: Props): JSX.Element => {
                                 entity={app}
                                 deleteHandler={deleteAppHandler}
                                 updateHandler={updateAppHandler}
+                                pinHanlder={pinAppHandler}
                                 changeVisibilty={changeAppVisibiltyHandler}
-                                showPin={false}
                               />
                             )}
                           </tr>

@@ -67,6 +67,7 @@ export const appsReducer = (
       };
     }
 
+    case ActionType.pinApp:
     case ActionType.updateApp: {
       const categoryIdx = state.categories.findIndex(
         (category) => category.id === action.payload.categoryId
