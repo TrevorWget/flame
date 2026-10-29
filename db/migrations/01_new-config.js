@@ -1,8 +1,13 @@
 const { readFile, writeFile, copyFile } = require('fs/promises');
 const Config = require('../../models/Config');
+const checkFileExists = require('../../utils/checkFileExists');
 
 const up = async (query) => {
-  await copyFile('utils/init/initialConfig.json', 'data/config.json');
+  // initConfig runs before migrations, so data/config.json normally exists
+  // already and must not be reset to the initial config
+  if (!(await checkFileExists('data/config.json'))) {
+    await copyFile('utils/init/initialConfig.json', 'data/config.json');
+  }
 
   const initConfigFile = await readFile('data/config.json', 'utf-8');
   const parsedNewConfig = JSON.parse(initConfigFile);
