@@ -21,7 +21,7 @@ const getSingleCategory = asyncWrapper(async (req, res, next) => {
           [Sequelize.fn('lower', Sequelize.col('bookmarks.name')), 'ASC']
         ]
       : [
-          [{ model: App, as: 'apps' }, orderType, 'ASC']
+          [{ model: App, as: 'apps' }, orderType, 'ASC'],
           [{ model: Bookmark, as: 'bookmarks' }, orderType, 'ASC']
         ];
 
