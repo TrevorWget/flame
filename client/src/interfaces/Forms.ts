@@ -1,6 +1,7 @@
-import { WeatherData } from '../types';
+import { WeatherData, WeatherProvider } from '../types';
 
 export interface WeatherForm {
+  weatherProvider: WeatherProvider;
   WEATHER_API_KEY?: string;
   lat: number;
   long: number;

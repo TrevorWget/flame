@@ -8,6 +8,10 @@
 - Fixed reordering apps, bookmarks and categories responding before the new order was saved
 - Fixed icon URLs on hosts without a dot (e.g. `http://localhost:8080/icon.png`) being treated as uploaded files
 - Fixed uploaded icons being left in `data/uploads` when the app or bookmark is then rejected
+- Added Open-Meteo as a weather provider that needs no API key ([#390](https://github.com/pawelmalak/flame/pull/390), [#400](https://github.com/pawelmalak/flame/pull/400))
+- Fixed weather never updating when the API key was added after Flame started; weather updates now start and stop as soon as the settings are saved ([#306](https://github.com/pawelmalak/flame/issues/306), [#346](https://github.com/pawelmalak/flame/issues/346))
+- Security: weather requests use HTTPS with encoded parameters, and `GET /api/weather/update` now requires login
+- Weather update errors now show the provider's reason (e.g. an invalid API key) instead of a generic failure
 
 ### v2.4.0 (2026-04-24)
 - Fixed high severity authentication security issues ([#465](https://github.com/pawelmalak/flame/issues/465))

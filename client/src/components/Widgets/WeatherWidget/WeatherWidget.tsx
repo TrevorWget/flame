@@ -53,9 +53,16 @@ export const WeatherWidget = (): JSX.Element => {
   }, []);
 
   return (
-    <div className={classes.WeatherWidget}>
+    <div
+      className={classes.WeatherWidget}
+      title={
+        config.weatherProvider === 'open-meteo'
+          ? 'Weather data by Open-Meteo.com'
+          : undefined
+      }
+    >
       {configLoading ||
-        (config.hasWeatherKey && weather.id > 0 && (
+        (config.weatherEnabled && weather.id > 0 && (
           <Fragment>
             <div className={classes.WeatherIcon}>
               <WeatherIcon

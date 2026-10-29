@@ -1,6 +1,9 @@
 const asyncWrapper = require('../../middleware/asyncWrapper');
 const loadConfig = require('../../utils/loadConfig');
 const { DERIVED_KEYS, toAdminConfig } = require('../../utils/sanitizeConfig');
+const { isWeatherProvider } = require('../../utils/weatherProviders');
+const { syncWeatherJobs } = require('../../utils/weatherJobs');
+const ErrorResponse = require('../../utils/ErrorResponse');
 const { writeFile } = require('fs/promises');
 
 // @desc      Update config
@@ -20,12 +23,18 @@ const updateConfig = asyncWrapper(async (req, res, next) => {
     delete body.WEATHER_API_KEY;
   }
 
+  if ('weatherProvider' in body && !isWeatherProvider(body.weatherProvider)) {
+    return next(new ErrorResponse('Unknown weather provider', 400));
+  }
+
   const newConfig = {
     ...existingConfig,
     ...body,
   };
 
   await writeFile('data/config.json', JSON.stringify(newConfig));
+
+  await syncWeatherJobs();
 
   res.status(200).send({
     success: true,
