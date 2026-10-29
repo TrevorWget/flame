@@ -1,7 +1,8 @@
-const slugify = () => {
-  const version = process.env.VERSION;
-  const slug = `db-${version.replace(/\./g, '')}-backup.sqlite`;
-  return slug;
+// e.g. db-250-20261029T144501123Z-backup.sqlite
+const slugify = (date = new Date()) => {
+  const version = (process.env.VERSION || 'unknown').replace(/\./g, '');
+  const timestamp = date.toISOString().replace(/[-:.]/g, '');
+  return `db-${version}-${timestamp}-backup.sqlite`;
 };
 
 const parseSlug = (slug) => {

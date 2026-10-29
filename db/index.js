@@ -1,3 +1,4 @@
+const fs = require('fs');
 const { Sequelize } = require('sequelize');
 const { join } = require('path');
 const Umzug = require('umzug');
@@ -7,9 +8,11 @@ const backupDB = require('./utils/backupDb');
 const Logger = require('../utils/Logger');
 const logger = new Logger();
 
+const storage = './data/db.sqlite';
+
 const sequelize = new Sequelize({
   dialect: 'sqlite',
-  storage: './data/db.sqlite',
+  storage,
   logging: false,
 });
 
@@ -26,7 +29,9 @@ const umzug = new Umzug({
 
 const connectDB = async () => {
   try {
-    backupDB();
+    // authenticate() creates an empty file, so check before connecting
+    const hasExistingDB =
+      fs.existsSync(storage) && fs.statSync(storage).size > 0;
 
     await sequelize.authenticate();
 
@@ -34,6 +39,21 @@ const connectDB = async () => {
     const pendingMigrations = await umzug.pending();
 
     if (pendingMigrations.length > 0) {
+      if (hasExistingDB) {
+        let backupPath;
+
+        try {
+          backupPath = backupDB();
+        } catch (error) {
+          throw new Error(
+            `could not back up the database before migrating, so no migrations were run (${error.message})`,
+            { cause: error }
+          );
+        }
+
+        logger.log(`Backed up the database to ${backupPath}`);
+      }
+
       logger.log('Executing pending migrations');
       await umzug.up();
     }
@@ -48,4 +68,5 @@ const connectDB = async () => {
 module.exports = {
   connectDB,
   sequelize,
+  umzug,
 };
