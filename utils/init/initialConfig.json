@@ -33,5 +33,7 @@
   "isKilometer": true,
   "weatherData": "cloud",
   "hideDate": false,
-  "extraUrlSchemes": ""
+  "extraUrlSchemes": "",
+  "backupSchedule": "off",
+  "backupRetention": 7
 }

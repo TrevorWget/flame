@@ -34,4 +34,4 @@ const updateTheme = { params: nameParam, body: theme };
 
 const deleteTheme = { params: nameParam, body: emptyBody };
 
-module.exports = { addTheme, updateTheme, deleteTheme };
+module.exports = { theme, addTheme, updateTheme, deleteTheme };

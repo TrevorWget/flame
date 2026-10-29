@@ -60,6 +60,8 @@ const SETTINGS = {
   weatherData: z.enum(['cloud', 'humidity']),
   hideDate: z.boolean(),
   extraUrlSchemes: text(500),
+  backupSchedule: z.enum(['off', 'daily', 'weekly']),
+  backupRetention: z.number().int().min(1).max(365),
 };
 
 const isUnchanged = (value, stored) =>

@@ -3,6 +3,7 @@ const { syncIntegrations } = require('../../utils/integrationSync');
 const loadConfig = require('../../utils/loadConfig');
 const { toAdminConfig } = require('../../utils/sanitizeConfig');
 const { syncWeatherJobs } = require('../../utils/weatherJobs');
+const { syncBackupJobs } = require('../../utils/backupJobs');
 const { writeFile } = require('fs/promises');
 
 // @desc      Update config
@@ -19,6 +20,7 @@ const updateConfig = asyncWrapper(async (req, res, next) => {
   await writeFile('data/config.json', JSON.stringify(newConfig));
 
   await syncWeatherJobs();
+  await syncBackupJobs();
 
   res.status(200).send({
     success: true,
