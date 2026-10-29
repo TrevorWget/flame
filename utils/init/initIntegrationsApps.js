@@ -1,24 +1,19 @@
 const { useKubernetes, useDocker } = require('../../controllers/apps/docker');
-const asyncWrapper = require('../../middleware/asyncWrapper');
 const loadConfig = require('../loadConfig');
 
-const loadIntegrationsApps = asyncWrapper(async () => {
+const initIntegrationsApps = async () => {
   const {
     dockerApps: useDockerAPI,
     kubernetesApps: useKubernetesAPI,
   } = await loadConfig();
-  
-  let apps;
 
   if (useDockerAPI) {
-    await useDocker(apps);
+    await useDocker();
   }
 
   if (useKubernetesAPI) {
-    await useKubernetes(apps);
+    await useKubernetes();
   }
+};
 
-  return apps;
-});
-
-module.exports = loadIntegrationsApps;
+module.exports = initIntegrationsApps;

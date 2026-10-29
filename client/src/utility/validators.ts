@@ -5,9 +5,10 @@ export const isUrlOrIp = (data: string): boolean => {
   return regex.test(data);
 };
 
+// Distinguishes remote icons from uploaded ones; upload names never contain a
+// scheme, and hosts like `localhost` or `nas:8080` have no dot
 export const isUrl = (data: string): boolean => {
-  const regex =
-    /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/i;
+  const regex = /^https?:\/\/[^\s/?#]+/i;
 
   return regex.test(data);
 };

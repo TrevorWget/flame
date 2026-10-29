@@ -13,6 +13,7 @@ const Sockets = require('./Sockets');
 
 // Utils
 const initApp = require('./utils/init');
+const normalizeTheme = require('./utils/init/normalizeTheme');
 const initIntegrationsApps = require('./utils/init/initIntegrationsApps');
 const Logger = require('./utils/Logger');
 const logger = new Logger();
@@ -23,6 +24,8 @@ const logger = new Logger();
   // Init app
   await initApp();
   await connectDB();
+  // After migrations: 01_new-config can bring back a legacy theme name from the DB
+  await normalizeTheme();
   await associateModels();  
   await jobs();
 

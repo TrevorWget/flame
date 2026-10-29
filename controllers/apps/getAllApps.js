@@ -2,8 +2,7 @@ const asyncWrapper = require('../../middleware/asyncWrapper');
 const App = require('../../models/App');
 const { Sequelize } = require('sequelize');
 const loadConfig = require('../../utils/loadConfig');
-
-const { useKubernetes, useDocker } = require('./docker');
+const initIntegrationsApps = require('../../utils/init/initIntegrationsApps');
 
 // @desc      Get all apps
 // @route     GET /api/apps
@@ -24,7 +23,7 @@ const getAllApps = asyncWrapper(async (req, res, next) => {
       ? [[Sequelize.fn('lower', Sequelize.col('name')), 'ASC']]
       : [[orderType, 'ASC']];
 
-  apps = await App.findAll({
+  const apps = await App.findAll({
     order,
     where,
   });
