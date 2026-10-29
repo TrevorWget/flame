@@ -18,6 +18,7 @@ export interface GeneralForm {
   useOrdering: string;
   appsSameTab: boolean;
   bookmarksSameTab: boolean;
+  extraUrlSchemes: string;
 }
 
 export interface UISettingsForm {

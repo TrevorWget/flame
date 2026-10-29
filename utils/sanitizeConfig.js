@@ -24,6 +24,7 @@ const PUBLIC_KEYS = [
   'isKilometer',
   'weatherData',
   'hideDate',
+  'extraUrlSchemes',
 ];
 
 // Never returned by any endpoint, even to authenticated admins.

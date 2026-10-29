@@ -5,7 +5,11 @@ import { bindActionCreators } from 'redux';
 import { GeneralForm, Query } from '../../../interfaces';
 import { actionCreators } from '../../../store';
 import { State } from '../../../store/reducers';
-import { generalSettingsTemplate, inputHandler } from '../../../utility';
+import {
+  DEFAULT_URL_SCHEMES,
+  generalSettingsTemplate,
+  inputHandler,
+} from '../../../utility';
 import searchQueries from '../../../utility/searchQueries.json';
 import { Button, InputGroup, SettingsHeadline } from '../../UI';
 import { CustomQueries } from './CustomQueries/CustomQueries';
@@ -88,6 +92,24 @@ export const GeneralSettings = (): JSX.Element => {
             <option value="name">Alphabetical order</option>
             <option value="orderId">Custom order</option>
           </select>
+        </InputGroup>
+
+        {/* EXTRA URL SCHEMES */}
+        <InputGroup>
+          <label htmlFor="extraUrlSchemes">Additional URL schemes</label>
+          <input
+            type="text"
+            id="extraUrlSchemes"
+            name="extraUrlSchemes"
+            placeholder="obsidian;vscode"
+            value={formData.extraUrlSchemes}
+            onChange={(e) => inputChangeHandler(e)}
+          />
+          <span>
+            Links to apps and bookmarks may only use{' '}
+            {DEFAULT_URL_SCHEMES.join(', ')}. Add more schemes separated with
+            semicolon. javascript, data and similar schemes are always blocked
+          </span>
         </InputGroup>
 
         {/* === APPS OPTIONS === */}

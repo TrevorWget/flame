@@ -40,7 +40,10 @@ export const AppCard = (props: Props): JSX.Element => {
 
       <div className={classes.Apps}>
         {category.apps.map((app: App) => {
-          const [displayUrl, redirectUrl] = urlParser(app.url);
+          const [displayUrl, redirectUrl] = urlParser(
+            app.url,
+            config.extraUrlSchemes
+          );
 
           let iconEl: JSX.Element = <Fragment></Fragment>;
 

@@ -39,7 +39,10 @@ export const BookmarkCard = (props: Props): JSX.Element => {
 
       <div className={classes.Bookmarks}>
         {category.bookmarks.map((bookmark: Bookmark) => {
-          const redirectUrl = urlParser(bookmark.url)[1];
+          const redirectUrl = urlParser(
+            bookmark.url,
+            config.extraUrlSchemes
+          )[1];
 
           let iconEl: JSX.Element = <Fragment></Fragment>;
 
