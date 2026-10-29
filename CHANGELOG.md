@@ -3,6 +3,11 @@
 - Security: Flame refuses to start if `SECRET` is the value leaked in this repository's `.env` before v2.4.0, and warns if `SECRET` is shorter than 32 bytes
 - Security: timing-safe password comparison, login rate limit (10 failed attempts per 15 minutes per IP; set `TRUST_PROXY` behind a reverse proxy), session duration restricted to the options offered in the UI
 - Security: tokens are pinned to HS256 and invalidated when `PASSWORD` changes (existing sessions must log in again after upgrading)
+- Fixed `GET /api/apps` failing with a server error, and the Applications / Bookmarks pages staying on "Loading..." when opened directly while logged out
+- Fixed the default theme not being applied on a fresh install until the next restart
+- Fixed reordering apps, bookmarks and categories responding before the new order was saved
+- Fixed icon URLs on hosts without a dot (e.g. `http://localhost:8080/icon.png`) being treated as uploaded files
+- Fixed uploaded icons being left in `data/uploads` when the app or bookmark is then rejected
 
 ### v2.4.0 (2026-04-24)
 - Fixed high severity authentication security issues ([#465](https://github.com/pawelmalak/flame/issues/465))
