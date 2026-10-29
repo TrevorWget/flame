@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 // middleware
-const { auth, requireAuth } = require('../middleware');
+const { auth, requireAuth, validateDockerHost } = require('../middleware');
 
 const {
   getCSS,
@@ -12,7 +12,10 @@ const {
   updateConfig,
 } = require('../controllers/config');
 
-router.route('/').get(getConfig).put(auth, requireAuth, updateConfig);
+router
+  .route('/')
+  .get(getConfig)
+  .put(auth, requireAuth, validateDockerHost, updateConfig);
 
 router.route('/admin').get(auth, requireAuth, getAdminConfig);
 
