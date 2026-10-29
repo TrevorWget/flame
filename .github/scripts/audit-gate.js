@@ -17,15 +17,9 @@ const PROJECTS = {
   },
   client: {
     dir: 'client',
-    // The client ships as a static bundle; these packages are listed in
-    // `dependencies` only because the old Dockerfiles installed with --production
-    ignoredRoots: {
-      'react-scripts': 'build tooling, not part of the bundle',
-      typescript: 'build tooling, not part of the bundle',
-      '@types/*': 'type definitions only',
-      '@testing-library/*': 'test-only',
-      'http-proxy-middleware': 'CRA dev server proxy (src/setupProxy.js) only',
-    },
+    // Build, lint and test tooling are devDependencies, so `dependencies` is
+    // exactly what ships in the bundle
+    ignoredRoots: {},
   },
 };
 

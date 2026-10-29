@@ -34,7 +34,7 @@ export const AppDetails = (): JSX.Element => {
               >
                 Flame
               </a>{' '}
-              version {process.env.REACT_APP_VERSION}
+              version {import.meta.env.VITE_APP_VERSION}
             </p>
 
             <p className={classes.text}>

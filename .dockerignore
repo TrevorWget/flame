@@ -8,7 +8,7 @@
 .env
 data
 public
-client/build
+client/dist
 k8s
 skaffold.yaml
 test
