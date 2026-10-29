@@ -22,6 +22,8 @@ const app = (id: number, categoryId: number, orderId: number): App => ({
   icon: '',
   isPublic: true,
   description: '',
+  statusCheck: true,
+  statusUrl: null,
   orderId,
   isPinned: false,
 });
