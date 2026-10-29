@@ -30,6 +30,7 @@ import {
   AddQueryAction,
   DeleteQueryAction,
   FetchQueriesAction,
+  GetAdminConfigAction,
   GetConfigAction,
   UpdateConfigAction,
   UpdateQueryAction,
@@ -54,6 +55,7 @@ export type Action =
   | EditThemeAction
   // Config
   | GetConfigAction
+  | GetAdminConfigAction
   | UpdateConfigAction
   | AddQueryAction
   | DeleteQueryAction

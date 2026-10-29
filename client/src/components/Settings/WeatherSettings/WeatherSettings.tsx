@@ -27,27 +27,44 @@ export const WeatherSettings = (): JSX.Element => {
     weatherSettingsTemplate
   );
 
+  // The stored key is never sent to the client, so the input only holds a new key
+  const [apiKey, setApiKey] = useState('');
+  const [removeApiKey, setRemoveApiKey] = useState(false);
+
   // Get config
   useEffect(() => {
     setFormData({
       ...config,
     });
-  }, [loading]);
+  }, [loading, config]);
 
   // Form handler
   const formSubmitHandler = async (e: FormEvent) => {
     e.preventDefault();
 
+    const willHaveKey = apiKey !== '' || (config.hasWeatherKey && !removeApiKey);
+
     // Check for api key input
-    if ((formData.lat || formData.long) && !formData.WEATHER_API_KEY) {
+    if ((formData.lat || formData.long) && !willHaveKey) {
       createNotification({
         title: 'Warning',
         message: 'API key is missing. Weather Module will NOT work',
       });
     }
 
+    const payload: WeatherForm = { ...formData };
+
+    if (apiKey !== '') {
+      payload.WEATHER_API_KEY = apiKey;
+    } else if (removeApiKey) {
+      payload.WEATHER_API_KEY = '';
+    }
+
     // Save settings
-    await updateConfig(formData);
+    await updateConfig(payload);
+
+    setApiKey('');
+    setRemoveApiKey(false);
 
     // Update weather
     axios
@@ -102,9 +119,17 @@ export const WeatherSettings = (): JSX.Element => {
           type="text"
           id="WEATHER_API_KEY"
           name="WEATHER_API_KEY"
-          placeholder="secret"
-          value={formData.WEATHER_API_KEY}
-          onChange={(e) => inputChangeHandler(e)}
+          placeholder={
+            config.hasWeatherKey && !removeApiKey
+              ? 'Saved key hidden - leave blank to keep it'
+              : 'secret'
+          }
+          autoComplete="off"
+          value={apiKey}
+          onChange={(e) => {
+            setApiKey(e.target.value);
+            setRemoveApiKey(false);
+          }}
         />
         <span>
           Using
@@ -114,6 +139,19 @@ export const WeatherSettings = (): JSX.Element => {
           </a>
           . Key is required for weather module to work.
         </span>
+        {config.hasWeatherKey && !removeApiKey && (
+          <span
+            onClick={() => {
+              setApiKey('');
+              setRemoveApiKey(true);
+            }}
+          >
+            <a href="#">Remove saved key</a>
+          </span>
+        )}
+        {removeApiKey && (
+          <span>Saved key will be removed when you save changes.</span>
+        )}
       </InputGroup>
 
       <SettingsHeadline text="Location" />
