@@ -28,6 +28,8 @@ const PUBLIC_KEYS = [
   'weatherData',
   'hideDate',
   'extraUrlSchemes',
+  'statusChecks',
+  'statusCheckInterval',
 ];
 
 // Never returned by any endpoint, even to authenticated admins.

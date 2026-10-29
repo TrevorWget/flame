@@ -33,5 +33,9 @@
   "isKilometer": true,
   "weatherData": "cloud",
   "hideDate": false,
-  "extraUrlSchemes": ""
+  "extraUrlSchemes": "",
+  "statusChecks": false,
+  "statusCheckInterval": 60,
+  "statusCheckTimeout": 5,
+  "statusCheckDocker": false
 }

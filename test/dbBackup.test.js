@@ -24,7 +24,7 @@ const { connectDB, sequelize, umzug } = require('../db');
 const backupDB = require('../db/utils/backupDb');
 const { slugify } = require('../db/utils/slugify');
 
-const LAST_MIGRATION = '07_default-app-categories.js';
+const LAST_MIGRATION = '09_app-status-check.js';
 
 test.after(async () => {
   await sequelize.close();
