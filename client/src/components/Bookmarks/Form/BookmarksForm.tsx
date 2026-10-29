@@ -241,7 +241,7 @@ export const BookmarksForm = ({
             name="icon"
             id="icon"
             onChange={(e) => fileChangeHandler(e)}
-            accept=".jpg,.jpeg,.png,.svg,.ico"
+            accept=".jpg,.jpeg,.png,.svg,.ico,.webp"
           />
           <span
             onClick={() => {

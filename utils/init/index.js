@@ -4,6 +4,7 @@ const initDockerSecrets = require('./initDockerSecrets');
 const initSecret = require('./initSecret');
 const initPassword = require('./initPassword');
 const normalizeTheme = require('./normalizeTheme');
+const sanitizeUploads = require('./sanitizeUploads');
 
 const initApp = async () => {
   initDockerSecrets();
@@ -12,6 +13,7 @@ const initApp = async () => {
   await initFiles();
   await initConfig();
   await normalizeTheme();
+  await sanitizeUploads();
 };
 
 module.exports = initApp;
