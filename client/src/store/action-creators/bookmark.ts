@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { Dispatch } from 'redux';
 
 import { ApiResponse, Bookmark, Config, NewBookmark } from '../../interfaces';
@@ -39,7 +39,15 @@ export const addBookmark =
 
       dispatch<any>(sortBookmarks(res.data.data.categoryId));
     } catch (err) {
-      console.log(err);
+      const error = err as AxiosError<{ error: string }>;
+
+      dispatch<any>({
+        type: ActionType.createNotification,
+        payload: {
+          title: 'Error',
+          message: error.response?.data.error,
+        },
+      });
     }
   };
 
@@ -129,7 +137,15 @@ export const updateBookmark =
 
       dispatch<any>(sortBookmarks(res.data.data.categoryId));
     } catch (err) {
-      console.log(err);
+      const error = err as AxiosError<{ error: string }>;
+
+      dispatch<any>({
+        type: ActionType.createNotification,
+        payload: {
+          title: 'Error',
+          message: error.response?.data.error,
+        },
+      });
     }
   };
 

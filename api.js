@@ -2,6 +2,7 @@ const { join } = require('path');
 const express = require('express');
 const { errorHandler } = require('./middleware');
 const securityHeaders = require('./middleware/securityHeaders');
+const { ICON_EXTENSION_REGEX } = require('./utils/icons');
 
 const api = express();
 
@@ -26,7 +27,24 @@ api.use(securityHeaders);
 
 // Static files
 api.use(express.static(join(__dirname, 'public')));
-api.use('/uploads', express.static(join(__dirname, 'data/uploads')));
+api.use(
+  '/uploads',
+  express.static(join(__dirname, 'data/uploads'), {
+    index: false,
+    setHeaders: (res, path) => {
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader(
+        'Content-Security-Policy',
+        "default-src 'none'; img-src data:; style-src 'unsafe-inline'; sandbox"
+      );
+
+      if (!ICON_EXTENSION_REGEX.test(path)) {
+        res.setHeader('Content-Disposition', 'attachment');
+      }
+    },
+  }),
+  (req, res) => res.sendStatus(404)
+);
 api.get(/^\/(?!api)/, (req, res) => {
   res.sendFile(join(__dirname, 'public/index.html'));
 });

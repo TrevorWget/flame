@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { Dispatch } from 'redux';
 
 import { ApiResponse, App, Config, NewApp } from '../../interfaces';
@@ -75,7 +75,15 @@ export const addApp =
 
       dispatch<any>(sortApps(res.data.data.categoryId));
     } catch (err) {
-      console.log(err);
+      const error = err as AxiosError<{ error: string }>;
+
+      dispatch<any>({
+        type: ActionType.createNotification,
+        payload: {
+          title: 'Error',
+          message: error.response?.data.error,
+        },
+      });
     }
   };
 
@@ -165,7 +173,15 @@ export const updateApp =
 
       dispatch<any>(sortApps(res.data.data.categoryId));
     } catch (err) {
-      console.log(err);
+      const error = err as AxiosError<{ error: string }>;
+
+      dispatch<any>({
+        type: ActionType.createNotification,
+        payload: {
+          title: 'Error',
+          message: error.response?.data.error,
+        },
+      });
     }
   };
 
