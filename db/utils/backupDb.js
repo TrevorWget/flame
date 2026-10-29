@@ -1,21 +1,24 @@
 const fs = require('fs');
+const { join } = require('path');
 const { slugify } = require('./slugify');
 
-const backupDB = () => {
-  if (!fs.existsSync('data/db_backups')) {
-    fs.mkdirSync('data/db_backups');
+const backupDir = 'data/db_backups';
+const srcPath = 'data/db.sqlite';
+
+// Throws instead of skipping: migrations must not run without a backup
+const backupDB = (date = new Date()) => {
+  fs.mkdirSync(backupDir, { recursive: true });
+
+  const slug = slugify(date);
+  let destPath = join(backupDir, slug);
+
+  for (let n = 1; fs.existsSync(destPath); n++) {
+    destPath = join(backupDir, slug.replace(/\.sqlite$/, `-${n}.sqlite`));
   }
 
-  const slug = slugify();
+  fs.copyFileSync(srcPath, destPath, fs.constants.COPYFILE_EXCL);
 
-  const srcPath = 'data/db.sqlite';
-  const destPath = `data/db_backups/${slug}`;
-
-  if (fs.existsSync(srcPath)) {
-    if (!fs.existsSync(destPath)) {
-      fs.copyFileSync(srcPath, destPath);
-    }
-  }
+  return destPath;
 };
 
 module.exports = backupDB;

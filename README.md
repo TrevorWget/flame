@@ -58,6 +58,15 @@ Login attempts are rate limited per client IP. If Flame runs behind a reverse pr
 
 Leave `SECRET` unset to have a random JWT secret generated in `data/.secret`. Flame refuses to start if `SECRET` is set to the value that was committed to this repository before v2.4.0.
 
+##### Upgrading from upstream Flame
+
+The data directory of [pawelmalak/flame](https://github.com/pawelmalak/flame) (v2.4.0 and older) can be used as is. Upstream has no app categories, so on the first start Flame moves every app that isn't in an app category into one of two new app categories, keeping what the home page showed before:
+
+- **Applications** (pinned): apps that were pinned to the home page
+- **Other apps** (not pinned): the remaining apps, shown on the Applications page only
+
+Existing categories become bookmark categories. Nothing is deleted, and you can rename the new categories or move apps afterwards. Before running migrations, Flame copies the database to `data/db_backups/db-<version>-<timestamp>-backup.sqlite`; if that copy fails, Flame exits without migrating.
+
 #### Building images
 
 ```sh
@@ -111,7 +120,7 @@ environment:
 
 ##### Docker Secrets
 
-All environment variables can be overwritten by appending `_FILE` to the variable value. For example, you can use `PASSWORD_FILE` to pass through a docker secret instead of `PASSWORD`. If both `PASSWORD` and `PASSWORD_FILE` are set, the docker secret will take precedent.
+Every file in `/run/secrets` overrides the environment variable of the same name in upper case, so a secret named `password` sets `PASSWORD` and one named `secret` sets `SECRET`. Any environment variable can also be read from a file by appending `_FILE` to its name, e.g. `PASSWORD_FILE=/run/secrets/flame_password` or `SECRET_FILE=/run/secrets/flame_secret`. `_FILE` takes precedence over both the plain variable and `/run/secrets`. Surrounding whitespace and trailing newlines are trimmed. If a `_FILE` can't be read, the variable is unset and an error is logged (for `PASSWORD` this disables login).
 
 ```bash
 # ./secrets/flame_password
