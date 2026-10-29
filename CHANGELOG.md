@@ -5,6 +5,9 @@
 - Security: tokens are pinned to HS256 and invalidated when `PASSWORD` changes (existing sessions must log in again after upgrading)
 - Security: upgraded `@kubernetes/client-node` to 1.x, removing the critical `jsonpath-plus`, `tar`, `form-data` and `request` advisories
 - Fixed the Kubernetes integration ignoring the `flame.pawelmalak/name` annotation and failing on every ingress ([fdarveau#26](https://github.com/fdarveau/flame/issues/26)); `KUBECONFIG` is now honoured when set
+- Security: Docker and Kubernetes apps are synced by a background job (every 30 seconds, and on Docker container start/stop events) instead of on every `GET /api/apps` / `GET /api/categories`
+- Fixed "Unpin stopped containers" unpinning every app, including ones added manually; it now only unpins apps from stopped containers or removed ingresses
+- Fixed the Docker integration sending an invalid container filter
 - Fixed `GET /api/apps` failing with a server error, and the Applications / Bookmarks pages staying on "Loading..." when opened directly while logged out
 - Fixed the default theme not being applied on a fresh install until the next restart
 - Fixed reordering apps, bookmarks and categories responding before the new order was saved
