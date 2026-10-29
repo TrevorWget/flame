@@ -171,7 +171,7 @@ export const BackupSettings = (): JSX.Element => {
         <SettingsHeadline text="Export" />
         <p className={classes.text}>
           Download apps, bookmarks, categories, settings, themes, search
-          providers, custom CSS and uploaded icons as a zip file. The password
+          providers, custom CSS and uploaded or fetched icons as a zip file. The password
           and the weather API key are never included.
         </p>
         <a className={classes.linkButton} href="/api/backup/export" download>

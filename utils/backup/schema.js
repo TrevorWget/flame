@@ -3,7 +3,7 @@ const { SETTINGS, updateCSS } = require('../../validation/config');
 const { theme } = require('../../validation/themes');
 const { queryFields } = require('../../validation/queries');
 const { SECRET_KEYS } = require('../sanitizeConfig');
-const { isAllowedUrl } = require('../urlSchemes');
+const { isAllowedUrl, isHttpUrl } = require('../urlSchemes');
 
 const FORMAT = 'flame-backup';
 
@@ -60,6 +60,18 @@ const app = z.object({
   isPublic,
   description: z.string().max(1000).default(''),
   source: z.string().max(50).nullable().default(null),
+  externalUrl: z.string().max(MAX_URL_LENGTH).default(''),
+  preferredUrl: z.enum(['internal', 'external']).default('internal'),
+  statusCheck: z
+    .union([z.boolean(), z.literal(0), z.literal(1)])
+    .transform(Boolean)
+    .default(true),
+  statusUrl: z
+    .string()
+    .max(MAX_URL_LENGTH)
+    .nullable()
+    .transform((value) => value || null)
+    .default(null),
   ...timestamps,
 });
 
@@ -149,6 +161,24 @@ const dataSchema = (currentExtraUrlSchemes) =>
           }
         });
       }
+
+      data.apps.forEach((app, i) => {
+        if (app.externalUrl && !isAllowedUrl(app.externalUrl, extraUrlSchemes)) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['apps', i, 'externalUrl'],
+            message: 'URL is invalid or its scheme is not allowed',
+          });
+        }
+
+        if (app.statusUrl && !isHttpUrl(app.statusUrl)) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['apps', i, 'statusUrl'],
+            message: 'Status check URL must be an http:// or https:// URL',
+          });
+        }
+      });
     });
 
 const manifestSchema = z.object({

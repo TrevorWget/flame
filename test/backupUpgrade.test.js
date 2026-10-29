@@ -32,6 +32,12 @@ const NEWER_KEYS = [
   'extraUrlSchemes',
   'backupSchedule',
   'backupRetention',
+  'autoFetchIcons',
+  'iconFetchAllowPrivate',
+  'statusChecks',
+  'statusCheckInterval',
+  'statusCheckTimeout',
+  'statusCheckDocker',
 ];
 const upstreamConfig = Object.fromEntries(
   Object.entries({
@@ -331,6 +337,10 @@ test("a backup with only the first format's required fields restores with defaul
       description: app.description,
       source: app.source,
       orderId: app.orderId,
+      externalUrl: app.externalUrl,
+      preferredUrl: app.preferredUrl,
+      statusCheck: app.statusCheck,
+      statusUrl: app.statusUrl,
     },
     {
       icon: 'cancel',
@@ -339,6 +349,10 @@ test("a backup with only the first format's required fields restores with defaul
       description: '',
       source: null,
       orderId: null,
+      externalUrl: '',
+      preferredUrl: 'internal',
+      statusCheck: 1,
+      statusUrl: null,
     }
   );
   assert.strictEqual(bookmarks[0].icon, '');

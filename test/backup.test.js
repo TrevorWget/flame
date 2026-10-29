@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const crypto = require('crypto');
 const fs = require('fs');
+const http = require('http');
 const os = require('os');
 const { join } = require('path');
 const jwt = require('jsonwebtoken');
@@ -51,6 +52,7 @@ const { sanitizeSvg } = require('../utils/icons');
 const { saveBackup, listBackupFiles } = require('../utils/backup');
 const { dataSchema } = require('../utils/backup/schema');
 const { runScheduledBackup } = require('../utils/backupJobs');
+const { runStatusChecks } = require('../utils/statusChecks');
 const { getPasswordFingerprint } = require('../utils/password');
 const { getTokenVersion } = require('../utils/tokenVersion');
 const { buildZip, buildBackup, unzip } = require('./zipFixture');
@@ -71,6 +73,17 @@ const SVG = sanitizeSvg(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>'
   )
 );
+// Icons fetched from a site are cached as favicon-<hash>.<ext>
+const FAVICON_PNG_NAME = `favicon-${crypto.randomBytes(8).toString('hex')}.png`;
+const FAVICON_ICO_NAME = `favicon-${crypto.randomBytes(8).toString('hex')}.ico`;
+const FAVICON_ICO = Buffer.concat([
+  Buffer.from([0x00, 0x00, 0x01, 0x00, 0x01, 0x00]),
+  crypto.randomBytes(32),
+]);
+
+// Answers the status checks of the restored apps
+const statusServer = http.createServer((req, res) => res.end('ok'));
+let statusUrl;
 
 const readJson = (path) => JSON.parse(fs.readFileSync(path, 'utf-8'));
 const writeJson = (path, value) =>
@@ -130,6 +143,12 @@ const seed = async () => {
       extraUrlSchemes: 'obsidian',
       backupRetention: 3,
       defaultTheme: '#EFFBFF;#6EE2FF;#242B33',
+      statusChecks: true,
+      statusCheckInterval: 120,
+      statusCheckTimeout: 3,
+      statusCheckDocker: true,
+      autoFetchIcons: true,
+      iconFetchAllowPrivate: true,
     },
     themes: {
       themes: [
@@ -155,7 +174,12 @@ const seed = async () => {
       ],
     },
     css: 'body { letter-spacing: 0.01em; }\n',
-    uploads: { [PNG_NAME]: PNG, [SVG_NAME]: SVG },
+    uploads: {
+      [PNG_NAME]: PNG,
+      [SVG_NAME]: SVG,
+      [FAVICON_PNG_NAME]: PNG,
+      [FAVICON_ICO_NAME]: FAVICON_ICO,
+    },
   });
 
   await clearTables();
@@ -180,12 +204,15 @@ const seed = async () => {
 
   await App.create({
     name: 'Jellyfin',
-    url: 'https://jellyfin.example.com',
+    url: 'http://192.168.1.2:8096',
+    externalUrl: 'https://jellyfin.example.com',
+    preferredUrl: 'external',
     categoryId: media.id,
-    icon: PNG_NAME,
+    icon: FAVICON_PNG_NAME,
     isPinned: true,
     orderId: 1,
     description: 'Movies',
+    statusCheck: false,
   });
   await App.create({
     name: 'Sonarr',
@@ -194,18 +221,21 @@ const seed = async () => {
     icon: SVG_NAME,
     isPublic: 0,
     source: 'docker',
+    statusUrl,
   });
   await App.create({
     name: 'Notes',
     url: 'obsidian://open?vault=notes',
+    externalUrl: 'https://notes.example.com',
     categoryId: tools.id,
+    icon: PNG_NAME,
     isPinned: false,
   });
   await Bookmark.create({
     name: 'Docs',
     url: 'https://docs.example.com',
     categoryId: links.id,
-    icon: 'book',
+    icon: FAVICON_ICO_NAME,
   });
   await Bookmark.create({
     name: 'Private',
@@ -270,6 +300,9 @@ let archive;
 let exported;
 
 test.before(async () => {
+  await new Promise((resolve) => statusServer.listen(0, '127.0.0.1', resolve));
+  statusUrl = `http://127.0.0.1:${statusServer.address().port}/health`;
+
   await connectDB();
   associateModels();
   await seed();
@@ -280,6 +313,10 @@ test.before(async () => {
 
 test.after(async () => {
   await schedule.gracefulShutdown();
+  // Lets a status check run started by the last restore finish first
+  await runStatusChecks();
+  statusServer.closeAllConnections();
+  await new Promise((resolve) => statusServer.close(resolve));
   await sequelize.close();
   process.chdir(repoRoot);
   fs.rmSync(workDir, { recursive: true, force: true });
@@ -332,6 +369,8 @@ test.describe('export', () => {
         'manifest.json',
         `uploads/${SVG_NAME}`,
         `uploads/${PNG_NAME}`,
+        `uploads/${FAVICON_PNG_NAME}`,
+        `uploads/${FAVICON_ICO_NAME}`,
       ].sort()
     );
 
@@ -349,6 +388,67 @@ test.describe('export', () => {
     assert.strictEqual(exported.settings.dockerHost, 'tcp://10.0.0.5:2375');
     assert.strictEqual(files.get('flame.css').toString(), seeded.css);
     assert.ok(files.get(`uploads/${PNG_NAME}`).equals(PNG));
+    assert.ok(files.get(`uploads/${FAVICON_ICO_NAME}`).equals(FAVICON_ICO));
+  });
+
+  test('contains the external URLs, status checks and their settings', () => {
+    const byName = Object.fromEntries(exported.apps.map((a) => [a.name, a]));
+
+    assert.deepStrictEqual(
+      Object.values(byName).map(
+        ({ name, externalUrl, preferredUrl, statusCheck, statusUrl }) => ({
+          name,
+          externalUrl,
+          preferredUrl,
+          statusCheck,
+          statusUrl,
+        })
+      ),
+      [
+        {
+          name: 'Jellyfin',
+          externalUrl: 'https://jellyfin.example.com',
+          preferredUrl: 'external',
+          statusCheck: false,
+          statusUrl: null,
+        },
+        {
+          name: 'Sonarr',
+          externalUrl: '',
+          preferredUrl: 'internal',
+          statusCheck: true,
+          statusUrl,
+        },
+        {
+          name: 'Notes',
+          externalUrl: 'https://notes.example.com',
+          preferredUrl: 'internal',
+          statusCheck: true,
+          statusUrl: null,
+        },
+      ]
+    );
+    assert.strictEqual(byName.Jellyfin.icon, FAVICON_PNG_NAME);
+    assert.strictEqual(exported.bookmarks[0].icon, FAVICON_ICO_NAME);
+
+    assert.deepStrictEqual(
+      {
+        statusChecks: exported.settings.statusChecks,
+        statusCheckInterval: exported.settings.statusCheckInterval,
+        statusCheckTimeout: exported.settings.statusCheckTimeout,
+        statusCheckDocker: exported.settings.statusCheckDocker,
+        autoFetchIcons: exported.settings.autoFetchIcons,
+        iconFetchAllowPrivate: exported.settings.iconFetchAllowPrivate,
+      },
+      {
+        statusChecks: true,
+        statusCheckInterval: 120,
+        statusCheckTimeout: 3,
+        statusCheckDocker: true,
+        autoFetchIcons: true,
+        iconFetchAllowPrivate: true,
+      }
+    );
   });
 
   test('never contains the weather API key, the password or the JWT secret', async () => {
@@ -394,7 +494,7 @@ test.describe('restore', () => {
       queries: 1,
       settings: Object.keys(exported.settings).length,
       css: true,
-      uploads: 2,
+      uploads: 4,
     });
     assert.deepStrictEqual(previewRes.body.data.current, {
       categories: 1,
@@ -422,6 +522,21 @@ test.describe('restore', () => {
     );
     // Secrets are not in the backup, so the current ones are kept
     assert.strictEqual(restored.weatherKey, 'key-set-after-the-backup');
+
+    // The restored settings turned status checks on, and they run right away
+    const sonarr = restored.apps.find((a) => a.name === 'Sonarr');
+    const statusOf = async () =>
+      (await authed(request(api).get('/api/apps/status'))).body.data;
+
+    for (let i = 0; i < 100; i++) {
+      if ((await statusOf()).statuses[sonarr.id]) break;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    const { enabled, statuses } = await statusOf();
+    assert.strictEqual(enabled, true);
+    assert.deepStrictEqual(Object.keys(statuses), [String(sonarr.id)]);
+    assert.strictEqual(statuses[sonarr.id].status, 'up');
 
     const categories = await authed(request(api).get('/api/categories'));
     assert.deepStrictEqual(
@@ -687,6 +802,24 @@ test.describe('invalid archives', () => {
       withData((d) => (d.apps[0].url = 'javascript:alert(document.cookie)')),
       400,
       /apps\.0\.url: URL is invalid/,
+    ],
+    [
+      'a javascript: external URL',
+      withData((d) => (d.apps[0].externalUrl = 'javascript:alert(1)')),
+      400,
+      /apps\.0\.externalUrl: URL is invalid/,
+    ],
+    [
+      'a status check URL that is not http',
+      withData((d) => (d.apps[1].statusUrl = 'ftp://orbit.local')),
+      400,
+      /apps\.1\.statusUrl: Status check URL must be/,
+    ],
+    [
+      'an unknown preferred URL',
+      withData((d) => (d.apps[0].preferredUrl = 'both')),
+      400,
+      /apps\.0\.preferredUrl/,
     ],
     [
       'a search provider with a data: template',

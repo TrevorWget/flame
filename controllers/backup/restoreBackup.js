@@ -2,6 +2,7 @@ const asyncWrapper = require('../../middleware/asyncWrapper');
 const backups = require('../../utils/backup');
 const { syncBackupJobs } = require('../../utils/backupJobs');
 const { syncIntegrations } = require('../../utils/integrationSync');
+const { runStatusChecks } = require('../../utils/statusChecks');
 const { syncWeatherJobs } = require('../../utils/weatherJobs');
 
 // @desc      Replace apps, bookmarks, categories, settings, themes, search
@@ -21,6 +22,7 @@ const restoreBackup = asyncWrapper(async (req, res, next) => {
   });
 
   syncIntegrations();
+  runStatusChecks();
 });
 
 module.exports = restoreBackup;

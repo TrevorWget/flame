@@ -423,7 +423,7 @@ Like Docker labels, annotations can describe several apps separated by `;`, and 
 
 Settings > Backup (requires login):
 
-- **Download backup** saves a zip with your apps, bookmarks, categories, settings, themes, search providers, custom CSS and uploaded icons. The password, the JWT secret and the weather API key are never included.
+- **Download backup** saves a zip with your apps (including their external URLs and status check options), bookmarks, categories, settings, themes, search providers, custom CSS and uploaded or fetched icons. The password, the JWT secret and the weather API key are never included.
 - **Restore** checks the chosen backup and shows what it contains next to what you have now. Nothing changes until you confirm. Restoring replaces all apps, bookmarks and categories, plus the settings, themes, search providers and custom CSS stored in the backup; uploaded icons are added to the existing ones. Secrets such as the weather API key keep their current values.
 - Before every restore, Flame saves the current state to `data/backups/pre-restore-<time>.zip` (the last 5 are kept), so a restore can be undone by restoring that file. The restore is applied all at once: if anything fails, the database and files stay as they were.
 - **Scheduled backups** can be saved to `data/backups/flame-backup-<time>.zip` daily or weekly at 03:30 server time, keeping the newest 7 by default. Saved backups are listed with download links.
