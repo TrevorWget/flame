@@ -7,13 +7,8 @@ class File {
   }
 
   read() {
-    try {
-      const content = fs.readFileSync(this.path, { encoding: 'utf-8' });
-      this.content = content;
-      return this.content;
-    } catch (err) {
-      return err.message;
-    }
+    this.content = fs.readFileSync(this.path, { encoding: 'utf-8' });
+    return this.content;
   }
 
   write(data, isJSON) {

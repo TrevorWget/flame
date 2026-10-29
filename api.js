@@ -1,6 +1,7 @@
 const { join } = require('path');
 const express = require('express');
 const { errorHandler } = require('./middleware');
+const securityHeaders = require('./middleware/securityHeaders');
 
 const api = express();
 
@@ -20,6 +21,8 @@ if (process.env.TRUST_PROXY) {
       : trustProxy
   );
 }
+
+api.use(securityHeaders);
 
 // Static files
 api.use(express.static(join(__dirname, 'public')));

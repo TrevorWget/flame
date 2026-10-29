@@ -88,6 +88,15 @@ secrets:
     file: /path/to/secrets/password
 ```
 
+##### Embedding Flame in another page
+
+Flame sends a Content-Security-Policy that only allows it to be framed by itself. To embed it in another dashboard (e.g. Organizr or Home Assistant), set `FRAME_ANCESTORS` to a space-separated list of allowed origins:
+
+```yaml
+environment:
+  - FRAME_ANCESTORS='self' https://organizr.example.com
+```
+
 ##### Docker Secrets
 
 All environment variables can be overwritten by appending `_FILE` to the variable value. For example, you can use `PASSWORD_FILE` to pass through a docker secret instead of `PASSWORD`. If both `PASSWORD` and `PASSWORD_FILE` are set, the docker secret will take precedent.
