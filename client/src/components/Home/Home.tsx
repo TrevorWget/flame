@@ -62,8 +62,10 @@ export const Home = (): JSX.Element => {
       appCategory.apps = appCategories
         .map(({ apps }) => apps)
         .flat()
-        .filter(({ name, url, description }) =>
-          new RegExp(escapeRegex(localSearch), 'i').test(`${name} ${url} ${description}`)
+        .filter(({ name, url, externalUrl = '', description }) =>
+          new RegExp(escapeRegex(localSearch), 'i').test(
+            `${name} ${url} ${externalUrl} ${description}`
+          )
         );
 
         setAppSearchResult([appCategory]);
