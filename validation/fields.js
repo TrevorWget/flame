@@ -8,29 +8,37 @@ const isPlainObject = (value) =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
 // Multipart fields arrive as strings, JSON bodies as numbers
-const id = z.union([
-  z.number().int().positive(),
-  z
-    .string()
-    .regex(/^\d+$/, 'Expected a positive integer')
-    .transform(Number)
-    .pipe(z.number().int().positive()),
-]);
+const id = z.union(
+  [
+    z.number().int().positive(),
+    z
+      .string()
+      .regex(/^\d+$/)
+      .transform(Number)
+      .pipe(z.number().int().positive()),
+  ],
+  { error: 'Expected a positive integer' }
+);
 
 const idParam = z.strictObject({ id });
 
 // Stored as 0/1 integers. The JSON forms send booleans, multipart sends "1"/"0".
 const visibility = z
-  .union([
-    z.boolean(),
-    z.literal(0),
-    z.literal(1),
-    z.enum(['0', '1', 'true', 'false']),
-  ])
+  .union(
+    [
+      z.boolean(),
+      z.literal(0),
+      z.literal(1),
+      z.enum(['0', '1', 'true', 'false']),
+    ],
+    { error: 'Expected true/false or 1/0' }
+  )
   .transform((value) => (value === true || value === 1 || value === '1' || value === 'true' ? 1 : 0));
 
 const flag = z
-  .union([z.boolean(), z.literal(0), z.literal(1)])
+  .union([z.boolean(), z.literal(0), z.literal(1)], {
+    error: 'Expected true/false or 1/0',
+  })
   .transform(Boolean);
 
 const name = z.string().trim().min(1, 'Must not be empty').max(255);
