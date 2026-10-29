@@ -19,7 +19,7 @@ const securityHeaders = helmet({
       'frame-ancestors': frameAncestors.length ? frameAncestors : ["'self'"],
       // App/bookmark icons may be any remote image URL (often plain http on a LAN)
       'img-src': ["'self'", 'data:', 'blob:', 'http:', 'https:'],
-      // Remote SVG icons are fetched with XHR by external-svg-loader, the
+      // Remote SVG icons are fetched by the SvgIcon component, the
       // version check hits GitHub, and the weather widget uses a WebSocket
       'connect-src': ["'self'", 'http:', 'https:', 'ws:', 'wss:'],
       // Inline SVG icons carry style attributes; custom CSS may import remote fonts
