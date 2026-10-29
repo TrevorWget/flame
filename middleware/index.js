@@ -6,5 +6,5 @@ module.exports = {
   requireAuth: require('./requireAuth'),
   requireBody: require('./requireBody'),
   requireCsrf: require('./requireCsrf'),
-  validateDockerHost: require('./validateDockerHost'),
+  validate: require('./validate'),
 };
