@@ -15,6 +15,7 @@ const Sockets = require('./Sockets');
 const initApp = require('./utils/init');
 const normalizeTheme = require('./utils/init/normalizeTheme');
 const { startIntegrationSync } = require('./utils/integrationSync');
+const { runStatusChecks } = require('./utils/statusChecks');
 const Logger = require('./utils/Logger');
 const logger = new Logger();
 
@@ -31,6 +32,9 @@ const logger = new Logger();
 
   // Create/update apps from integrations (Docker, Kubernetes) in the background
   startIntegrationSync();
+
+  // App status indicators, if enabled
+  runStatusChecks();
 
   // Create server for Express API and WebSockets
   const server = http.createServer();

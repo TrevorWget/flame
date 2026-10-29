@@ -5,6 +5,7 @@ import { Category } from '../../../interfaces';
 import { State } from '../../../store/reducers';
 import { Message } from '../../UI';
 import { AppCard } from '../AppCard/AppCard';
+import { useAppStatuses } from '../AppStatus/useAppStatuses';
 import classes from './AppGrid.module.css';
 
 interface Props {
@@ -23,6 +24,7 @@ export const AppGrid = (props: Props): JSX.Element => {
   } = props;
 
   const config = useSelector((state: State) => state.config.config);
+  const statuses = useAppStatuses();
 
   const shouldBeShown = (category: Category) => {
     return !config.hideEmptyCategories || category.apps.length > 0 || !fromHomepage
@@ -41,6 +43,8 @@ export const AppGrid = (props: Props): JSX.Element => {
               <AppCard
                 category={category}
                 fromHomepage={fromHomepage}
+                statuses={statuses}
+                collapsible={fromHomepage && !searching}
                 key={category.id}
               />
             )

@@ -41,6 +41,7 @@ export const BookmarkGrid = (props: Props): JSX.Element => {
               <BookmarkCard
                 category={category}
                 fromHomepage={fromHomepage}
+                collapsible={fromHomepage && !searching}
                 key={category.id}
               />
             )

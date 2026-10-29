@@ -7,6 +7,7 @@ import { App, Category } from '../../../interfaces';
 import { actionCreators } from '../../../store';
 import { State } from '../../../store/reducers';
 import { appTemplate } from '../../../utility';
+import { resolveAppUrl } from '../../../utility/appUrl';
 import { TableActions } from '../../Actions/TableActions';
 import { Message, Table } from '../../UI';
 
@@ -16,6 +17,13 @@ import { Message, Table } from '../../UI';
 interface Props {
   openFormForUpdating: (data: Category | App) => void;
 }
+
+// The URL the app opens, marked as internal or external once it has both
+const appUrlCell = (app: App): string => {
+  const { url, type } = resolveAppUrl(app);
+
+  return app.url.trim() && app.externalUrl?.trim() ? `${url} (${type})` : url;
+};
 
 export const AppsTable = ({ openFormForUpdating }: Props): JSX.Element => {
   const categoryInEdit = useSelector((state: State) => state.apps.categoryInEdit);
@@ -153,7 +161,9 @@ export const AppsTable = ({ openFormForUpdating }: Props): JSX.Element => {
                             style={style}
                           >
                             <td style={{ width: '200px' }}>{app.name}</td>
-                            <td style={{ width: '200px' }}>{app.url}</td>
+                            <td style={{ width: '200px' }}>
+                              {appUrlCell(app)}
+                            </td>
                             <td style={{ width: '200px' }}>{app.icon}</td>
                             <td style={{ width: '200px' }}>
                               {app.isPublic ? 'Visible' : 'Hidden'}

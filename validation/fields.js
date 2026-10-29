@@ -90,6 +90,7 @@ const writableFields = (shape, ignoredKeys = []) =>
   }, z.strictObject(shape));
 
 module.exports = {
+  MAX_URL_LENGTH,
   id,
   idParam,
   visibility,

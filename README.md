@@ -310,6 +310,17 @@ For list of supported search engines, shortcuts and more about searching functio
 2. Get lat/long for your location. You can get them from [latlong.net](https://www.latlong.net/convert-address-to-lat-long.html).
 3. Enter and save data. Weather widget will now update and should be visible on Home page. Weather refreshes every 15 minutes; saving a key or switching provider takes effect without a restart.
 
+### Fetching icons
+
+Next to the icon field of the app and bookmark forms, **Fetch icon from site** asks the Flame server to download the site's icon: the best `<link rel="icon">` / `apple-touch-icon` on the page (the smallest one that is at least 48px, then SVG, then the largest small one), falling back to `/favicon.ico`. If the icon field holds an image URL, that image is downloaded instead. The icon is stored in `data/uploads` as `favicon-<hash>.<ext>` and used like an uploaded icon, so it keeps working when the site is down or blocks hotlinking. MDI icons, icon URLs and uploads work as before.
+
+**Settings > General > Icons**:
+
+- **Fetch icons for apps and bookmarks saved without one** (off by default): saving an app or bookmark with an empty icon field and an http(s) URL fetches its icon. Saving waits for up to 5 seconds and keeps the item without an icon if none is found.
+- **Allow fetching icons from private network addresses** (off by default): the server refuses to fetch from loopback, private (`10.x`, `172.16-31.x`, `192.168.x`, `100.64.x`), link-local (`169.254.x`, `fe80::`) and unique-local IPv6 addresses unless this is on, so turn it on for self-hosted apps such as `http://server.local:8096`. Self-signed certificates are accepted from those addresses. Multicast, `0.0.0.0` and similar addresses are always refused.
+
+Only `http` and `https` URLs are fetched; every redirect is checked again, downloads are limited to 1 MB and 10 seconds, and only PNG, JPEG, ICO, WebP and (sanitized) SVG files are kept. Hostnames are resolved by the Flame server, so `.local` (mDNS) names only work if the server or container can resolve them; use an IP address otherwise.
+
 ### Docker integration
 
 In order to use the Docker integration, each container must have the following labels:
@@ -319,6 +330,7 @@ labels:
   - flame.type=application # "app" works too
   - flame.name=My container
   - flame.url=https://example.com
+  - flame.url.external=https://example.org # Optional external URL
   - flame.category=My category # Optional, default is "Docker"
   - flame.icon=icon-name # Optional, default is "docker"
   - flame.order=1 # Optional, default is 500; lower number is first in the list
@@ -327,6 +339,8 @@ labels:
 > "Use Docker API" option must be enabled for this to work. You can find it in Settings > Docker
 
 Flame picks up containers when they start or stop (via the Docker events API) and re-checks every 30 seconds. With "Unpin stopped containers / removed ingresses" enabled, apps whose container or ingress is gone are unpinned; apps added in the UI are never unpinned. Use `flame.icon=custom` to keep an icon you set in the UI.
+
+`flame.url` is the app's internal URL and `flame.url.external` its optional external URL. Which one is shown and opened is chosen per app in the app's settings ("Open with"), and defaults to the internal URL; if the chosen URL is empty, the other one is used. Without `flame.url.external`, an external URL set in the UI is kept.
 
 > URLs (from labels, Kubernetes annotations or the UI) may only use `http`, `https`, `ftp`, `ftps`, `sftp`, `ssh`, `smb`, `steam`, `mailto`, `tel`, `rdp` or `vnc`. Other schemes can be allowed in Settings > General > Additional URL schemes; apps with any other scheme are skipped. `javascript:`, `data:`, `vbscript:` and `blob:` URLs are always rejected.
 
@@ -394,6 +408,7 @@ metadata:
   - flame.pawelmalak/type=application # "app" works too
   - flame.pawelmalak/name=My container
   - flame.pawelmalak/url=https://example.com
+  - flame.pawelmalak/url.external=https://example.org # Optional external URL
   - flame.pawelmalak/category=My category # Optional, default is "Kubernetes"
   - flame.pawelmalak/icon=icon-name # Optional, default is "kubernetes"
   - flame.pawelmalak/order=1 # Optional, default is 500; lower number is first in the list
@@ -401,7 +416,7 @@ metadata:
 
 > "Use Kubernetes Ingress API" option must be enabled for this to work. You can find it in Settings > Docker
 
-Like Docker labels, annotations can describe several apps separated by `;`. Flame uses the pod's service account by default (it needs `list` on `ingresses`, see `k8s/base/rbac.yaml`); set `KUBECONFIG` to use a kubeconfig file instead, e.g. when Flame runs outside the cluster.
+Like Docker labels, annotations can describe several apps separated by `;`, and `url.external` works like `flame.url.external`. Flame uses the pod's service account by default (it needs `list` on `ingresses`, see `k8s/base/rbac.yaml`); set `KUBECONFIG` to use a kubeconfig file instead, e.g. when Flame runs outside the cluster.
 
 ### Import HTML Bookmarks (Experimental)
 

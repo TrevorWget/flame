@@ -91,10 +91,30 @@ const normalizeUrl = (url, extraSchemes = '') => {
 const isAllowedUrl = (url, extraSchemes) =>
   normalizeUrl(url, extraSchemes) !== null;
 
+/**
+ * Returns the URL to request for an http(s) check (scheme-less input gets
+ * "http://"), or null for other schemes and invalid URLs
+ */
+const toHttpUrl = (url) => {
+  const normalized = normalizeUrl(url);
+
+  if (!normalized) return null;
+
+  const parsed = new URL(normalized);
+
+  return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+    ? parsed.href
+    : null;
+};
+
+const isHttpUrl = (url) => toHttpUrl(url) !== null;
+
 module.exports = {
   DEFAULT_URL_SCHEMES,
   BLOCKED_URL_SCHEMES,
   parseSchemeList,
   normalizeUrl,
   isAllowedUrl,
+  toHttpUrl,
+  isHttpUrl,
 };

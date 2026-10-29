@@ -6,7 +6,7 @@ import { App, Category, NewApp } from '../../../interfaces';
 import { actionCreators } from '../../../store';
 import { State } from '../../../store/reducers';
 import { inputHandler, newAppTemplate, normalizeUrl } from '../../../utility';
-import { Button, InputGroup, ModalForm } from '../../UI';
+import { Button, FetchIcon, InputGroup, ModalForm } from '../../UI';
 import classes from './Form.module.css';
 
 // Redux
@@ -38,7 +38,7 @@ export const AppsForm = ({
   // Load app data if provided for editing
   useEffect(() => {
     if (app) {
-      setFormData({ ...app });
+      setFormData({ ...app, statusUrl: app.statusUrl ?? '' });
     } else {
       setFormData(newAppTemplate);
     }
@@ -80,7 +80,18 @@ export const AppsForm = ({
     if (!normalizeUrl(formData.url, config.extraUrlSchemes)) {
       createNotification({
         title: 'Error',
-        message: 'URL is invalid or its scheme is not allowed',
+        message: 'Internal URL is invalid or its scheme is not allowed',
+      });
+
+      return;
+    }
+
+    const externalUrl = formData.externalUrl?.trim() ?? '';
+
+    if (externalUrl && !normalizeUrl(externalUrl, config.extraUrlSchemes)) {
+      createNotification({
+        title: 'Error',
+        message: 'External URL is invalid or its scheme is not allowed',
       });
 
       return;
@@ -95,8 +106,12 @@ export const AppsForm = ({
       data.append('name', formData.name);
       data.append('description', formData.description);
       data.append('url', formData.url);
+      data.append('externalUrl', externalUrl);
+      data.append('preferredUrl', formData.preferredUrl ?? 'internal');
       data.append('categoryId', `${formData.categoryId}`);
       data.append('isPublic', `${formData.isPublic ? 1 : 0}`);
+      data.append('statusCheck', `${formData.statusCheck ? 1 : 0}`);
+      data.append('statusUrl', formData.statusUrl ?? '');
 
       return data;
     };
@@ -130,7 +145,7 @@ export const AppsForm = ({
         const data = createFormData();
         addApp(data);
       } else {
-        addApp(formData);
+        addApp({ ...formData, externalUrl });
       }
 
       setFormData({
@@ -149,7 +164,7 @@ export const AppsForm = ({
           curr: formData.categoryId,
         });
       } else {
-        updateApp(app.id, formData, {
+        updateApp(app.id, { ...formData, externalUrl }, {
           prev: app.categoryId,
           curr: formData.categoryId,
         });
@@ -180,16 +195,48 @@ export const AppsForm = ({
 
       {/* URL */}
       <InputGroup>
-        <label htmlFor="url">App URL</label>
+        <label htmlFor="url">Internal URL</label>
         <input
           type="text"
           name="url"
           id="url"
-          placeholder="reddit.com"
+          placeholder="192.168.1.2:8096"
           required
           value={formData.url}
           onChange={(e) => inputChangeHandler(e)}
         />
+      </InputGroup>
+
+      {/* EXTERNAL URL */}
+      <InputGroup>
+        <label htmlFor="externalUrl">External URL</label>
+        <input
+          type="text"
+          name="externalUrl"
+          id="externalUrl"
+          placeholder="jellyfin.example.com"
+          value={formData.externalUrl ?? ''}
+          onChange={(e) => inputChangeHandler(e)}
+        />
+        <span>Optional - e.g. the address used outside your network</span>
+      </InputGroup>
+
+      {/* PREFERRED URL */}
+      <InputGroup>
+        <label htmlFor="preferredUrl">Open with</label>
+        <select
+          id="preferredUrl"
+          name="preferredUrl"
+          value={formData.preferredUrl ?? 'internal'}
+          onChange={(e) => inputChangeHandler(e)}
+        >
+          <option value="internal">Internal URL</option>
+          <option value="external">External URL</option>
+        </select>
+        <span>
+          The URL that is displayed and opened. If it is empty, the other one
+          is used
+        </span>
       </InputGroup>
 
       {/* CATEGORY */}
@@ -225,7 +272,8 @@ export const AppsForm = ({
           onChange={(e) => inputChangeHandler(e)}
         />
         <span>
-          Optional - If description is not set, app URL will be displayed
+          Optional - If description is not set, the URL it opens will be
+          displayed
         </span>
       </InputGroup>
 
@@ -249,6 +297,11 @@ export const AppsForm = ({
               Click here for reference
             </a>
           </span>
+          <FetchIcon
+            url={formData.url}
+            icon={formData.icon}
+            onFetched={(icon) => setFormData((prev) => ({ ...prev, icon }))}
+          />
           <span
             onClick={() => toggleUseCustomIcon(!useCustomIcon)}
             className={classes.Switch}
@@ -292,6 +345,41 @@ export const AppsForm = ({
           <option value={0}>Hidden (authentication required)</option>
         </select>
       </InputGroup>
+
+      {/* STATUS INDICATOR */}
+      {config.statusChecks && (
+        <InputGroup>
+          <label htmlFor="statusCheck">Status indicator</label>
+          <select
+            id="statusCheck"
+            name="statusCheck"
+            value={formData.statusCheck ? 1 : 0}
+            onChange={(e) => inputChangeHandler(e, { isBool: true })}
+          >
+            <option value={1}>Check this app</option>
+            <option value={0}>Don't check this app</option>
+          </select>
+        </InputGroup>
+      )}
+
+      {config.statusChecks && formData.statusCheck && (
+        <InputGroup>
+          <label htmlFor="statusUrl">Status check URL</label>
+          <input
+            type="text"
+            name="statusUrl"
+            id="statusUrl"
+            placeholder="http://192.168.1.2:8096/health"
+            value={formData.statusUrl ?? ''}
+            onChange={(e) => inputChangeHandler(e)}
+          />
+          <span>
+            Optional - checked instead of the app URL, e.g. when the app URL
+            can't be reached from the Flame server. Docker apps with a check
+            URL get an HTTP check instead of their container state
+          </span>
+        </InputGroup>
+      )}
 
       <Button>{app ? 'Update app' : 'Add new app'}</Button>
     </ModalForm>

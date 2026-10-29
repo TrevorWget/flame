@@ -94,6 +94,7 @@ const useDocker = async () => {
       ) {
         const names = labels['flame.name'].split(';');
         const urls = labels['flame.url'].split(';');
+        const externalUrls = labels['flame.url.external'] ? labels['flame.url.external'].split(';') : [];
         const categoriesLabels = labels['flame.category'] ? labels['flame.category'].split(';') : [];
         const orders = labels['flame.order'] ? labels['flame.order'].split(';') : [];
         const icons = labels['flame.icon'] ? labels['flame.icon'].split(';') : [];
@@ -109,6 +110,16 @@ const useDocker = async () => {
             continue;
           }
 
+          // Without the label, the external URL set in the UI is kept
+          let externalUrl = externalUrls[i] || externalUrls[0];
+
+          if (externalUrl && !isAllowedUrl(externalUrl, extraUrlSchemes)) {
+            warnOnce(
+              `Ignoring the external URL of Docker app "${name}": URL is invalid or its scheme is not allowed`
+            );
+            externalUrl = undefined;
+          }
+
           let category = categoriesLabels[i] ? categories.find(category => category.name.toUpperCase() === categoriesLabels[i].toUpperCase()) : dockerDefaultCategory;
           if (!category) {
             category = await createNewCategory(categoriesLabels[i]);
@@ -122,6 +133,7 @@ const useDocker = async () => {
           dockerApps.push({
             name,
             url,
+            ...(externalUrl ? { externalUrl } : {}),
             icon: icons[i] || 'docker',
             categoryId: category.id,
             orderId: orders[i] || 500,

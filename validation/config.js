@@ -60,6 +60,13 @@ const SETTINGS = {
   weatherData: z.enum(['cloud', 'humidity']),
   hideDate: z.boolean(),
   extraUrlSchemes: text(500),
+  autoFetchIcons: z.boolean(),
+  iconFetchAllowPrivate: z.boolean(),
+  statusChecks: z.boolean(),
+  // Seconds
+  statusCheckInterval: z.number().int().min(10).max(86400),
+  statusCheckTimeout: z.number().int().min(1).max(60),
+  statusCheckDocker: z.boolean(),
 };
 
 const isUnchanged = (value, stored) =>
