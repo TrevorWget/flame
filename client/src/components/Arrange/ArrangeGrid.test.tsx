@@ -26,6 +26,8 @@ const app = (id: number, categoryId: number): App => ({
   icon: '',
   isPublic: id !== 3,
   description: '',
+  statusCheck: true,
+  statusUrl: null,
   orderId: id,
   isPinned: false,
 });
@@ -107,7 +109,16 @@ const setup = ({ loggedIn = true, useOrdering = 'orderId' } = {}) => {
   });
   store.dispatch(
     loggedIn
-      ? { type: ActionType.login, payload: Date.now() + 60_000 }
+      ? {
+          type: ActionType.login,
+          payload: {
+            isAuthenticated: true,
+            expiresAt: Date.now() + 60_000,
+            method: 'password',
+            user: null,
+            logoutUrl: null,
+          },
+        }
       : { type: ActionType.logout }
   );
 };
