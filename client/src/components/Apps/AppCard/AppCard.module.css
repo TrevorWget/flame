@@ -59,7 +59,7 @@
   min-width: 0;
 }
 
-.WideAppCard .AppCardDetails span {
+.WideAppCard .AppCardDetails > span {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;

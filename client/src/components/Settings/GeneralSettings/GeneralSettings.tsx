@@ -191,7 +191,8 @@ export const GeneralSettings = (): JSX.Element => {
                 name="statusCheckTimeout"
                 min={1}
                 max={60}
-                value={formData.statusCheckTimeout}
+                // Admin-only setting, absent until the admin config has loaded
+                value={formData.statusCheckTimeout ?? ''}
                 onChange={(e) => inputChangeHandler(e, { isNumber: true })}
               />
             </InputGroup>
