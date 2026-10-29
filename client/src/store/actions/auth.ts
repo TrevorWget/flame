@@ -2,7 +2,7 @@ import { ActionType } from '../action-types';
 
 export interface LoginAction {
   type: ActionType.login;
-  payload: string;
+  payload: number;
 }
 
 export interface LogoutAction {
@@ -11,7 +11,7 @@ export interface LogoutAction {
 
 export interface AutoLoginAction {
   type: ActionType.autoLogin;
-  payload: string;
+  payload: number;
 }
 
 export interface AuthErrorAction {

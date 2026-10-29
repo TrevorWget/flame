@@ -5,17 +5,22 @@ import { useSelector, useDispatch } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import { actionCreators } from '../../../../store';
 import { State } from '../../../../store/reducers';
-import { decodeToken, parseTokenExpire } from '../../../../utility';
+import { parseTokenExpire } from '../../../../utility';
 
 // Other
 import { InputGroup, Button } from '../../../UI';
 import classes from '../AppDetails.module.css';
 
 export const AuthForm = (): JSX.Element => {
-  const { isAuthenticated, token } = useSelector((state: State) => state.auth);
+  const { isAuthenticated, expiresAt } = useSelector(
+    (state: State) => state.auth
+  );
 
   const dispatch = useDispatch();
-  const { login, logout } = bindActionCreators(actionCreators, dispatch);
+  const { login, logout, logoutAll } = bindActionCreators(
+    actionCreators,
+    dispatch
+  );
 
   const [tokenExpires, setTokenExpires] = useState('');
   const [formData, setFormData] = useState({
@@ -30,12 +35,16 @@ export const AuthForm = (): JSX.Element => {
   }, []);
 
   useEffect(() => {
-    if (token) {
-      const decoded = decodeToken(token);
-      const expiresIn = parseTokenExpire(decoded.exp);
-      setTokenExpires(expiresIn);
+    if (expiresAt) {
+      setTokenExpires(parseTokenExpire(expiresAt));
     }
-  }, [token]);
+  }, [expiresAt]);
+
+  const logoutAllHandler = () => {
+    if (window.confirm('Log out of Flame on every device, including this one?')) {
+      logoutAll();
+    }
+  };
 
   const formHandler = (e: FormEvent) => {
     e.preventDefault();
@@ -102,7 +111,10 @@ export const AuthForm = (): JSX.Element => {
             You are logged in. Your session will expire{' '}
             <span>{tokenExpires}</span>
           </p>
-          <Button click={logout}>Logout</Button>
+          <div className={classes.buttons}>
+            <Button click={logout}>Logout</Button>
+            <Button click={logoutAllHandler}>Log out all sessions</Button>
+          </div>
         </div>
       )}
     </Fragment>

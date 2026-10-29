@@ -54,7 +54,7 @@ The image has a `HEALTHCHECK`, so `docker ps` shows whether Flame is responding.
 
 `PASSWORD` is required. If it is missing or set to one of the old example values (`flame_password`, `change_me`, ...), Flame still serves the dashboard but login is disabled and an error is logged at startup.
 
-Login attempts are rate limited per client IP. If Flame runs behind a reverse proxy, set `TRUST_PROXY` so the real client IP is used: `true` (trust all proxies), a hop count such as `1`, or a list of trusted addresses/subnets such as `loopback, 172.16.0.0/12` (see [Express "trust proxy"](https://expressjs.com/en/guide/behind-proxies.html)).
+Login attempts are rate limited per client IP. If Flame runs behind a reverse proxy, set `TRUST_PROXY` so the real client IP is used: `true` (trust all proxies), a hop count such as `1`, or a list of trusted addresses/subnets such as `loopback, 172.16.0.0/12` (see [Express "trust proxy"](https://expressjs.com/en/guide/behind-proxies.html)). `TRUST_PROXY` also lets Flame see that the proxy serves HTTPS, so the session cookie is marked `Secure`.
 
 Leave `SECRET` unset to have a random JWT secret generated in `data/.secret`. Flame refuses to start if `SECRET` is set to the value that was committed to this repository before v2.4.0.
 
@@ -192,6 +192,12 @@ The app version shown in Settings comes from `VITE_APP_VERSION` in `client/.env`
 ### Authentication
 
 Visit [project wiki](https://github.com/pawelmalak/flame/wiki/Authentication) to read more about authentication
+
+The session is stored in an `HttpOnly`, `SameSite=Strict` cookie (`Secure` over HTTPS). **Settings > App** has a "Log out all sessions" button that signs out every browser and device, e.g. after losing a device.
+
+Browsers send cookies to every port of a host, so other web apps served from the same hostname as Flame (e.g. `http://server:8080` next to `http://server:5005`) receive Flame's session cookie. Give Flame its own hostname if you don't trust the other services on that host.
+
+API clients can log in with `POST /api/auth` and keep the returned `flame_token` cookie, or send its value as `Authorization-Flame: Bearer <token>`. Login (`POST /api/auth`) and logout (`POST /api/auth/logout`) always need an `X-Flame-CSRF: 1` header; other requests that change data need it when they are authenticated by the cookie.
 
 ### Search bar
 

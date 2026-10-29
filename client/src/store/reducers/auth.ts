@@ -3,12 +3,16 @@ import { ActionType } from '../action-types';
 
 interface AuthState {
   isAuthenticated: boolean;
-  token: string | null;
+  // False until the session cookie has been checked on page load
+  sessionChecked: boolean;
+  // Session expiry in ms since the epoch; the token itself is an HttpOnly cookie
+  expiresAt: number | null;
 }
 
 const initialState: AuthState = {
   isAuthenticated: false,
-  token: null,
+  sessionChecked: false,
+  expiresAt: null,
 };
 
 export const authReducer = (
@@ -19,29 +23,32 @@ export const authReducer = (
     case ActionType.login:
       return {
         ...state,
-        token: action.payload,
+        expiresAt: action.payload,
         isAuthenticated: true,
+        sessionChecked: true,
       };
 
     case ActionType.logout:
       return {
         ...state,
-        token: null,
+        expiresAt: null,
         isAuthenticated: false,
       };
 
     case ActionType.autoLogin:
       return {
         ...state,
-        token: action.payload,
+        expiresAt: action.payload,
         isAuthenticated: true,
+        sessionChecked: true,
       };
 
     case ActionType.authError:
       return {
         ...state,
-        token: null,
+        expiresAt: null,
         isAuthenticated: false,
+        sessionChecked: true,
       };
 
     default:

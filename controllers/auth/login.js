@@ -1,6 +1,8 @@
+const jwt = require('jsonwebtoken');
 const asyncWrapper = require('../../middleware/asyncWrapper');
 const ErrorResponse = require('../../utils/ErrorResponse');
 const signToken = require('../../utils/signToken');
+const { setTokenCookie } = require('../../utils/authCookie');
 const { isLoginEnabled, checkPassword } = require('../../utils/password');
 
 // Must match the session duration options in the client's AuthForm
@@ -30,10 +32,13 @@ const login = asyncWrapper(async (req, res, next) => {
   }
 
   const token = signToken(duration);
+  const expiresAt = jwt.decode(token).exp * 1000;
+
+  setTokenCookie(req, res, token, new Date(expiresAt));
 
   res.status(200).json({
     success: true,
-    data: { token },
+    data: { isAuthenticated: true, expiresAt },
   });
 });
 

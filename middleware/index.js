@@ -5,5 +5,6 @@ module.exports = {
   upload: require('./multer'),
   requireAuth: require('./requireAuth'),
   requireBody: require('./requireBody'),
+  requireCsrf: require('./requireCsrf'),
   validateDockerHost: require('./validateDockerHost'),
 };

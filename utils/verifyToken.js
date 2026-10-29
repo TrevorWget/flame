@@ -1,10 +1,12 @@
 const jwt = require('jsonwebtoken');
 const { isLoginEnabled, getPasswordFingerprint } = require('./password');
+const { getTokenVersion } = require('./tokenVersion');
 
-// Returns true only for unexpired HS256 tokens issued for the current PASSWORD
-const verifyToken = (token) => {
+// Returns the payload of an unexpired HS256 token issued for the current
+// PASSWORD and token version, or null
+const readToken = (token) => {
   if (!token || typeof token !== 'string' || !isLoginEnabled()) {
-    return false;
+    return null;
   }
 
   try {
@@ -12,10 +14,18 @@ const verifyToken = (token) => {
       algorithms: ['HS256'],
     });
 
-    return payload.app === 'flame' && payload.pwd === getPasswordFingerprint();
+    const isValid =
+      payload.app === 'flame' &&
+      payload.pwd === getPasswordFingerprint() &&
+      payload.ver === getTokenVersion();
+
+    return isValid ? payload : null;
   } catch {
-    return false;
+    return null;
   }
 };
 
+const verifyToken = (token) => readToken(token) !== null;
+
 module.exports = verifyToken;
+module.exports.readToken = readToken;

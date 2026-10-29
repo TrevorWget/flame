@@ -5,10 +5,14 @@ import { Outlet } from 'react-router-dom';
 import { State } from '../../store/reducers';
 
 export const ProtectedRoute = () => {
-  const { isAuthenticated } = useSelector((state: State) => state.auth);
-  
+  const { isAuthenticated, sessionChecked } = useSelector(
+    (state: State) => state.auth
+  );
+
   if (isAuthenticated) {
     return <Outlet />;
+  } else if (!sessionChecked) {
+    return null;
   } else {
     return <Navigate to="/settings/app" />;
   }

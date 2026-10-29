@@ -12,7 +12,7 @@ import NotFound from './NotFound';
 import { actionCreators, store } from './store';
 import { autoLogin, getConfig } from './store/action-creators';
 import { State } from './store/reducers';
-import { checkVersion, decodeToken, parsePABToTheme } from './utility';
+import { checkVersion, parsePABToTheme } from './utility';
 
 // Redux
 // Utils
@@ -20,10 +20,11 @@ import { checkVersion, decodeToken, parsePABToTheme } from './utility';
 // Get config
 store.dispatch<any>(getConfig());
 
-// Validate token
-if (localStorage.token) {
-  store.dispatch<any>(autoLogin());
-}
+// Tokens used to be kept in localStorage; the session is now an HttpOnly cookie
+localStorage.removeItem('token');
+
+// Restore the session from the cookie
+store.dispatch<any>(autoLogin());
 
 export const App = (): JSX.Element => {
   const { config, loading } = useSelector((state: State) => state.config);
@@ -33,13 +34,14 @@ export const App = (): JSX.Element => {
     bindActionCreators(actionCreators, dispath);
 
   useEffect(() => {
-    // check if token is valid
+    // check if session is still valid
     const tokenIsValid = setInterval(() => {
-      if (localStorage.token) {
-        const expiresIn = decodeToken(localStorage.token).exp * 1000;
+      const { expiresAt } = store.getState().auth;
+
+      if (expiresAt) {
         const now = new Date().getTime();
 
-        if (now > expiresIn) {
+        if (now > expiresAt) {
           logout();
           createNotification({
             title: 'Info',
