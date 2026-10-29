@@ -19,7 +19,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@kubernetes/client-node": "^0.15.1",
+    "@kubernetes/client-node": "^1.4.0",
     "axios": "^1.21.0",
     "docker-secret": "^1.2.4",
     "dompurify": "^3.4.17",
