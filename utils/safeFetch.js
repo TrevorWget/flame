@@ -178,7 +178,7 @@ const resolveTarget = async (hostname, { allowPrivate, lookup = lookupAll }) => 
 
   throw new FetchError(
     sawPrivate
-      ? `${host} is on a private network address. Allow private network addresses for icon fetching in the settings to fetch icons from local services`
+      ? `${host} is on a private network. Turn on "Allow fetching icons from private network addresses" in Settings > General to fetch icons from it`
       : `${host} does not resolve to an address icons can be fetched from`,
     'BLOCKED'
   );
@@ -210,6 +210,8 @@ const requestOnce = (url, target, { maxBytes, truncate, signal, accept }) =>
       {
         method: 'GET',
         signal,
+        // A fresh connection per request, so it always goes to `target`
+        agent: false,
         headers: {
           'User-Agent': USER_AGENT,
           Accept: accept,

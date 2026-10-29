@@ -1,3 +1,7 @@
+### Unreleased
+- Added icon fetching for apps and bookmarks ([#303](https://github.com/pawelmalak/flame/issues/303), [#372](https://github.com/pawelmalak/flame/issues/372), port of [#497](https://github.com/pawelmalak/flame/pull/497)): "Fetch icon from site" in the app and bookmark forms downloads the site's favicon (or the icon URL in the icon field) and keeps a copy in `data/uploads`, so icons no longer depend on the site being reachable. Settings > General > Icons can also fetch icons automatically for apps and bookmarks saved without one (off by default)
+- Security: icons are fetched by the server over http/https only, never from loopback, LAN, link-local or other non-public addresses unless "Allow fetching icons from private network addresses" is turned on, with every redirect re-checked, a 1 MB / 10 second limit, and the content checked to be a PNG, JPEG, ICO, WebP or sanitized SVG
+
 ### v2.5.0 (2026-10-29)
 - Fixed every app disappearing after upgrading from upstream Flame (pawelmalak, v2.4.0 and older): apps without an app category are moved into a new pinned "Applications" category (apps that were pinned) or an unpinned "Other apps" category (the rest), so the home page shows the same apps as before
 - Fixed the database backup before migrations being skipped when a backup for the same version already existed. Backups are now named `db-<version>-<timestamp>-backup.sqlite`, are only taken when migrations are pending, and Flame exits without migrating if the backup fails

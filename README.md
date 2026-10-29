@@ -225,6 +225,17 @@ For list of supported search engines, shortcuts and more about searching functio
 2. Get lat/long for your location. You can get them from [latlong.net](https://www.latlong.net/convert-address-to-lat-long.html).
 3. Enter and save data. Weather widget will now update and should be visible on Home page. Weather refreshes every 15 minutes; saving a key or switching provider takes effect without a restart.
 
+### Fetching icons
+
+Next to the icon field of the app and bookmark forms, **Fetch icon from site** asks the Flame server to download the site's icon: the best `<link rel="icon">` / `apple-touch-icon` on the page (the smallest one that is at least 48px, then SVG, then the largest small one), falling back to `/favicon.ico`. If the icon field holds an image URL, that image is downloaded instead. The icon is stored in `data/uploads` as `favicon-<hash>.<ext>` and used like an uploaded icon, so it keeps working when the site is down or blocks hotlinking. MDI icons, icon URLs and uploads work as before.
+
+**Settings > General > Icons**:
+
+- **Fetch icons for apps and bookmarks saved without one** (off by default): saving an app or bookmark with an empty icon field and an http(s) URL fetches its icon. Saving waits for up to 5 seconds and keeps the item without an icon if none is found.
+- **Allow fetching icons from private network addresses** (off by default): the server refuses to fetch from loopback, private (`10.x`, `172.16-31.x`, `192.168.x`, `100.64.x`), link-local (`169.254.x`, `fe80::`) and unique-local IPv6 addresses unless this is on, so turn it on for self-hosted apps such as `http://server.local:8096`. Self-signed certificates are accepted from those addresses. Multicast, `0.0.0.0` and similar addresses are always refused.
+
+Only `http` and `https` URLs are fetched; every redirect is checked again, downloads are limited to 1 MB and 10 seconds, and only PNG, JPEG, ICO, WebP and (sanitized) SVG files are kept. Hostnames are resolved by the Flame server, so `.local` (mDNS) names only work if the server or container can resolve them; use an IP address otherwise.
+
 ### Docker integration
 
 In order to use the Docker integration, each container must have the following labels:

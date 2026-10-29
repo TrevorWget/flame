@@ -38,12 +38,14 @@ const isSvgHref = (href, type) =>
   /\.svg$/i.test(href.split(/[?#]/)[0]);
 
 /**
- * Scalable icons first, then the smallest icon that's still sharp, then the
- * largest of the small ones
+ * The smallest raster icon that's still sharp first, then scalable icons,
+ * then the largest of the small ones. Large rasters (usually apple-touch-icon)
+ * carry their own background; SVG favicons are often a dark glyph made for a
+ * light browser tab that disappears on dark themes.
  */
 const rankCandidate = ({ isSvg, size }) => {
-  if (isSvg || size === Infinity) return [0, 0];
-  if (size >= PREFERRED_MIN_SIZE) return [1, size];
+  if (isSvg || size === Infinity) return [1, 0];
+  if (size >= PREFERRED_MIN_SIZE) return [0, size];
   return [2, -size];
 };
 

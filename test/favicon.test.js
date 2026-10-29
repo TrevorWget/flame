@@ -60,7 +60,7 @@ const withSite = async (routes, fn) => {
 
 const LAN = { allowPrivate: true };
 
-test('icon links are ranked: scalable, then sharp and small, then largest', () => {
+test('icon links are ranked: sharp and small, then scalable, then largest', () => {
   const html = `<!doctype html><html><head>
     <base href="/static/">
     <link rel="stylesheet" href="/style.css">
@@ -79,10 +79,10 @@ test('icon links are ranked: scalable, then sharp and small, then largest', () =
   assert.deepStrictEqual(
     links.map((link) => link.href),
     [
-      'https://site.test/static/logo.svg?v=2',
       'https://site.test/static/64.png',
       'https://site.test/static/touch.png',
       'https://site.test/static/512.png',
+      'https://site.test/static/logo.svg?v=2',
       'https://site.test/favicon.ico',
       'https://site.test/static/16.png',
     ]
