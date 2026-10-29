@@ -25,21 +25,32 @@ Flame is self-hosted startpage for your server. Its design is inspired (heavily)
 ### With Docker (recommended)
 
 ```sh
-docker pull ghcr.io/fdarveau/flame:latest
+# one image for amd64 and arm64 (e.g. Raspberry Pi 4/5 with a 64-bit OS)
+docker pull ghcr.io/trevorwget/flame:latest
 
-# for ARM architecture (e.g. RaspberryPi)
-docker pull ghcr.io/fdarveau/flame:latest-multiarch
-
-# installing specific version
-docker pull ghcr.io/fdarveau/flame:2021-12-12
+# pinning a build: date of the master build, or the commit
+docker pull ghcr.io/trevorwget/flame:2026-10-28
+docker pull ghcr.io/trevorwget/flame:sha-<commit>
 ```
 
 #### Deployment
 
 ```sh
 # run container
-docker run -p 5005:5005 -v /path/to/data:/app/data -e PASSWORD='<your-strong-password>' ghcr.io/fdarveau/flame:latest
+docker run -p 5005:5005 -v /path/to/data:/app/data -e PASSWORD='<your-strong-password>' ghcr.io/trevorwget/flame:latest
 ```
+
+##### User and permissions
+
+The container runs as the unprivileged user `node` (uid/gid `1000:1000`), so the data directory must be writable by that user. If it is not, the container exits with a message explaining how to fix it. Pick one of:
+
+- Give the directory to uid 1000: `sudo chown -R 1000:1000 /path/to/data`. Data directories from the old `multiarch` images are already owned by uid 1000.
+- Run as the user that owns the directory: `--user 1001:1001` (compose: `user: "1001:1001"`).
+- Start the container as root with `--user 0:0` and set `PUID` / `PGID` (default `1000`). Flame then fixes ownership of the data directory (only the files that need it) and joins the Docker socket's group before dropping to `PUID:PGID`.
+
+The Docker integration needs access to `/var/run/docker.sock`. When running as non-root, add the socket's group to the container: `--group-add $(stat -c %g /var/run/docker.sock)` (compose: `group_add: ["<gid>"]`). Neither is needed when Flame connects through a socket proxy (see [Connecting to Docker](#connecting-to-docker)).
+
+The image has a `HEALTHCHECK`, so `docker ps` shows whether Flame is responding.
 
 `PASSWORD` is required. If it is missing or set to one of the old example values (`flame_password`, `change_me`, ...), Flame still serves the dashboard but login is disabled and an error is logged at startup.
 
@@ -50,29 +61,30 @@ Leave `SECRET` unset to have a random JWT secret generated in `data/.secret`. Fl
 #### Building images
 
 ```sh
-# build image for amd64 only
+# build image for the current platform
 docker build -t flame -f .docker/Dockerfile .
 
-# build multiarch image for amd64, armv7 and arm64
-# building failed multiple times with 2GB memory usage limit so you might want to increase it
+# build for amd64 and arm64 (needs buildx; QEMU for the non-native platform)
 docker buildx build \
-  --platform linux/arm/v7,linux/arm64,linux/amd64 \
-  -f .docker/Dockerfile.multiarch \
-  -t flame:multiarch .
+  --platform linux/amd64,linux/arm64 \
+  -f .docker/Dockerfile \
+  -t flame .
 ```
+
+Images are published to `ghcr.io/trevorwget/flame` by the `Docker image` GitHub Actions workflow on every push to `master` (`latest`, date and `sha-` tags) and on `v*.*.*` tags (semver tags).
 
 #### Docker-Compose
 
 ```yaml
-version: '3.6'
-
 services:
   flame:
-    image: ghcr.io/fdarveau/flame:latest
+    image: ghcr.io/trevorwget/flame:latest
     container_name: flame
     volumes:
       - /path/to/host/data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock # optional but required for Docker integration
+    group_add:
+      - "999" # group id of the Docker socket: stat -c %g /var/run/docker.sock
     ports:
       - 5005:5005
     secrets:
@@ -240,7 +252,7 @@ services:
     # no ports: only reachable from this compose network
 
   flame:
-    # ... as above, without the docker.sock volume
+    # ... as above, without the docker.sock volume and group_add
     depends_on:
       - socket-proxy
 ```

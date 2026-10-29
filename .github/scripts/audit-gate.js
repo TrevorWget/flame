@@ -18,7 +18,7 @@ const PROJECTS = {
   client: {
     dir: 'client',
     // The client ships as a static bundle; these packages are listed in
-    // `dependencies` only because the Dockerfiles install with --production
+    // `dependencies` only because the old Dockerfiles installed with --production
     ignoredRoots: {
       'react-scripts': 'build tooling, not part of the bundle',
       typescript: 'build tooling, not part of the bundle',
