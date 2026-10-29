@@ -14,6 +14,10 @@ interface Props {
   fromHomepage?: boolean;
 }
 
+// Longer categories span the whole AppGrid and lay their apps out in as many
+// columns as fit instead of stacking them in one
+export const WIDE_CATEGORY_MIN_APPS = 9;
+
 export const AppCard = (props: Props): JSX.Element => {
   const { category, fromHomepage = false } = props;
 
@@ -23,8 +27,14 @@ export const AppCard = (props: Props): JSX.Element => {
   const dispatch = useDispatch();
   const { setEditCategory } = bindActionCreators(actionCreators, dispatch);
 
+  const isWide = category.apps.length >= WIDE_CATEGORY_MIN_APPS;
+
   return (
-    <div className={classes.AppCard}>
+    <div
+      className={
+        isWide ? `${classes.AppCard} ${classes.WideAppCard}` : classes.AppCard
+      }
+    >
       <h3
         className={
           fromHomepage || !isAuthenticated ? '' : classes.AppHeader

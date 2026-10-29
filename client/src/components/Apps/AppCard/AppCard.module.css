@@ -2,6 +2,10 @@
   margin-bottom: 20px;
 }
 
+.WideAppCard {
+  grid-column: 1 / -1;
+}
+
 .AppCard h3 {
   color: var(--color-accent);
   margin-bottom: 10px;
@@ -43,6 +47,23 @@
   padding: 2px;
   border-radius: 4px;
   transition: all 0.1s;
+}
+
+/* As many columns as fit, so long URLs never push the grid off the page */
+.WideAppCard .Apps {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
+}
+
+.WideAppCard .AppCardDetails {
+  min-width: 0;
+}
+
+.WideAppCard .AppCardDetails span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .Apps a {
