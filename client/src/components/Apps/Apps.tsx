@@ -30,7 +30,7 @@ export const Apps = (props: Props): JSX.Element => {
 
   // Get Redux action creators
   const dispatch = useDispatch();
-  const { setEditCategory, setEditApp } =
+  const { getCategories, setEditCategory, setEditApp } =
     bindActionCreators(actionCreators, dispatch);
 
   // Form
@@ -62,6 +62,11 @@ export const Apps = (props: Props): JSX.Element => {
   useEffect(() => {
     setShowTable(false);
     setEditCategory(null);
+
+    // Opened directly (not via Home) without a token, nothing else loads them
+    if (loading) {
+      getCategories();
+    }
   }, []);
 
   // Form actions
