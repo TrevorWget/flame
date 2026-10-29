@@ -1,4 +1,5 @@
 import { act, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { store } from '../../store/store';
 import { App, Category } from '../../interfaces';
 import { ActionType } from '../../store/action-types';
+import { COLLAPSED_CATEGORIES_KEY } from '../../utility/collapsedCategories';
 import { Home } from './Home';
 
 vi.mock('../Widgets/WeatherWidget/WeatherWidget', () => ({
@@ -108,5 +110,125 @@ describe('Home', () => {
     expect(screen.queryByText('Applications')).not.toBeInTheDocument();
     expect(screen.queryByText('Sonarr')).not.toBeInTheDocument();
     expect(screen.getByText(/Welcome to Flame!/)).toBeInTheDocument();
+  });
+});
+
+const bookmarkCategory = (id: number, name: string): Category => ({
+  ...category(id, name, true, []),
+  type: 'bookmarks',
+  bookmarks: [
+    {
+      ...model,
+      id: id * 10,
+      name: `${name} link`,
+      url: `http://${name.toLowerCase()}.example`,
+      categoryId: id,
+      icon: '',
+      isPublic: true,
+      orderId: 1,
+    },
+  ],
+});
+
+const toggle = (name: string) => screen.getByRole('button', { name });
+
+const isCollapsed = (name: string) => {
+  const button = toggle(name);
+  const content = document.getElementById(button.getAttribute('aria-controls')!);
+
+  expect(content).not.toBeNull();
+  expect(button.closest('h3')!.parentElement).toContainElement(content);
+
+  return button.getAttribute('aria-expanded') === 'false';
+};
+
+describe('Home collapsible categories', () => {
+  const categories = () => [
+    category(1, 'Media', true, [app('Jellyfin', true)]),
+    category(2, 'Tools', true, [app('Portainer', true)]),
+    bookmarkCategory(3, 'Reading'),
+  ];
+
+  beforeEach(() => {
+    store.dispatch({ type: ActionType.logout });
+    localStorage.clear();
+  });
+
+  it('collapses a category when its name is clicked and remembers it after a reload', async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderHome(categories());
+
+    expect(isCollapsed('Media')).toBe(false);
+
+    await user.click(toggle('Media'));
+    expect(isCollapsed('Media')).toBe(true);
+    expect(isCollapsed('Tools')).toBe(false);
+    expect(toggle('Media').closest('h3')!.parentElement!.className).toMatch(/Collapsed/);
+
+    unmount();
+    renderHome(categories());
+
+    expect(isCollapsed('Media')).toBe(true);
+    expect(isCollapsed('Tools')).toBe(false);
+
+    await user.click(toggle('Media'));
+    expect(isCollapsed('Media')).toBe(false);
+  });
+
+  it('collapses bookmark categories too', async () => {
+    const user = userEvent.setup();
+    renderHome(categories());
+
+    await user.click(toggle('Reading'));
+    expect(isCollapsed('Reading')).toBe(true);
+    expect(isCollapsed('Media')).toBe(false);
+  });
+
+  it('toggles from the keyboard', async () => {
+    const user = userEvent.setup();
+    renderHome(categories());
+
+    act(() => toggle('Tools').focus());
+    await user.keyboard('{Enter}');
+    expect(isCollapsed('Tools')).toBe(true);
+
+    await user.keyboard(' ');
+    expect(isCollapsed('Tools')).toBe(false);
+  });
+
+  it('still finds apps inside collapsed categories when searching', async () => {
+    const user = userEvent.setup();
+    const { container } = renderHome(categories());
+
+    await user.click(toggle('Media'));
+    await user.type(container.querySelector('input')!, 'jelly');
+
+    expect(screen.getByText('Search Results')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Search Results' })).toBeNull();
+    expect(screen.getByText('Jellyfin').closest('[class*=Collapsed]')).toBeNull();
+
+    await user.keyboard('{Escape}');
+    expect(isCollapsed('Media')).toBe(true);
+  });
+
+  it('forgets deleted categories once a signed-in user loads them all', () => {
+    localStorage.setItem(COLLAPSED_CATEGORIES_KEY, '[1,99]');
+    act(() => {
+      store.dispatch({ type: ActionType.login, payload: Date.now() + 60_000 });
+    });
+
+    renderHome(categories());
+
+    expect(localStorage.getItem(COLLAPSED_CATEGORIES_KEY)).toBe('[1]');
+    expect(isCollapsed('Media')).toBe(true);
+  });
+
+  it("keeps guests' saved state for categories they can't see", () => {
+    localStorage.setItem(COLLAPSED_CATEGORIES_KEY, '[1,99]');
+
+    renderHome(categories());
+
+    expect(localStorage.getItem(COLLAPSED_CATEGORIES_KEY)).toBe('[1,99]');
+    expect(isCollapsed('Media')).toBe(true);
   });
 });
