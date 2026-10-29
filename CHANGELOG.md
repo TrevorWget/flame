@@ -19,6 +19,9 @@
 - Security: weather requests use HTTPS with encoded parameters, and `GET /api/weather/update` now requires login
 - Weather update errors now show the provider's reason (e.g. an invalid API key) instead of a generic failure
 - Fixed `GET /api/categories/:id` building an invalid sort order unless ordering is set to name
+- Docker: one image for amd64 and arm64 published to `ghcr.io/trevorwget/flame` (the `-multiarch` tags are gone), built on Node 24 with production dependencies only
+- Docker: the container runs as uid 1000 instead of root and no longer `chown`s the data directory on every start. Use `--user` to run as another user, or start as root with `PUID`/`PGID`. With the Docker integration, add the socket's group (`group_add`) when running as non-root
+- Docker: added a `HEALTHCHECK`
 
 ### v2.4.0 (2026-04-24)
 - Fixed high severity authentication security issues ([#465](https://github.com/pawelmalak/flame/issues/465))
