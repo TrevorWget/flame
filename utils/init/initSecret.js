@@ -8,8 +8,30 @@ const logger = new Logger();
 const secretLocation = 'data/.secret';
 const secretFullPath = join(__dirname, '../../', secretLocation);
 
+// Committed to the repo's .env before v2.4.0; tokens signed with it are forgeable
+const LEAKED_SECRETS = [
+  'e02eb43d69953658c6d07311d6313f2d4467672cb881f96b29368ba1f3f4da4b',
+];
+
+const MIN_SECRET_BYTES = 32;
+
 const initSecret = () => {
   if (process.env.SECRET) {
+    if (LEAKED_SECRETS.includes(process.env.SECRET.trim())) {
+      logger.log(
+        'SECRET is set to the publicly leaked value from old Flame releases. Remove SECRET from your environment (Flame will generate one in data/.secret) or replace it with a new random value, e.g. `openssl rand -hex 32`.',
+        'ERROR'
+      );
+      process.exit(1);
+    }
+
+    if (Buffer.byteLength(process.env.SECRET) < MIN_SECRET_BYTES) {
+      logger.log(
+        `SECRET is shorter than ${MIN_SECRET_BYTES} bytes, which makes tokens easier to forge. Use a longer random value or unset SECRET to have one generated.`,
+        'WARN'
+      );
+    }
+
     return;
   }
 

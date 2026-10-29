@@ -38,8 +38,14 @@ docker pull ghcr.io/fdarveau/flame:2021-12-12
 
 ```sh
 # run container
-docker run -p 5005:5005 -v /path/to/data:/app/data -e PASSWORD=change_me ghcr.io/fdarveau/flame:latest
+docker run -p 5005:5005 -v /path/to/data:/app/data -e PASSWORD='<your-strong-password>' ghcr.io/fdarveau/flame:latest
 ```
+
+`PASSWORD` is required. If it is missing or set to one of the old example values (`flame_password`, `change_me`, ...), Flame still serves the dashboard but login is disabled and an error is logged at startup.
+
+Login attempts are rate limited per client IP. If Flame runs behind a reverse proxy, set `TRUST_PROXY` so the real client IP is used: `true` (trust all proxies), a hop count such as `1`, or a list of trusted addresses/subnets such as `loopback, 172.16.0.0/12` (see [Express "trust proxy"](https://expressjs.com/en/guide/behind-proxies.html)).
+
+Leave `SECRET` unset to have a random JWT secret generated in `data/.secret`. Flame refuses to start if `SECRET` is set to the value that was committed to this repository before v2.4.0.
 
 #### Building images
 
@@ -72,7 +78,7 @@ services:
     secrets:
       - password # optional but required for (1)
     environment:
-      - PASSWORD=change_me
+      - PASSWORD=<your-strong-password>
       - PASSWORD_FILE=/run/secrets/password # optional but required for (1)
     restart: unless-stopped
 

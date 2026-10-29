@@ -1,21 +1,19 @@
 const asyncWrapper = require('../../middleware/asyncWrapper');
 const ErrorResponse = require('../../utils/ErrorResponse');
-const jwt = require('jsonwebtoken');
+const verifyToken = require('../../utils/verifyToken');
 
 // @desc      Verify token
 // @route     POST /api/auth/verify
 // @access    Public
 const validate = asyncWrapper(async (req, res, next) => {
-  try {
-    jwt.verify(req.body.token, process.env.SECRET);
-
-    res.status(200).json({
-      success: true,
-      data: { token: { isValid: true } },
-    });
-  } catch (err) {
+  if (!verifyToken(req.body.token)) {
     return next(new ErrorResponse('Token expired', 401));
   }
+
+  res.status(200).json({
+    success: true,
+    data: { token: { isValid: true } },
+  });
 });
 
 module.exports = validate;

@@ -1,3 +1,9 @@
+### Unreleased
+- Security: login now fails closed. If `PASSWORD` is unset or a known default (`flame_password`, `change_me`, ...), login is disabled and an error is logged; the images no longer ship a default password
+- Security: Flame refuses to start if `SECRET` is the value leaked in this repository's `.env` before v2.4.0, and warns if `SECRET` is shorter than 32 bytes
+- Security: timing-safe password comparison, login rate limit (10 failed attempts per 15 minutes per IP; set `TRUST_PROXY` behind a reverse proxy), session duration restricted to the options offered in the UI
+- Security: tokens are pinned to HS256 and invalidated when `PASSWORD` changes (existing sessions must log in again after upgrading)
+
 ### v2.4.0 (2026-04-24)
 - Fixed high severity authentication security issues ([#465](https://github.com/pawelmalak/flame/issues/465))
 
