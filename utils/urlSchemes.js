@@ -54,6 +54,7 @@ const normalizeUrl = (url, extraSchemes = '') => {
 
   // Browsers strip these before parsing, e.g. "java\tscript:" is "javascript:"
   let value = url
+    // eslint-disable-next-line no-control-regex
     .replace(/^[\u0000-\u0020]+|[\u0000-\u0020]+$/g, '')
     .replace(/[\t\n\r]/g, '');
 
