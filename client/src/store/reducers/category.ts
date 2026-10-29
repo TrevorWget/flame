@@ -41,21 +41,23 @@ export const categoriesReducer = <T extends CategoriesState>(
       };
     }
 
-    case ActionType.pinCategory: {
+    case ActionType.pinCategory:
+    case ActionType.updateCategory: {
       const categoryIdx = state.categories.findIndex(
         (category) => category.id === action.payload.id
       );
 
       if (categoryIdx < 0) return state;
 
+      // Editing a category never changes its apps/bookmarks, and the ones in
+      // state keep their client-side sort order
+      const { apps, bookmarks } = state.categories[categoryIdx];
+
       return {
         ...state,
         categories: [
           ...state.categories.slice(0, categoryIdx),
-          {
-            ...action.payload,
-            bookmarks: [...state.categories[categoryIdx].bookmarks],
-          },
+          { ...action.payload, apps, bookmarks },
           ...state.categories.slice(categoryIdx + 1),
         ],
       };
@@ -72,26 +74,6 @@ export const categoriesReducer = <T extends CategoriesState>(
         ...state,
         categories: [
           ...state.categories.slice(0, categoryIdx),
-          ...state.categories.slice(categoryIdx + 1),
-        ],
-      };
-    }
-
-    case ActionType.updateCategory: {
-      const categoryIdx = state.categories.findIndex(
-        (category) => category.id === action.payload.id
-      );
-
-      if (categoryIdx < 0) return state;
-
-      return {
-        ...state,
-        categories: [
-          ...state.categories.slice(0, categoryIdx),
-          {
-            ...action.payload,
-            bookmarks: [...state.categories[categoryIdx].bookmarks],
-          },
           ...state.categories.slice(categoryIdx + 1),
         ],
       };
