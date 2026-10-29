@@ -4,6 +4,23 @@ const { errorHandler } = require('./middleware');
 
 const api = express();
 
+// Behind a reverse proxy, lets req.ip (used by the login rate limit) resolve to
+// the real client. Accepts true, a hop count, or Express' subnet list syntax.
+if (process.env.TRUST_PROXY) {
+  const trustProxy = process.env.TRUST_PROXY.trim();
+
+  api.set(
+    'trust proxy',
+    trustProxy === 'true'
+      ? true
+      : trustProxy === 'false'
+      ? false
+      : /^\d+$/.test(trustProxy)
+      ? Number(trustProxy)
+      : trustProxy
+  );
+}
+
 // Static files
 api.use(express.static(join(__dirname, 'public')));
 api.use('/uploads', express.static(join(__dirname, 'data/uploads')));
