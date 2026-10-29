@@ -1,11 +1,21 @@
 const asyncWrapper = require('../../middleware/asyncWrapper');
 const ErrorResponse = require('../../utils/ErrorResponse');
 const Bookmark = require('../../models/Bookmark');
+const loadConfig = require('../../utils/loadConfig');
+const { isAllowedUrl } = require('../../utils/urlSchemes');
 
 // @desc      Update bookmark
 // @route     PUT /api/bookmarks/:id
 // @access    Public
 const updateBookmark = asyncWrapper(async (req, res, next) => {
+  const { extraUrlSchemes } = await loadConfig();
+
+  if ('url' in req.body && !isAllowedUrl(req.body.url, extraUrlSchemes)) {
+    return next(
+      new ErrorResponse('URL is invalid or its scheme is not allowed', 400)
+    );
+  }
+
   let bookmark = await Bookmark.findOne({
     where: { id: req.params.id },
   });

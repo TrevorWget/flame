@@ -5,7 +5,7 @@ import { bindActionCreators } from 'redux';
 import { Category } from '../../interfaces';
 import { actionCreators } from '../../store';
 import { State } from '../../store/reducers';
-import { redirectUrl, searchParser, urlParser } from '../../utility';
+import { redirectUrl, searchParser } from '../../utility';
 import classes from './SearchBar.module.css';
 
 // Redux
@@ -92,14 +92,21 @@ export const SearchBar = (props: Props): JSX.Element => {
         });
       } else if (isURL) {
         // URL or IP passed -> redirect
-        const url = urlParser(inputRef.current.value)[1];
-        redirectUrl(url, sameTab);
+        redirectUrl(inputRef.current.value, sameTab, config.extraUrlSchemes);
       } else if (isLocal) {
         // Local query -> redirect if at least 1 result found
         if (appSearchResult?.[0]?.apps?.length) {
-          redirectUrl(appSearchResult[0].apps[0].url, sameTab);
+          redirectUrl(
+            appSearchResult[0].apps[0].url,
+            sameTab,
+            config.extraUrlSchemes
+          );
         } else if (bookmarkSearchResult?.[0]?.bookmarks?.length) {
-          redirectUrl(bookmarkSearchResult[0].bookmarks[0].url, sameTab);
+          redirectUrl(
+            bookmarkSearchResult[0].bookmarks[0].url,
+            sameTab,
+            config.extraUrlSchemes
+          );
         } else {
           // no local results -> search the internet with the default search provider if query is not empty
           if (!/^ *$/.test(rawQuery)) {
@@ -110,13 +117,13 @@ export const SearchBar = (props: Props): JSX.Element => {
             }
 
             const url = `${template}${encodedURL}`;
-            redirectUrl(url, sameTab);
+            redirectUrl(url, sameTab, config.extraUrlSchemes);
           }
         }
       } else {
         // Valid query -> redirect to search results
         const url = `${primarySearch.template}${encodedURL}`;
-        redirectUrl(url, sameTab);
+        redirectUrl(url, sameTab, config.extraUrlSchemes);
       }
     }
   };

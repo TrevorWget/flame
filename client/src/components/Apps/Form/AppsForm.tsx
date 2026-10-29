@@ -5,7 +5,7 @@ import { bindActionCreators } from 'redux';
 import { App, Category, NewApp } from '../../../interfaces';
 import { actionCreators } from '../../../store';
 import { State } from '../../../store/reducers';
-import { inputHandler, newAppTemplate } from '../../../utility';
+import { inputHandler, newAppTemplate, normalizeUrl } from '../../../utility';
 import { Button, InputGroup, ModalForm } from '../../UI';
 import classes from './Form.module.css';
 
@@ -24,6 +24,7 @@ export const AppsForm = ({
   modalHandler,
 }: Props): JSX.Element => {
   const { categories } = useSelector((state: State) => state.apps);
+  const { config } = useSelector((state: State) => state.config);
 
   const dispatch = useDispatch();
   const { addApp, updateApp, createNotification } =
@@ -74,6 +75,15 @@ export const AppsForm = ({
 
         return;
       }
+    }
+
+    if (!normalizeUrl(formData.url, config.extraUrlSchemes)) {
+      createNotification({
+        title: 'Error',
+        message: 'URL is invalid or its scheme is not allowed',
+      });
+
+      return;
     }
 
     const createFormData = (): FormData => {

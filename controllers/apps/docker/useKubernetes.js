@@ -4,6 +4,7 @@ const Logger = require('../../../utils/Logger');
 const logger = new Logger();
 const loadConfig = require('../../../utils/loadConfig');
 const Category = require('../../../models/Category');
+const { isAllowedUrl } = require('../../../utils/urlSchemes');
 
 const kubernetesDefaultCategory = {
   id: -3,
@@ -14,7 +15,11 @@ const kubernetesDefaultCategory = {
 };
 
 const useKubernetes = async (apps) => {
-  const { useOrdering: orderType, unpinStoppedApps } = await loadConfig();
+  const {
+    useOrdering: orderType,
+    unpinStoppedApps,
+    extraUrlSchemes,
+  } = await loadConfig();
 
   let ingresses = null;
 
@@ -101,6 +106,14 @@ const useKubernetes = async (apps) => {
     }
 
     for (const item of kubernetesApps) {
+      if (!isAllowedUrl(item.url, extraUrlSchemes)) {
+        logger.log(
+          `Skipping Kubernetes app "${item.name}": URL is invalid or its scheme is not allowed`,
+          'WARN'
+        );
+        continue;
+      }
+
       if (apps.some((app) => app.name === item.name)) {
         const app = apps.find((a) => a.name === item.name);
         await app.update({ ...item, isPinned: true });

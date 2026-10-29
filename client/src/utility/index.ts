@@ -1,5 +1,6 @@
 export * from './iconParser';
 export * from './urlParser';
+export * from './urlSchemes';
 export * from './checkVersion';
 export * from './sortData';
 export * from './searchParser';

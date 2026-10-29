@@ -4,6 +4,7 @@ const Logger = require('../../../utils/Logger');
 const logger = new Logger();
 const loadConfig = require('../../../utils/loadConfig');
 const Category = require('../../../models/Category');
+const { isAllowedUrl } = require('../../../utils/urlSchemes');
 
 const dockerDefaultCategory = {
   id: -2,
@@ -18,6 +19,7 @@ const useDocker = async (apps) => {
     useOrdering: orderType,
     unpinStoppedApps,
     dockerHost: host,
+    extraUrlSchemes,
   } = await loadConfig();
 
   let containers = null;
@@ -115,6 +117,17 @@ const useDocker = async (apps) => {
         const icons = labels['flame.icon'] ? labels['flame.icon'].split(';') : [];
 
         for (let i = 0; i < names.length; i++) {     
+          const name = names[i] || names[0];
+          const url = urls[i] || urls[0];
+
+          if (!isAllowedUrl(url, extraUrlSchemes)) {
+            logger.log(
+              `Skipping Docker app "${name}": URL is invalid or its scheme is not allowed`,
+              'WARN'
+            );
+            continue;
+          }
+
           let category = categoriesLabels[i] ? categories.find(category => category.name.toUpperCase() === categoriesLabels[i].toUpperCase()) : dockerDefaultCategory;
           if (!category) {
             category = await createNewCategory(categoriesLabels[i]);
@@ -126,8 +139,8 @@ const useDocker = async (apps) => {
           }
 
           dockerApps.push({
-            name: names[i] || names[0],
-            url: urls[i] || urls[0],
+            name,
+            url,
             icon: icons[i] || 'docker',
             categoryId: category.id,
             orderId: orders[i] || 500,

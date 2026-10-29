@@ -198,6 +198,8 @@ labels:
 
 > "Use Docker API" option must be enabled for this to work. You can find it in Settings > Docker
 
+> URLs (from labels, Kubernetes annotations or the UI) may only use `http`, `https`, `ftp`, `ftps`, `sftp`, `ssh`, `smb`, `steam`, `mailto`, `tel`, `rdp` or `vnc`. Other schemes can be allowed in Settings > General > Additional URL schemes; apps with any other scheme are skipped. `javascript:`, `data:`, `vbscript:` and `blob:` URLs are always rejected.
+
 You can also set up different apps in the same label adding `;` between each one.
 
 ```yml

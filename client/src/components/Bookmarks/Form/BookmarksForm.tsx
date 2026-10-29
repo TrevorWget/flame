@@ -16,7 +16,11 @@ import { ModalForm, InputGroup, Button } from '../../UI';
 import classes from './Form.module.css';
 
 // Utils
-import { inputHandler, newBookmarkTemplate } from '../../../utility';
+import {
+  inputHandler,
+  newBookmarkTemplate,
+  normalizeUrl,
+} from '../../../utility';
 
 interface Props {
   modalHandler: () => void;
@@ -28,6 +32,7 @@ export const BookmarksForm = ({
   modalHandler,
 }: Props): JSX.Element => {
   const { categories } = useSelector((state: State) => state.bookmarks);
+  const { config } = useSelector((state: State) => state.config);
 
   const dispatch = useDispatch();
   const { addBookmark, updateBookmark, createNotification } =
@@ -78,6 +83,15 @@ export const BookmarksForm = ({
 
         return;
       }
+    }
+
+    if (!normalizeUrl(formData.url, config.extraUrlSchemes)) {
+      createNotification({
+        title: 'Error',
+        message: 'URL is invalid or its scheme is not allowed',
+      });
+
+      return;
     }
 
     const createFormData = (): FormData => {
