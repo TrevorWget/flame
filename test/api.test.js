@@ -49,6 +49,7 @@ test.after(async () => {
 const api = require('../api');
 const { PUBLIC_KEYS, DERIVED_KEYS } = require('../utils/sanitizeConfig');
 const { getPasswordFingerprint } = require('../utils/password');
+const { getTokenVersion } = require('../utils/tokenVersion');
 
 const withEnv = async (overrides, fn) => {
   const saved = {};
@@ -70,14 +71,25 @@ const withEnv = async (overrides, fn) => {
   }
 };
 
-const login = (body) => request(api).post('/api/auth').send(body);
+const CSRF = { 'X-Flame-CSRF': '1' };
+
+const login = (body) => request(api).post('/api/auth').set(CSRF).send(body);
+
+const getSetCookie = (res) =>
+  (res.headers['set-cookie'] || []).find((c) => c.startsWith('flame_token='));
 
 const getToken = async () => {
   const res = await login({ password: PASSWORD, duration: '1h' });
   assert.strictEqual(res.status, 200);
 
-  return res.body.data.token;
+  return getSetCookie(res).split(';')[0].slice('flame_token='.length);
 };
+
+const tokenClaims = () => ({
+  app: 'flame',
+  pwd: getPasswordFingerprint(),
+  ver: getTokenVersion(),
+});
 
 const getAdminConfig = (token) => {
   const req = request(api).get('/api/config/admin');
@@ -130,7 +142,7 @@ test.describe('auth', () => {
   });
 
   test('forged, expired and unsigned tokens are rejected', async () => {
-    const claims = { app: 'flame', pwd: getPasswordFingerprint() };
+    const claims = tokenClaims();
     const now = Math.floor(Date.now() / 1000);
 
     const tokens = {
@@ -142,6 +154,14 @@ test.describe('auth', () => {
       ),
       algNone: jwt.sign(claims, null, { algorithm: 'none' }),
       wrongApp: jwt.sign({ ...claims, app: 'other' }, process.env.SECRET),
+      oldVersion: jwt.sign(
+        { ...claims, ver: claims.ver - 1 },
+        process.env.SECRET
+      ),
+      noVersion: jwt.sign(
+        { app: claims.app, pwd: claims.pwd },
+        process.env.SECRET
+      ),
     };
 
     for (const [name, token] of Object.entries(tokens)) {
@@ -164,21 +184,166 @@ test.describe('auth', () => {
 
     assert.strictEqual((await getAdminConfig(token)).status, 200);
   });
+});
 
-  test('repeated failed logins are rate limited', async () => {
-    // A successful login clears this client's failed attempts
-    await getToken();
+test.describe('session cookie and CSRF', () => {
+  const withCookie = (req, token) => req.set('Cookie', `flame_token=${token}`);
 
-    for (let i = 0; i < 10; i++) {
-      assert.strictEqual(
-        (await login({ password: 'wrong', duration: '1h' })).status,
-        401
+  test('login sets an HttpOnly SameSite=Strict cookie instead of returning the token', async () => {
+    const before = Date.now();
+    const res = await login({ password: PASSWORD, duration: '1h' });
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.data.isAuthenticated, true);
+    assert.ok(!('token' in res.body.data));
+
+    const expiresAt = res.body.data.expiresAt;
+    assert.ok(Math.abs(expiresAt - (before + 3600 * 1000)) < 5000);
+
+    const cookie = getSetCookie(res);
+    assert.ok(!res.text.includes(cookie.split(';')[0].split('=')[1]));
+    assert.match(cookie, /; HttpOnly/);
+    assert.match(cookie, /; SameSite=Strict/);
+    assert.match(cookie, /; Path=\//);
+    assert.match(cookie, /; Expires=/);
+    // Plain-HTTP installs must still get a usable cookie
+    assert.doesNotMatch(cookie, /; Secure/);
+  });
+
+  test('cookie is Secure over HTTPS behind a trusted proxy only', async () => {
+    const forwardedLogin = () =>
+      login({ password: PASSWORD, duration: '1h' }).set(
+        'X-Forwarded-Proto',
+        'https'
       );
+
+    assert.doesNotMatch(getSetCookie(await forwardedLogin()), /; Secure/);
+
+    api.set('trust proxy', true);
+    try {
+      assert.match(getSetCookie(await forwardedLogin()), /; Secure/);
+    } finally {
+      api.set('trust proxy', false);
+    }
+  });
+
+  test('login requires the CSRF header', async () => {
+    const res = await request(api)
+      .post('/api/auth')
+      .send({ password: PASSWORD, duration: '1h' });
+
+    assert.strictEqual(res.status, 403);
+    assert.strictEqual(getSetCookie(res), undefined);
+  });
+
+  test('session endpoint reports the cookie session', async () => {
+    const anonymous = await request(api).get('/api/auth');
+    assert.strictEqual(anonymous.status, 200);
+    assert.deepStrictEqual(anonymous.body.data, {
+      isAuthenticated: false,
+      expiresAt: null,
+    });
+
+    const token = await getToken();
+    const res = await withCookie(request(api).get('/api/auth'), token);
+    assert.strictEqual(res.body.data.isAuthenticated, true);
+    assert.strictEqual(res.body.data.expiresAt, jwt.decode(token).exp * 1000);
+
+    const forged = await withCookie(request(api).get('/api/auth'), 'not-a-jwt');
+    assert.strictEqual(forged.body.data.isAuthenticated, false);
+  });
+
+  test('cookie authenticates reads without the CSRF header', async () => {
+    const token = await getToken();
+    const res = await withCookie(request(api).get('/api/config/admin'), token);
+
+    assert.strictEqual(res.status, 200);
+  });
+
+  test('cookie-authenticated mutations require the CSRF header', async () => {
+    const token = await getToken();
+    const before = fs.readFileSync(configPath, 'utf-8');
+
+    const rejected = await withCookie(request(api).put('/api/config'), token).send(
+      { customTitle: 'csrf' }
+    );
+    assert.strictEqual(rejected.status, 403);
+    assert.strictEqual(fs.readFileSync(configPath, 'utf-8'), before);
+
+    const accepted = await withCookie(request(api).put('/api/config'), token)
+      .set(CSRF)
+      .send({ customTitle: 'CI Flame' });
+    assert.strictEqual(accepted.status, 200);
+  });
+
+  test('a cross-site form POST with the cookie is rejected', async () => {
+    const token = await getToken();
+
+    const res = await withCookie(request(api).post('/api/apps'), token)
+      .type('form')
+      .send({ name: 'evil', url: 'http://evil.example' });
+    assert.strictEqual(res.status, 403);
+    assert.match(res.body.error, /X-Flame-CSRF/);
+  });
+
+  test('the Authorization-Flame header needs no CSRF header', async () => {
+    const token = await getToken();
+
+    const res = await request(api)
+      .put('/api/config')
+      .set('Authorization-Flame', `Bearer ${token}`)
+      .send({ customTitle: 'CI Flame' });
+    assert.strictEqual(res.status, 200);
+  });
+
+  test('logout clears the cookie', async () => {
+    assert.strictEqual(
+      (await request(api).post('/api/auth/logout')).status,
+      403
+    );
+
+    const res = await request(api).post('/api/auth/logout').set(CSRF);
+    assert.strictEqual(res.status, 200);
+
+    const cookie = getSetCookie(res);
+    assert.match(cookie, /^flame_token=;/);
+    assert.match(cookie, /Expires=Thu, 01 Jan 1970/);
+    assert.match(cookie, /; HttpOnly/);
+  });
+
+  test('log out all sessions invalidates every token', async () => {
+    const first = await getToken();
+    const second = await getToken();
+
+    assert.strictEqual(
+      (await request(api).post('/api/auth/logout-all').set(CSRF)).status,
+      401
+    );
+    assert.strictEqual(
+      (await withCookie(request(api).post('/api/auth/logout-all'), first))
+        .status,
+      403
+    );
+
+    const res = await withCookie(
+      request(api).post('/api/auth/logout-all'),
+      first
+    ).set(CSRF);
+    assert.strictEqual(res.status, 200);
+    assert.match(getSetCookie(res), /^flame_token=;/);
+
+    for (const token of [first, second]) {
+      assert.strictEqual((await getAdminConfig(token)).status, 401);
+      const session = await withCookie(request(api).get('/api/auth'), token);
+      assert.strictEqual(session.body.data.isAuthenticated, false);
     }
 
-    const res = await login({ password: PASSWORD, duration: '1h' });
-    assert.strictEqual(res.status, 429);
-    assert.ok(Number(res.headers['retry-after']) > 0);
+    assert.strictEqual(
+      JSON.parse(fs.readFileSync(join(workDir, 'data/sessions.json'), 'utf-8'))
+        .tokenVersion,
+      getTokenVersion()
+    );
+    assert.strictEqual((await getAdminConfig(await getToken())).status, 200);
   });
 });
 
@@ -186,11 +351,10 @@ test.describe('config visibility', () => {
   let token;
 
   test.before(async () => {
-    token = jwt.sign(
-      { app: 'flame', pwd: getPasswordFingerprint() },
-      process.env.SECRET,
-      { expiresIn: '1h', algorithm: 'HS256' }
-    );
+    token = jwt.sign(tokenClaims(), process.env.SECRET, {
+      expiresIn: '1h',
+      algorithm: 'HS256',
+    });
   });
 
   test('public config only contains allow-listed keys', async () => {
@@ -262,5 +426,24 @@ test.describe('config visibility', () => {
     const publicRes = await request(api).get('/api/config');
     assert.strictEqual(publicRes.body.data.customTitle, 'Updated');
     assert.ok(!publicRes.text.includes('new-weather-key'));
+  });
+});
+
+// Leaves this client rate limited, so it runs last
+test.describe('login rate limit', () => {
+  test('repeated failed logins are rate limited', async () => {
+    // A successful login clears this client's failed attempts
+    await getToken();
+
+    for (let i = 0; i < 10; i++) {
+      assert.strictEqual(
+        (await login({ password: 'wrong', duration: '1h' })).status,
+        401
+      );
+    }
+
+    const res = await login({ password: PASSWORD, duration: '1h' });
+    assert.strictEqual(res.status, 429);
+    assert.ok(Number(res.headers['retry-after']) > 0);
   });
 });
