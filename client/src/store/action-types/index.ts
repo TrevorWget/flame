@@ -8,6 +8,7 @@ export enum ActionType {
   editTheme = 'EDIT_THEME',
   // CONFIG
   getConfig = 'GET_CONFIG',
+  getAdminConfig = 'GET_ADMIN_CONFIG',
   updateConfig = 'UPDATE_CONFIG',
   // QUERIES
   addQuery = 'ADD_QUERY',

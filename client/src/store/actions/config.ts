@@ -3,6 +3,11 @@ import { Config, Query } from '../../interfaces';
 
 export interface GetConfigAction {
   type: ActionType.getConfig;
+  payload: Partial<Config>;
+}
+
+export interface GetAdminConfigAction {
+  type: ActionType.getAdminConfig;
   payload: Config;
 }
 

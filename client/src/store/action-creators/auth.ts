@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import { Dispatch } from 'redux';
 
-import { getCategories } from '.';
+import { getAdminConfig, getCategories, getConfig } from '.';
 import { ApiResponse } from '../../interfaces';
 import { ActionType } from '../action-types';
 import { AuthErrorAction, AutoLoginAction, LoginAction, LogoutAction } from '../actions/auth';
@@ -23,6 +23,7 @@ export const login =
       });
 
       dispatch<any>(getCategories());
+      dispatch<any>(getAdminConfig());
     } catch (err) {
       dispatch<any>(authError(err, true));
     }
@@ -36,6 +37,7 @@ export const logout = () => (dispatch: Dispatch<LogoutAction>) => {
   });
 
   dispatch<any>(getCategories());
+  dispatch<any>(getConfig());
 };
 
 export const autoLogin = () => async (dispatch: Dispatch<AutoLoginAction>) => {
@@ -53,6 +55,7 @@ export const autoLogin = () => async (dispatch: Dispatch<AutoLoginAction>) => {
     });
 
     dispatch<any>(getCategories());
+    dispatch<any>(getAdminConfig());
   } catch (err) {
     dispatch<any>(authError(err, false));
   }

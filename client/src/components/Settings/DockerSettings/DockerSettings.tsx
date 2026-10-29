@@ -31,7 +31,7 @@ export const DockerSettings = (): JSX.Element => {
     setFormData({
       ...config,
     });
-  }, [loading]);
+  }, [loading, config]);
 
   // Form handler
   const formSubmitHandler = async (e: FormEvent) => {

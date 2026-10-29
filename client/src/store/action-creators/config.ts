@@ -3,6 +3,7 @@ import {
   AddQueryAction,
   DeleteQueryAction,
   FetchQueriesAction,
+  GetAdminConfigAction,
   GetConfigAction,
   UpdateConfigAction,
   UpdateQueryAction,
@@ -10,7 +11,7 @@ import {
 import axios, { AxiosError } from 'axios';
 import { ApiResponse, Config, Query } from '../../interfaces';
 import { ActionType } from '../action-types';
-import { storeUIConfig, applyAuth } from '../../utility';
+import { storeUIConfig, applyAuth, configTemplate } from '../../utility';
 import { ConfigFormData } from '../../types';
 
 const keys: (keyof Config)[] = [
@@ -24,7 +25,8 @@ const keys: (keyof Config)[] = [
 
 export const getConfig = () => async (dispatch: Dispatch<GetConfigAction>) => {
   try {
-    const res = await axios.get<ApiResponse<Config>>('/api/config');
+    const res = await axios.get<ApiResponse<Partial<Config>>>('/api/config');
+    const config = { ...configTemplate, ...res.data.data };
 
     dispatch({
       type: ActionType.getConfig,
@@ -32,16 +34,32 @@ export const getConfig = () => async (dispatch: Dispatch<GetConfigAction>) => {
     });
 
     // Set custom page title if set
-    document.title = res.data.data.customTitle;
+    document.title = config.customTitle;
 
     // Store settings for priority UI elements
     for (let key of keys) {
-      storeUIConfig(key, res.data.data);
+      storeUIConfig(key, config);
     }
   } catch (err) {
     console.log(err);
   }
 };
+
+export const getAdminConfig =
+  () => async (dispatch: Dispatch<GetAdminConfigAction>) => {
+    try {
+      const res = await axios.get<ApiResponse<Config>>('/api/config/admin', {
+        headers: applyAuth(),
+      });
+
+      dispatch({
+        type: ActionType.getAdminConfig,
+        payload: res.data.data,
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
 export const updateConfig =
   (formData: ConfigFormData) =>
