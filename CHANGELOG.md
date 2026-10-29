@@ -1,3 +1,6 @@
+### Unreleased
+- Added backup and restore (Settings > Backup, [#318](https://github.com/pawelmalak/flame/issues/318), [#259](https://github.com/pawelmalak/flame/issues/259)): download a zip with apps, bookmarks, categories, settings, themes, search providers, custom CSS and uploaded icons (never the password, JWT secret or weather API key), and restore it after a preview of what it contains. Restores are validated, all-or-nothing, and preceded by a backup of the current state in `data/backups`. Optional daily or weekly backups to `data/backups` with a configurable number to keep
+
 ### v2.5.0 (2026-10-29)
 - Fixed every app disappearing after upgrading from upstream Flame (pawelmalak, v2.4.0 and older): apps without an app category are moved into a new pinned "Applications" category (apps that were pinned) or an unpinned "Other apps" category (the rest), so the home page shows the same apps as before
 - Fixed the database backup before migrations being skipped when a backup for the same version already existed. Backups are now named `db-<version>-<timestamp>-backup.sqlite`, are only taken when migrations are pending, and Flame exits without migrating if the backup fails

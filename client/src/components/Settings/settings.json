@@ -31,6 +31,11 @@
       "authRequired": true
     },
     {
+      "name": "Backup",
+      "dest": "/settings/backup",
+      "authRequired": true
+    },
+    {
       "name": "App",
       "dest": "/settings/app",
       "authRequired": false

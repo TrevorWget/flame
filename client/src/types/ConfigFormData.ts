@@ -1,4 +1,5 @@
 import {
+  BackupSettingsForm,
   DockerSettingsForm,
   UISettingsForm,
   GeneralForm,
@@ -11,4 +12,5 @@ export type ConfigFormData =
   | GeneralForm
   | DockerSettingsForm
   | UISettingsForm
-  | ThemeSettingsForm;
+  | ThemeSettingsForm
+  | BackupSettingsForm;
