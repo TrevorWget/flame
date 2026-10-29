@@ -1,6 +1,7 @@
 const asyncWrapper = require('../../middleware/asyncWrapper');
 const App = require('../../models/App');
 const loadConfig = require('../../utils/loadConfig');
+const { autoFetchIcon } = require('../../utils/autoFetchIcon');
 
 // @desc      Create new app
 // @route     POST /api/apps
@@ -8,10 +9,12 @@ const loadConfig = require('../../utils/loadConfig');
 const createApp = asyncWrapper(async (req, res, next) => {
   const { pinAppsByDefault } = await loadConfig();
 
-  const body = { ...req.body };
+  let body = { ...req.body };
 
   if (req.file) {
     body.icon = req.file.filename;
+  } else {
+    body = await autoFetchIcon(body);
   }
 
   const app = await App.create({

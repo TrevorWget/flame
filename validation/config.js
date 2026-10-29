@@ -60,6 +60,8 @@ const SETTINGS = {
   weatherData: z.enum(['cloud', 'humidity']),
   hideDate: z.boolean(),
   extraUrlSchemes: text(500),
+  autoFetchIcons: z.boolean(),
+  iconFetchAllowPrivate: z.boolean(),
 };
 
 const isUnchanged = (value, stored) =>
