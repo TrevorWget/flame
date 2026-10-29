@@ -1,4 +1,5 @@
 const asyncWrapper = require('../../middleware/asyncWrapper');
+const { syncIntegrations } = require('../../utils/integrationSync');
 const loadConfig = require('../../utils/loadConfig');
 const { DERIVED_KEYS, toAdminConfig } = require('../../utils/sanitizeConfig');
 const { isWeatherProvider } = require('../../utils/weatherProviders');
@@ -40,6 +41,9 @@ const updateConfig = asyncWrapper(async (req, res, next) => {
     success: true,
     data: toAdminConfig(newConfig),
   });
+
+  // Apply integration setting changes without waiting for the next scheduled sync
+  syncIntegrations();
 });
 
 module.exports = updateConfig;

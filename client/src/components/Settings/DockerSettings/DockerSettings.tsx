@@ -87,7 +87,7 @@ export const DockerSettings = (): JSX.Element => {
       {/* UNPIN DOCKER APPS */}
       <InputGroup>
         <label htmlFor="unpinStoppedApps">
-          Unpin stopped containers / other apps
+          Unpin stopped containers / removed ingresses
         </label>
         <select
           id="unpinStoppedApps"

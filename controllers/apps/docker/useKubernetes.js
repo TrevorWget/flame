@@ -1,10 +1,11 @@
-const App = require('../../../models/App');
 const Logger = require('../../../utils/Logger');
 const logger = new Logger();
 const loadConfig = require('../../../utils/loadConfig');
 const Category = require('../../../models/Category');
 const { isAllowedUrl } = require('../../../utils/urlSchemes');
 const { parseIngressApps } = require('./kubernetesAnnotations');
+const applyIntegrationApps = require('./applyIntegrationApps');
+const warnOnce = require('./warnOnce');
 
 // @kubernetes/client-node 1.x is ESM-only
 let k8sModule;
@@ -35,7 +36,7 @@ const kubernetesDefaultCategory = {
   orderId: 999,
 };
 
-const useKubernetes = async (apps) => {
+const useKubernetes = async () => {
   const {
     useOrdering: orderType,
     unpinStoppedApps,
@@ -51,10 +52,6 @@ const useKubernetes = async (apps) => {
   }
 
   if (ingresses) {
-    apps = await App.findAll({
-      order: [[orderType, 'ASC']],
-    });
-
     const kubernetesApps = [];
 
     const categories = await Category.findAll({
@@ -69,6 +66,13 @@ const useKubernetes = async (apps) => {
     }
 
     for (const { category: categoryLabel, ...app } of parseIngressApps(ingresses)) {
+      if (!isAllowedUrl(app.url, extraUrlSchemes)) {
+        warnOnce(
+          `Skipping Kubernetes app "${app.name}": URL is invalid or its scheme is not allowed`
+        );
+        continue;
+      }
+
       let category = categoryLabel
         ? categories.find(
             (category) => category.name.toUpperCase() === categoryLabel.toUpperCase()
@@ -89,31 +93,10 @@ const useKubernetes = async (apps) => {
       });
     }
 
-    if (unpinStoppedApps) {
-      for (const app of apps) {
-        await app.update({ isPinned: false });
-      }
-    }
-
-    for (const item of kubernetesApps) {
-      if (!isAllowedUrl(item.url, extraUrlSchemes)) {
-        logger.log(
-          `Skipping Kubernetes app "${item.name}": URL is invalid or its scheme is not allowed`,
-          'WARN'
-        );
-        continue;
-      }
-
-      if (apps.some((app) => app.name === item.name)) {
-        const app = apps.find((a) => a.name === item.name);
-        await app.update({ ...item, isPinned: true });
-      } else {
-        await App.create({
-          ...item,
-          isPinned: true,
-        });
-      }
-    }
+    await applyIntegrationApps('kubernetes', kubernetesApps, {
+      defaultIcon: 'kubernetes',
+      unpinMissing: unpinStoppedApps,
+    });
   }
 };
 

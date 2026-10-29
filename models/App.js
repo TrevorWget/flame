@@ -40,6 +40,11 @@ const App = sequelize.define(
       allowNull: false,
       defaultValue: '',
     },
+    source: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+    },
   },
   {
     tableName: 'apps',

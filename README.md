@@ -200,6 +200,8 @@ labels:
 
 > "Use Docker API" option must be enabled for this to work. You can find it in Settings > Docker
 
+Flame picks up containers when they start or stop (via the Docker events API) and re-checks every 30 seconds. With "Unpin stopped containers / removed ingresses" enabled, apps whose container or ingress is gone are unpinned; apps added in the UI are never unpinned. Use `flame.icon=custom` to keep an icon you set in the UI.
+
 > URLs (from labels, Kubernetes annotations or the UI) may only use `http`, `https`, `ftp`, `ftps`, `sftp`, `ssh`, `smb`, `steam`, `mailto`, `tel`, `rdp` or `vnc`. Other schemes can be allowed in Settings > General > Additional URL schemes; apps with any other scheme are skipped. `javascript:`, `data:`, `vbscript:` and `blob:` URLs are always rejected.
 
 You can also set up different apps in the same label adding `;` between each one.
