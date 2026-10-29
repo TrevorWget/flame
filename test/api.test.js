@@ -116,7 +116,7 @@ test.describe('auth', () => {
   test('null password is rejected', async () => {
     const res = await login({ password: null, duration: '1y' });
 
-    assert.strictEqual(res.status, 401);
+    assert.strictEqual(res.status, 400);
   });
 
   test('missing fields and unknown durations are rejected', async () => {
@@ -129,7 +129,7 @@ test.describe('auth', () => {
 
   test('login is disabled when PASSWORD is unset or a known default', async () => {
     await withEnv({ PASSWORD: undefined }, async () => {
-      const res = await login({ password: null, duration: '1h' });
+      const res = await login({ password: '', duration: '1h' });
       assert.strictEqual(res.status, 503);
     });
 

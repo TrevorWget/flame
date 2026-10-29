@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 
 // middleware
-const { auth, requireAuth, requireBody } = require('../middleware');
+const { auth, requireAuth, validate } = require('../middleware');
+const { queries: schemas } = require('../validation');
 
 const {
   getQueries,
@@ -13,17 +14,12 @@ const {
 
 router
   .route('/')
-  .post(
-    auth,
-    requireAuth,
-    requireBody(['name', 'prefix', 'template']),
-    addQuery
-  )
+  .post(auth, requireAuth, validate(schemas.addQuery), addQuery)
   .get(getQueries);
 
 router
   .route('/:prefix')
-  .delete(auth, requireAuth, deleteQuery)
-  .put(auth, requireAuth, updateQuery);
+  .delete(auth, requireAuth, validate(schemas.deleteQuery), deleteQuery)
+  .put(auth, requireAuth, validate(schemas.updateQuery), updateQuery);
 
 module.exports = router;

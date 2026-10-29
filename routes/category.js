@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 
 // middleware
-const { auth, requireAuth } = require('../middleware');
+const { auth, requireAuth, validate } = require('../middleware');
+const { categories: schemas } = require('../validation');
 
 const {
   createCategory,
@@ -15,15 +16,22 @@ const {
 
 router
   .route('/')
-  .post(auth, requireAuth, createCategory)
+  .post(auth, requireAuth, validate(schemas.createCategory), createCategory)
   .get(auth, getAllCategories);
 
 router
   .route('/:id')
   .get(auth, getSingleCategory)
-  .put(auth, requireAuth, updateCategory)
-  .delete(auth, requireAuth, deleteCategory);
+  .put(auth, requireAuth, validate(schemas.updateCategory), updateCategory)
+  .delete(auth, requireAuth, validate(schemas.deleteCategory), deleteCategory);
 
-router.route('/0/reorder').put(auth, requireAuth, reorderCategories);
+router
+  .route('/0/reorder')
+  .put(
+    auth,
+    requireAuth,
+    validate(schemas.reorderCategories),
+    reorderCategories
+  );
 
 module.exports = router;

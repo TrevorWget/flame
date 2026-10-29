@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 
 // middleware
-const { auth, requireAuth, requireBody } = require('../middleware');
+const { auth, requireAuth, validate } = require('../middleware');
+const { themes: schemas } = require('../validation');
 
 const {
   getThemes,
@@ -14,16 +15,11 @@ const {
 router
   .route('/')
   .get(getThemes)
-  .post(
-    auth,
-    requireAuth,
-    requireBody(['name', 'colors', 'isCustom']),
-    addTheme
-  );
+  .post(auth, requireAuth, validate(schemas.addTheme), addTheme);
 
 router
   .route('/:name')
-  .delete(auth, requireAuth, deleteTheme)
-  .put(auth, requireAuth, updateTheme);
+  .delete(auth, requireAuth, validate(schemas.deleteTheme), deleteTheme)
+  .put(auth, requireAuth, validate(schemas.updateTheme), updateTheme);
 
 module.exports = router;
