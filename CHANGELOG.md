@@ -3,6 +3,8 @@
 - Security: Flame refuses to start if `SECRET` is the value leaked in this repository's `.env` before v2.4.0, and warns if `SECRET` is shorter than 32 bytes
 - Security: timing-safe password comparison, login rate limit (10 failed attempts per 15 minutes per IP; set `TRUST_PROXY` behind a reverse proxy), session duration restricted to the options offered in the UI
 - Security: tokens are pinned to HS256 and invalidated when `PASSWORD` changes (existing sessions must log in again after upgrading)
+- Security: upgraded `@kubernetes/client-node` to 1.x, removing the critical `jsonpath-plus`, `tar`, `form-data` and `request` advisories
+- Fixed the Kubernetes integration ignoring the `flame.pawelmalak/name` annotation and failing on every ingress ([fdarveau#26](https://github.com/fdarveau/flame/issues/26)); `KUBECONFIG` is now honoured when set
 - Fixed `GET /api/apps` failing with a server error, and the Applications / Bookmarks pages staying on "Loading..." when opened directly while logged out
 - Fixed the default theme not being applied on a fresh install until the next restart
 - Fixed reordering apps, bookmarks and categories responding before the new order was saved

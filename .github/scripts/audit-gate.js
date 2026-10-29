@@ -13,10 +13,7 @@ const FAIL_LEVELS = ['high', 'critical'];
 const PROJECTS = {
   server: {
     dir: '.',
-    ignoredRoots: {
-      '@kubernetes/client-node':
-        '0.15 pulls in request/form-data, tar and jsonpath-plus; fixed by the 1.x upgrade (roadmap #9)',
-    },
+    ignoredRoots: {},
   },
   client: {
     dir: 'client',
