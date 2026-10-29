@@ -136,7 +136,7 @@ describe('AppsForm icon fetching', () => {
       </Provider>
     );
 
-    fireEvent.change(screen.getByLabelText('App URL'), {
+    fireEvent.change(screen.getByLabelText('Internal URL'), {
       target: { name: 'url', value: 'sonarr.local:8989' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Fetch icon from site' }));

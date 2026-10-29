@@ -44,6 +44,17 @@ const listRunningContainers = async (host) => {
   return data;
 };
 
+// Stopped containers included, so the status indicators can show them as down
+const listAllContainers = async (host) => {
+  const { data } = await axios.get('/containers/json', {
+    ...connectionOptions(host),
+    params: { all: 1 },
+    timeout: REQUEST_TIMEOUT,
+  });
+
+  return data;
+};
+
 // Resolves with a readable stream of newline-delimited JSON events; abort with `signal`.
 // The timeout only covers connecting, an idle stream stays open.
 const streamContainerEvents = async (host, signal) => {
@@ -72,5 +83,6 @@ const streamContainerEvents = async (host, signal) => {
 
 module.exports = {
   listRunningContainers,
+  listAllContainers,
   streamContainerEvents,
 };

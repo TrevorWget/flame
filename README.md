@@ -245,6 +245,7 @@ labels:
   - flame.type=application # "app" works too
   - flame.name=My container
   - flame.url=https://example.com
+  - flame.url.external=https://example.org # Optional external URL
   - flame.category=My category # Optional, default is "Docker"
   - flame.icon=icon-name # Optional, default is "docker"
   - flame.order=1 # Optional, default is 500; lower number is first in the list
@@ -253,6 +254,8 @@ labels:
 > "Use Docker API" option must be enabled for this to work. You can find it in Settings > Docker
 
 Flame picks up containers when they start or stop (via the Docker events API) and re-checks every 30 seconds. With "Unpin stopped containers / removed ingresses" enabled, apps whose container or ingress is gone are unpinned; apps added in the UI are never unpinned. Use `flame.icon=custom` to keep an icon you set in the UI.
+
+`flame.url` is the app's internal URL and `flame.url.external` its optional external URL. Which one is shown and opened is chosen per app in the app's settings ("Open with"), and defaults to the internal URL; if the chosen URL is empty, the other one is used. Without `flame.url.external`, an external URL set in the UI is kept.
 
 > URLs (from labels, Kubernetes annotations or the UI) may only use `http`, `https`, `ftp`, `ftps`, `sftp`, `ssh`, `smb`, `steam`, `mailto`, `tel`, `rdp` or `vnc`. Other schemes can be allowed in Settings > General > Additional URL schemes; apps with any other scheme are skipped. `javascript:`, `data:`, `vbscript:` and `blob:` URLs are always rejected.
 
@@ -320,6 +323,7 @@ metadata:
   - flame.pawelmalak/type=application # "app" works too
   - flame.pawelmalak/name=My container
   - flame.pawelmalak/url=https://example.com
+  - flame.pawelmalak/url.external=https://example.org # Optional external URL
   - flame.pawelmalak/category=My category # Optional, default is "Kubernetes"
   - flame.pawelmalak/icon=icon-name # Optional, default is "kubernetes"
   - flame.pawelmalak/order=1 # Optional, default is 500; lower number is first in the list
@@ -327,7 +331,7 @@ metadata:
 
 > "Use Kubernetes Ingress API" option must be enabled for this to work. You can find it in Settings > Docker
 
-Like Docker labels, annotations can describe several apps separated by `;`. Flame uses the pod's service account by default (it needs `list` on `ingresses`, see `k8s/base/rbac.yaml`); set `KUBECONFIG` to use a kubeconfig file instead, e.g. when Flame runs outside the cluster.
+Like Docker labels, annotations can describe several apps separated by `;`, and `url.external` works like `flame.url.external`. Flame uses the pod's service account by default (it needs `list` on `ingresses`, see `k8s/base/rbac.yaml`); set `KUBECONFIG` to use a kubeconfig file instead, e.g. when Flame runs outside the cluster.
 
 ### Import HTML Bookmarks (Experimental)
 

@@ -40,4 +40,8 @@ export const configTemplate: Config = {
   extraUrlSchemes: '',
   autoFetchIcons: false,
   iconFetchAllowPrivate: false,
+  statusChecks: false,
+  statusCheckInterval: 60,
+  statusCheckTimeout: 5,
+  statusCheckDocker: false,
 };

@@ -22,6 +22,10 @@ export interface GeneralForm {
   extraUrlSchemes: string;
   autoFetchIcons: boolean;
   iconFetchAllowPrivate: boolean;
+  statusChecks: boolean;
+  statusCheckInterval: number;
+  statusCheckTimeout: number;
+  statusCheckDocker: boolean;
 }
 
 export interface UISettingsForm {

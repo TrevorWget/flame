@@ -1,0 +1,70 @@
+/* Animating the content row between 1fr and 0fr collapses it to its real
+   height without measuring it */
+.Collapsible {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  align-content: start;
+  transition: grid-template-rows 0.2s ease;
+}
+
+.Collapsed {
+  grid-template-rows: auto 0fr;
+}
+
+/* Two classes so the cards' own list styles can't override the transition */
+.Collapsible > .Content {
+  min-height: 0;
+  overflow: hidden;
+  overflow: clip;
+  overflow-clip-margin: 4px;
+  transition: visibility 0.2s;
+}
+
+/* Also takes the hidden links out of the tab order */
+.Collapsed .Content {
+  visibility: hidden;
+}
+
+.Toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.Toggle:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.Chevron {
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: transform 0.2s ease, opacity 0.2s;
+}
+
+.Toggle:hover .Chevron,
+.Toggle:focus-visible .Chevron {
+  opacity: 1;
+}
+
+.Toggle[aria-expanded='false'] .Chevron {
+  transform: rotate(-90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .Collapsible,
+  .Collapsible > .Content,
+  .Chevron {
+    transition: none;
+  }
+}

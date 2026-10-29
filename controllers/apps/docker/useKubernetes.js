@@ -73,6 +73,13 @@ const useKubernetes = async () => {
         continue;
       }
 
+      if (app.externalUrl && !isAllowedUrl(app.externalUrl, extraUrlSchemes)) {
+        warnOnce(
+          `Ignoring the external URL of Kubernetes app "${app.name}": URL is invalid or its scheme is not allowed`
+        );
+        delete app.externalUrl;
+      }
+
       let category = categoryLabel
         ? categories.find(
             (category) => category.name.toUpperCase() === categoryLabel.toUpperCase()

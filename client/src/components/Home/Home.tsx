@@ -7,6 +7,7 @@ import { Category } from '../../interfaces';
 import { actionCreators } from '../../store';
 import { State } from '../../store/reducers';
 import { escapeRegex, pinnedApps } from '../../utility';
+import { pruneCollapsedCategories } from '../../utility/collapsedCategories';
 import { AppGrid } from '../Apps/AppGrid/AppGrid';
 import { BookmarkGrid } from '../Bookmarks/BookmarkGrid/BookmarkGrid';
 import { SearchBar } from '../SearchBar/SearchBar';
@@ -46,6 +47,16 @@ export const Home = (): JSX.Element => {
     }
   }, [appCategories.length, bookmarkCategories.length]);
 
+  // Guests only get public categories, so only signed-in users can tell
+  // which collapsed ones were deleted
+  useEffect(() => {
+    if (isAuthenticated && !appsLoading && !bookmarksLoading) {
+      pruneCollapsedCategories(
+        [...appCategories, ...bookmarkCategories].map(({ id }) => id)
+      );
+    }
+  }, [isAuthenticated, appsLoading, bookmarksLoading, appCategories, bookmarkCategories]);
+
   useEffect(() => {
     if (localSearch) {
       // Search through apps
@@ -62,8 +73,10 @@ export const Home = (): JSX.Element => {
       appCategory.apps = appCategories
         .map(({ apps }) => apps)
         .flat()
-        .filter(({ name, url, description }) =>
-          new RegExp(escapeRegex(localSearch), 'i').test(`${name} ${url} ${description}`)
+        .filter(({ name, url, externalUrl = '', description }) =>
+          new RegExp(escapeRegex(localSearch), 'i').test(
+            `${name} ${url} ${externalUrl} ${description}`
+          )
         );
 
         setAppSearchResult([appCategory]);

@@ -15,6 +15,8 @@ const app: App = {
   icon: '',
   isPublic: true,
   description: '',
+  statusCheck: true,
+  statusUrl: null,
   orderId: 1,
   isPinned: false,
 };

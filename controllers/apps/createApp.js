@@ -2,6 +2,7 @@ const asyncWrapper = require('../../middleware/asyncWrapper');
 const App = require('../../models/App');
 const loadConfig = require('../../utils/loadConfig');
 const { autoFetchIcon } = require('../../utils/autoFetchIcon');
+const { runStatusChecks } = require('../../utils/statusChecks');
 
 // @desc      Create new app
 // @route     POST /api/apps
@@ -26,6 +27,8 @@ const createApp = asyncWrapper(async (req, res, next) => {
     success: true,
     data: app,
   });
+
+  runStatusChecks();
 });
 
 module.exports = createApp;

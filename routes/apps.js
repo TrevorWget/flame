@@ -12,12 +12,16 @@ const {
   updateApp,
   deleteApp,
   reorderApps,
+  getAppStatus,
 } = require('../controllers/apps');
 
 router
   .route('/')
   .post(auth, requireAuth, upload, validate(schemas.createApp), createApp)
   .get(auth, getAllApps);
+
+// Before /:id, which would match it
+router.route('/status').get(auth, getAppStatus);
 
 router
   .route('/:id')
