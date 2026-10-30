@@ -189,10 +189,10 @@ test.before(async () => {
     },
     // Manual apps, like on a host whose mDNS name the Flame container can't
     // resolve: the container state must be used instead of a failing HTTP check
-    { name: 'qBittorrent', url: 'orbit.invalid:8081', categoryId: media.id },
-    { name: 'Digarr', url: 'orbit.invalid:6868', categoryId: media.id },
+    { name: 'qBittorrent', url: 'nas.invalid:8081', categoryId: media.id },
+    { name: 'Digarr', url: 'nas.invalid:6868', categoryId: media.id },
     // Its URL doesn't answer from the Flame container, its container is running
-    { name: 'Authentik', url: 'orbit.invalid:9901', categoryId: media.id },
+    { name: 'Authentik', url: 'nas.invalid:9901', categoryId: media.id },
     // No container of that name, and the "db" service is ambiguous
     { name: 'Miniflux', url: url('/204'), categoryId: media.id },
     { name: 'DB', url: url('/200'), categoryId: media.id },

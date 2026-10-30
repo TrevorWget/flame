@@ -31,7 +31,7 @@ test('tcp hosts use http unless TLS is configured', () => {
   const cases = {
     'tcp://socket-proxy:2375': 'http://socket-proxy:2375',
     'socket-proxy:2375': 'http://socket-proxy:2375',
-    '192.168.1.2': 'http://192.168.1.2:2375',
+    '192.0.2.10': 'http://192.0.2.10:2375',
     'http://docker.lan:2375/': 'http://docker.lan:2375',
     'tcp://[fd00::2]:2375': 'http://[fd00::2]:2375',
     'https://docker.lan': 'https://docker.lan:2376',
@@ -58,7 +58,7 @@ test('rejects values that are not a Docker API root', () => {
   for (const value of [
     'ftp://docker.lan',
     'file:///etc/passwd',
-    'ssh://orbit@orbit',
+    'ssh://admin@nas',
     'tcp://',
     'tcp://user:pass@docker.lan:2375',
     'http://docker.lan:2375/containers/json',

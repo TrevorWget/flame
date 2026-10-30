@@ -85,7 +85,7 @@ test.before(async () => {
   // Picked from selfh.st before icons could follow the theme
   await sequelize.query(
     `INSERT INTO apps (name, url, categoryId, icon, isPinned, isPublic, description, source, createdAt, updatedAt)
-     VALUES ('Jellyfin', 'http://192.168.1.2:8096', :categoryId, 'selfhst-jellyfin_light.svg', 1, 1, '', NULL, :now, :now)`,
+     VALUES ('Jellyfin', 'http://192.0.2.10:8096', :categoryId, 'selfhst-jellyfin_light.svg', 1, 1, '', NULL, :now, :now)`,
     { replacements: { categoryId: categoryIds.apps, now } }
   );
   await sequelize.query(

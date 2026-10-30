@@ -46,7 +46,7 @@ test('addresses are classified as public, private or forbidden', () => {
       '10.1.2.3',
       '172.16.0.1',
       '172.31.255.255',
-      '192.168.1.2',
+      '10.0.0.2',
       '169.254.169.254',
       '100.64.0.1',
       '198.18.0.1',
@@ -56,10 +56,10 @@ test('addresses are classified as public, private or forbidden', () => {
       'fc12:3456::1',
       '::ffff:127.0.0.1',
       '::ffff:7f00:1',
-      '::ffff:192.168.1.2',
+      '::ffff:10.0.0.2',
       '::127.0.0.1',
       '64:ff9b::a9fe:a9fe',
-      '2002:c0a8:0102::1',
+      '2002:0a00:0002::1',
     ],
     forbidden: [
       '0.0.0.0',
@@ -86,22 +86,22 @@ test('addresses are classified as public, private or forbidden', () => {
 
 test('hosts resolving only to private addresses need the private setting', async () => {
   const lookup = async () => [
-    { address: '192.168.1.2', family: 4 },
+    { address: '10.0.0.2', family: 4 },
     { address: 'fe80::1', family: 6 },
   ];
 
   await rejectsWith(
-    resolveTarget('orbit.local', { allowPrivate: false, lookup }),
+    resolveTarget('nas.local', { allowPrivate: false, lookup }),
     'BLOCKED'
   );
   await assert.rejects(
-    resolveTarget('orbit.local', { allowPrivate: false, lookup }),
+    resolveTarget('nas.local', { allowPrivate: false, lookup }),
     /private network address/
   );
 
   assert.deepStrictEqual(
-    await resolveTarget('orbit.local', { allowPrivate: true, lookup }),
-    { address: '192.168.1.2', family: 4, isPrivate: true }
+    await resolveTarget('nas.local', { allowPrivate: true, lookup }),
+    { address: '10.0.0.2', family: 4, isPrivate: true }
   );
 });
 

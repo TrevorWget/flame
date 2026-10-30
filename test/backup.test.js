@@ -251,7 +251,7 @@ const seed = async () => {
 
   await App.create({
     name: 'Jellyfin',
-    url: 'http://192.168.1.2:8096',
+    url: 'http://192.0.2.10:8096',
     externalUrl: 'https://jellyfin.example.com',
     preferredUrl: 'external',
     categoryId: media.id,
@@ -265,7 +265,7 @@ const seed = async () => {
   });
   await App.create({
     name: 'Sonarr',
-    url: 'orbit.local:8989',
+    url: 'nas.local:8989',
     categoryId: media.id,
     icon: SVG_NAME,
     isPublic: 0,
@@ -1000,7 +1000,7 @@ test.describe('invalid archives', () => {
     ],
     [
       'a status check URL that is not http',
-      withData((d) => (d.apps[1].statusUrl = 'ftp://orbit.local')),
+      withData((d) => (d.apps[1].statusUrl = 'ftp://nas.local')),
       400,
       /apps\.1\.statusUrl: Status check URL must be/,
     ],

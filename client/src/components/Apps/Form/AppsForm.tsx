@@ -207,7 +207,7 @@ export const AppsForm = ({
           type="text"
           name="url"
           id="url"
-          placeholder="192.168.1.2:8096"
+          placeholder="192.0.2.10:8096"
           required
           value={formData.url}
           onChange={(e) => inputChangeHandler(e)}
@@ -388,7 +388,7 @@ export const AppsForm = ({
             type="text"
             name="statusUrl"
             id="statusUrl"
-            placeholder="http://192.168.1.2:8096/health"
+            placeholder="http://192.0.2.10:8096/health"
             value={formData.statusUrl ?? ''}
             onChange={(e) => inputChangeHandler(e)}
           />
