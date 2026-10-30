@@ -37,6 +37,8 @@ export interface Config {
   weatherData: WeatherData;
   hideDate: boolean;
   extraUrlSchemes: string;
+  autoFetchIcons: boolean;
+  iconFetchAllowPrivate: boolean;
   statusChecks: boolean;
   statusCheckInterval: number;
   statusCheckTimeout: number;

@@ -253,6 +253,49 @@ export const GeneralSettings = (): JSX.Element => {
           </select>
         </InputGroup>
 
+        {/* === ICON OPTIONS === */}
+        <SettingsHeadline text="Icons" />
+        <InputGroup>
+          <label htmlFor="autoFetchIcons">
+            Fetch icons for apps and bookmarks saved without one
+          </label>
+          <select
+            id="autoFetchIcons"
+            name="autoFetchIcons"
+            value={formData.autoFetchIcons ? 1 : 0}
+            onChange={(e) => inputChangeHandler(e, { isBool: true })}
+          >
+            <option value={1}>True</option>
+            <option value={0}>False</option>
+          </select>
+          <span>
+            Flame downloads the site's favicon and keeps a copy in its data
+            folder. Saving waits up to 5 seconds; if no icon is found the item
+            is saved without one
+          </span>
+        </InputGroup>
+
+        <InputGroup>
+          <label htmlFor="iconFetchAllowPrivate">
+            Allow fetching icons from private network addresses
+          </label>
+          <select
+            id="iconFetchAllowPrivate"
+            name="iconFetchAllowPrivate"
+            value={formData.iconFetchAllowPrivate ? 1 : 0}
+            onChange={(e) => inputChangeHandler(e, { isBool: true })}
+          >
+            <option value={1}>True</option>
+            <option value={0}>False</option>
+          </select>
+          <span>
+            Needed for self-hosted apps on your LAN (192.168.x.x, 10.x.x.x,
+            *.local, localhost, link-local). The server may then connect to
+            any device on your network when fetching an icon, and accepts
+            self-signed certificates from those addresses
+          </span>
+        </InputGroup>
+
         {/* === SEARCH OPTIONS === */}
         <SettingsHeadline text="Search" />
         <InputGroup>

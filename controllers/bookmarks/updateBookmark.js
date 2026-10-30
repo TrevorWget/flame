@@ -1,6 +1,7 @@
 const asyncWrapper = require('../../middleware/asyncWrapper');
 const ErrorResponse = require('../../utils/ErrorResponse');
 const Bookmark = require('../../models/Bookmark');
+const { autoFetchIcon } = require('../../utils/autoFetchIcon');
 
 // @desc      Update bookmark
 // @route     PUT /api/bookmarks/:id
@@ -19,10 +20,12 @@ const updateBookmark = asyncWrapper(async (req, res, next) => {
     );
   }
 
-  const body = { ...req.body };
+  let body = { ...req.body };
 
   if (req.file) {
     body.icon = req.file.filename;
+  } else {
+    body = await autoFetchIcon(body, bookmark);
   }
 
   bookmark = await bookmark.update(body);
