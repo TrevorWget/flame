@@ -51,6 +51,13 @@ const NEWER_KEYS = [
   'hideAppUrls',
   'hideAppDescriptions',
   'hideStatusDots',
+  'themeMode',
+  'lightTheme',
+  'darkTheme',
+  'themeSchedule',
+  'themeLightTime',
+  'themeDarkTime',
+  'fontFamily',
 ];
 const upstreamConfig = Object.fromEntries(
   Object.entries({

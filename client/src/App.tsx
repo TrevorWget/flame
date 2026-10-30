@@ -8,6 +8,7 @@ import { Bookmarks } from './components/Bookmarks/Bookmarks';
 import { Home } from './components/Home/Home';
 import { NotificationCenter } from './components/NotificationCenter/NotificationCenter';
 import { Settings } from './components/Settings/Settings';
+import { useThemeOptions } from './components/Settings/Themer/ThemeOptions/useThemeOptions';
 import NotFound from './NotFound';
 import { actionCreators, store } from './store';
 import { autoLogin, getConfig } from './store/action-creators';
@@ -70,10 +71,12 @@ export const App = (): JSX.Element => {
 
   // If there is no user theme, set the default one
   useEffect(() => {
-    if (!loading && !localStorage.theme) {
+    if (!loading && !localStorage.theme && config.themeMode === 'manual') {
       setTheme(parsePABToTheme(config.defaultTheme), false);
     }
-  }, [config.defaultTheme, loading, setTheme]);
+  }, [config.defaultTheme, config.themeMode, loading, setTheme]);
+
+  useThemeOptions();
 
   return (
     <>

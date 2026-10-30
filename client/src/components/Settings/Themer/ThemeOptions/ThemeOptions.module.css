@@ -1,0 +1,70 @@
+.ThemeOptions {
+  margin-bottom: 30px;
+}
+
+.Pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  column-gap: 15px;
+}
+
+.Fonts {
+  border: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.Fonts legend {
+  color: var(--color-primary);
+  margin-bottom: 8px;
+}
+
+.Font {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background-color: rgba(0, 0, 0, 0.15);
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.Font:has(input:checked) {
+  border-color: var(--color-accent);
+}
+
+.Font:has(input:focus-visible) {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.Font input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.FontName,
+.FontSample {
+  font-family: var(--preview-font);
+}
+
+.FontName {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.FontSample {
+  text-transform: uppercase;
+  font-weight: 300;
+}
+
+.FontDescription {
+  font-size: 12px;
+  opacity: 0.75;
+}

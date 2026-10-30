@@ -11,6 +11,8 @@ import { ActionType } from '../action-types';
 import { Theme, ApiResponse, ThemeColors } from '../../interfaces';
 import { applyAuth, parseThemeToPAB } from '../../utility';
 import axios, { AxiosError } from 'axios';
+import type { State } from '../reducers';
+import { getAdminConfig } from './config';
 
 export const setTheme =
   (colors: ThemeColors, remeberTheme: boolean = true) =>
@@ -79,7 +81,7 @@ export const deleteTheme =
   (name: string) => async (dispatch: Dispatch<DeleteThemeAction>) => {
     try {
       const res = await axios.delete<ApiResponse<Theme[]>>(
-        `/api/themes/${name}`,
+        `/api/themes/${encodeURIComponent(name)}`,
         { headers: applyAuth() }
       );
 
@@ -110,10 +112,14 @@ export const editTheme =
 
 export const updateTheme =
   (theme: Theme, originalName: string) =>
-  async (dispatch: Dispatch<UpdateThemeAction>) => {
+  async (dispatch: Dispatch<UpdateThemeAction>, getState: () => State) => {
+    const original = getState().theme.userThemes.find(
+      (t) => t.name === originalName
+    );
+
     try {
       const res = await axios.put<ApiResponse<Theme[]>>(
-        `/api/themes/${originalName}`,
+        `/api/themes/${encodeURIComponent(originalName)}`,
         theme,
         { headers: applyAuth() }
       );
@@ -122,7 +128,35 @@ export const updateTheme =
         type: ActionType.updateTheme,
         payload: res.data.data,
       });
+
+      // Keep showing an edited theme that is in use
+      if (original) {
+        const before = parseThemeToPAB(original.colors);
+
+        if (parseThemeToPAB(getState().theme.activeTheme.colors) === before) {
+          dispatch<any>(setTheme(theme.colors, localStorage.theme === before));
+        }
+      }
+
+      // The server moves settings that use the theme to its new colors
+      dispatch<any>(getAdminConfig());
+
+      dispatch<any>({
+        type: ActionType.createNotification,
+        payload: {
+          title: 'Success',
+          message: 'Theme updated',
+        },
+      });
     } catch (err) {
-      console.log(err);
+      const error = err as AxiosError<{ error: string }>;
+
+      dispatch<any>({
+        type: ActionType.createNotification,
+        payload: {
+          title: 'Error',
+          message: error.response?.data.error,
+        },
+      });
     }
   };

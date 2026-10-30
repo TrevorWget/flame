@@ -7,6 +7,8 @@ interface ComponentProps {
   children: ReactNode;
   modalHandler?: () => void;
   formHandler: (e: SyntheticEvent<HTMLFormElement>) => void;
+  // Room for side-by-side content, scrolling when taller than the screen
+  wide?: boolean;
 }
 
 export const ModalForm = (props: ComponentProps): JSX.Element => {
@@ -16,8 +18,12 @@ export const ModalForm = (props: ComponentProps): JSX.Element => {
     }
   };
 
+  const modalClasses = [classes.ModalForm, props.wide && classes.Wide]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <div className={classes.ModalForm}>
+    <div className={modalClasses}>
       <div className={classes.ModalFormIcon} onClick={_modalHandler}>
         <Icon icon="mdiClose" />
       </div>

@@ -1,5 +1,6 @@
 import { WeatherData, WeatherProvider } from '../types';
 import { BackupSchedule } from './Backup';
+import { FontId, SunTimes, ThemeMode, ThemeSchedule } from './Theme';
 
 export type AppTileStyle = 'list' | 'tiles';
 export type AppDensity = 'compact' | 'normal' | 'roomy';
@@ -37,6 +38,14 @@ export interface Config {
   monthSchema: string;
   showTime: boolean;
   defaultTheme: string;
+  themeMode: ThemeMode;
+  lightTheme: string;
+  darkTheme: string;
+  themeSchedule: ThemeSchedule;
+  themeLightTime: string;
+  themeDarkTime: string;
+  fontFamily: FontId;
+  sunTimes: SunTimes | null;
   isKilometer: boolean;
   weatherData: WeatherData;
   hideDate: boolean;

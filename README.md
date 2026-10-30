@@ -458,6 +458,16 @@ cd flame/.dev
 python3 bookmarks_importer.py --bookmarks <path to bookmarks.html> --data <path to flame data folder>
 ```
 
+### Theme options
+
+Settings > Theme > Theme options (when logged in):
+
+- **Light and dark themes**: keep the picked theme (Manual, the default), follow the device's light or dark setting, or switch by time of day. By time of day uses sunrise and sunset at the weather location (Settings > Weather), or fixed times when no location is set. The location itself is never sent to visitors, only the day's sunrise and sunset times. A theme picked by hand applies until the next switch.
+- **Font**: Roboto (the default), Inter, Nunito, Source Serif, JetBrains Mono, or the device's own interface font. The fonts are part of the image; nothing is loaded from Google Fonts or any other server.
+- **User themes**: the theme editor shows a live preview of the homepage, warns when text or the accent color have too little contrast with the background, can start from any theme, and user themes can be edited, duplicated and deleted.
+
+Theme options and user themes are part of backups.
+
 ### Custom CSS and themes
 
 > This is an experimental feature. Its behaviour might change in the future.

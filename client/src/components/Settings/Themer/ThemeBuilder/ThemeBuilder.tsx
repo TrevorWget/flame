@@ -5,31 +5,35 @@ import { bindActionCreators } from 'redux';
 import { Theme } from '../../../../interfaces';
 import { actionCreators } from '../../../../store';
 import { State } from '../../../../store/reducers';
+import { copyName } from '../../../../utility';
 import { Button, Modal } from '../../../UI';
 import { ThemeGrid } from '../ThemeGrid/ThemeGrid';
 import classes from './ThemeBuilder.module.css';
 import { ThemeCreator } from './ThemeCreator';
 import { ThemeEditor } from './ThemeEditor';
 
-// Redux
-// Other
-// UI
 interface Props {
   themes: Theme[];
 }
 
 export const ThemeBuilder = ({ themes }: Props): JSX.Element => {
   const themeInEdit = useSelector((state: State) => state.theme.themeInEdit);
-  const userThemes = useSelector((state: State) => state.theme.userThemes);  
-  const isAuthenticated = useSelector((state: State) => state.auth.isAuthenticated);
+  const { themes: appThemes, userThemes } = useSelector(
+    (state: State) => state.theme
+  );
+  const isAuthenticated = useSelector(
+    (state: State) => state.auth.isAuthenticated
+  );
 
   const { editTheme } = bindActionCreators(actionCreators, useDispatch());
 
   const [showModal, toggleShowModal] = useState(false);
   const [isInEdit, toggleIsInEdit] = useState(false);
+  const [source, setSource] = useState<Theme | null>(null);
 
   useEffect(() => {
     if (themeInEdit) {
+      setSource(null);
       toggleIsInEdit(false);
       toggleShowModal(true);
     }
@@ -42,6 +46,17 @@ export const ThemeBuilder = ({ themes }: Props): JSX.Element => {
     }
   }, [isInEdit, userThemes]);
 
+  const duplicateHandler = (theme: Theme) => {
+    editTheme(null);
+    setSource({
+      ...theme,
+      colors: { ...theme.colors },
+      name: copyName(theme.name, [...appThemes, ...userThemes]),
+    });
+    toggleIsInEdit(false);
+    toggleShowModal(true);
+  };
+
   return (
     <div className={classes.ThemeBuilder}>
       {/* MODALS */}
@@ -51,9 +66,17 @@ export const ThemeBuilder = ({ themes }: Props): JSX.Element => {
         cb={() => editTheme(null)}
       >
         {isInEdit ? (
-          <ThemeEditor modalHandler={() => toggleShowModal(!showModal)} />
+          <ThemeEditor
+            modalHandler={() => toggleShowModal(!showModal)}
+            onDuplicate={duplicateHandler}
+          />
         ) : (
-          <ThemeCreator modalHandler={() => toggleShowModal(!showModal)} />
+          showModal && (
+            <ThemeCreator
+              modalHandler={() => toggleShowModal(!showModal)}
+              source={source}
+            />
+          )
         )}
       </Modal>
 
@@ -66,6 +89,7 @@ export const ThemeBuilder = ({ themes }: Props): JSX.Element => {
           <Button
             click={() => {
               editTheme(null);
+              setSource(null);
               toggleIsInEdit(false);
               toggleShowModal(!showModal);
             }}

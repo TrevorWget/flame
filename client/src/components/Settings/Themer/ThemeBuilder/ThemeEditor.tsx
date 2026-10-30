@@ -7,10 +7,9 @@ import { actionCreators } from '../../../../store';
 import { State } from '../../../../store/reducers';
 import { ActionIcons, CompactTable, Icon, ModalForm } from '../../../UI';
 
-// Redux
-// Other
 interface Props {
   modalHandler: () => void;
+  onDuplicate: (theme: Theme) => void;
 }
 
 export const ThemeEditor = (props: Props): JSX.Element => {
@@ -39,10 +38,28 @@ export const ThemeEditor = (props: Props): JSX.Element => {
           <Fragment key={idx}>
             <span>{t.name}</span>
             <ActionIcons>
-              <span onClick={() => updateHandler(t)}>
+              <span
+                role="button"
+                aria-label={`Edit ${t.name}`}
+                title="Edit"
+                onClick={() => updateHandler(t)}
+              >
                 <Icon icon="mdiPencil" />
               </span>
-              <span onClick={() => deleteHandler(t)}>
+              <span
+                role="button"
+                aria-label={`Duplicate ${t.name}`}
+                title="Duplicate"
+                onClick={() => props.onDuplicate(t)}
+              >
+                <Icon icon="mdiContentCopy" />
+              </span>
+              <span
+                role="button"
+                aria-label={`Delete ${t.name}`}
+                title="Delete"
+                onClick={() => deleteHandler(t)}
+              >
                 <Icon icon="mdiDelete" />
               </span>
             </ActionIcons>

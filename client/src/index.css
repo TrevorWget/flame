@@ -45,11 +45,17 @@ body {
   --color-primary: #effbff;
   --color-accent: #6ee2ff;
   --spacing-ui: 10px;
+  --font-family: Roboto, sans-serif;
 
   background-color: var(--color-background);
   transition: background-color 0.3s;
-  font-family: Roboto, sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
+}
+
+/* A picked font is used for form fields too (see applyFont) */
+body[data-font] :is(input, select, textarea, button) {
+  font-family: inherit;
 }
 
 a {

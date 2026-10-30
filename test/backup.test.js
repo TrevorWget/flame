@@ -101,6 +101,30 @@ const SELFHST_WEBP = Buffer.concat([
   crypto.randomBytes(24),
 ]);
 
+const CUSTOM_THEMES = [
+  {
+    name: 'Custom',
+    colors: { background: '#101010', primary: '#fafafa', accent: '#ff0066' },
+    isCustom: true,
+  },
+  {
+    name: 'Custom copy',
+    colors: { background: '#fdf6e3', primary: '#073642', accent: '#b58900' },
+    isCustom: true,
+  },
+];
+
+// None of these are the defaults, so a restore over a wiped state changes them
+const THEME_OPTIONS = {
+  themeMode: 'time',
+  lightTheme: '#073642;#b58900;#fdf6e3',
+  darkTheme: '#fafafa;#ff0066;#101010',
+  themeSchedule: 'fixed',
+  themeLightTime: '06:45',
+  themeDarkTime: '20:30',
+  fontFamily: 'source-serif',
+};
+
 // Answers the status checks of the restored apps
 const statusServer = http.createServer((req, res) => res.end('ok'));
 let statusUrl;
@@ -175,20 +199,10 @@ const seed = async () => {
       autoFetchIcons: true,
       iconFetchAllowPrivate: true,
       preferSelfhstIcons: true,
+      ...THEME_OPTIONS,
     },
     themes: {
-      themes: [
-        ...initialThemes.themes,
-        {
-          name: 'Custom',
-          colors: {
-            background: '#101010',
-            primary: '#fafafa',
-            accent: '#ff0066',
-          },
-          isCustom: true,
-        },
-      ],
+      themes: [...initialThemes.themes, ...CUSTOM_THEMES],
     },
     queries: {
       queries: [
@@ -413,7 +427,10 @@ test.describe('export', () => {
     assert.strictEqual(exported.categories.length, 3);
     assert.strictEqual(exported.apps.length, 3);
     assert.strictEqual(exported.bookmarks.length, 2);
-    assert.strictEqual(exported.themes.length, initialThemes.themes.length + 1);
+    assert.strictEqual(
+      exported.themes.length,
+      initialThemes.themes.length + CUSTOM_THEMES.length
+    );
     assert.deepStrictEqual(exported.queries, seeded.queries.queries);
     assert.strictEqual(exported.settings.customTitle, 'Backup Flame');
     assert.strictEqual(exported.settings.dockerHost, 'tcp://10.0.0.5:2375');
@@ -495,6 +512,21 @@ test.describe('export', () => {
     );
   });
 
+  test('contains the theme options and custom themes', () => {
+    assert.deepStrictEqual(
+      Object.fromEntries(
+        Object.keys(THEME_OPTIONS).map((key) => [key, exported.settings[key]])
+      ),
+      THEME_OPTIONS
+    );
+    assert.deepStrictEqual(
+      exported.themes.filter((t) => t.isCustom),
+      CUSTOM_THEMES
+    );
+    // Worked out from the location when the config is read, never stored
+    assert.ok(!('sunTimes' in exported.settings));
+  });
+
   test('never contains the weather API key, the password or the JWT secret', async () => {
     assert.ok(!('WEATHER_API_KEY' in exported.settings));
 
@@ -534,7 +566,7 @@ test.describe('restore', () => {
       categories: 3,
       apps: 3,
       bookmarks: 2,
-      themes: initialThemes.themes.length + 1,
+      themes: initialThemes.themes.length + CUSTOM_THEMES.length,
       queries: 1,
       settings: Object.keys(exported.settings).length,
       css: true,
@@ -566,6 +598,17 @@ test.describe('restore', () => {
     );
     // Secrets are not in the backup, so the current ones are kept
     assert.strictEqual(restored.weatherKey, 'key-set-after-the-backup');
+
+    const themeOptions = ({ config }) =>
+      Object.fromEntries(
+        Object.keys(THEME_OPTIONS).map((key) => [key, config[key]])
+      );
+    assert.notDeepStrictEqual(themeOptions(wiped), THEME_OPTIONS);
+    assert.deepStrictEqual(themeOptions(restored), THEME_OPTIONS);
+    assert.deepStrictEqual(
+      restored.themes.themes.filter((t) => t.isCustom),
+      CUSTOM_THEMES
+    );
 
     // The restored settings turned status checks on, and they run right away
     const sonarr = restored.apps.find((a) => a.name === 'Sonarr');
@@ -661,6 +704,65 @@ test.describe('restore', () => {
 
     const publicConfig = await request(api).get('/api/config');
     assert.deepStrictEqual(pick(publicConfig.body.data), LAYOUT_SETTINGS);
+  });
+
+  test('layout, selfh.st and theme settings survive an export, wipe and restore together', async () => {
+    const SETTINGS = {
+      ...LAYOUT_SETTINGS,
+      preferSelfhstIcons: true,
+      ...THEME_OPTIONS,
+    };
+    const SELFHST_ICONS = [SELFHST_SVG_NAME, SELFHST_WEBP_NAME];
+    const pick = (settings) =>
+      Object.fromEntries(
+        Object.keys(SETTINGS).map((key) => [key, settings[key]])
+      );
+    const customThemes = () =>
+      readJson('data/themes.json').themes.filter((t) => t.isCustom);
+
+    assert.deepStrictEqual(pick(exported.settings), SETTINGS);
+
+    await wipe();
+    const wiped = pick(readJson('data/config.json'));
+    for (const key of Object.keys(SETTINGS)) {
+      assert.notDeepStrictEqual(wiped[key], SETTINGS[key], key);
+    }
+    assert.deepStrictEqual(customThemes(), []);
+    assert.deepStrictEqual(fs.readdirSync('data/uploads'), []);
+
+    const res = await restore(archive);
+    assert.strictEqual(res.status, 200, res.text);
+
+    assert.deepStrictEqual(pick(readJson('data/config.json')), SETTINGS);
+    assert.deepStrictEqual(customThemes(), CUSTOM_THEMES);
+    for (const name of SELFHST_ICONS) {
+      assert.strictEqual(
+        fs.readFileSync(join('data/uploads', name)).toString('base64'),
+        seeded.uploads[name],
+        name
+      );
+    }
+    const restoredBookmark = (
+      await rows("SELECT icon FROM bookmarks WHERE name = 'Private'")
+    )[0];
+    assert.strictEqual(restoredBookmark.icon, SELFHST_WEBP_NAME);
+
+    // The dashboard reads layout and theme settings without logging in;
+    // preferSelfhstIcons only matters to the server
+    const publicConfig = (await request(api).get('/api/config')).body.data;
+    const { preferSelfhstIcons, ...publicSettings } = SETTINGS;
+    assert.deepStrictEqual(
+      Object.fromEntries(
+        Object.keys(publicSettings).map((key) => [key, publicConfig[key]])
+      ),
+      publicSettings
+    );
+    assert.ok(!('preferSelfhstIcons' in publicConfig));
+    assert.strictEqual(
+      (await authed(request(api).get('/api/config/admin'))).body.data
+        .preferSelfhstIcons,
+      preferSelfhstIcons
+    );
   });
 
   test('a backup cannot set the weather API key', async () => {

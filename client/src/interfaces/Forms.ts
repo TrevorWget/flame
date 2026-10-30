@@ -1,6 +1,7 @@
 import { WeatherData, WeatherProvider } from '../types';
 import { BackupSchedule } from './Backup';
 import { AppDensity, AppTileStyle } from './Config';
+import { FontId, ThemeMode, ThemeSchedule } from './Theme';
 
 export interface WeatherForm {
   weatherProvider: WeatherProvider;
@@ -71,6 +72,13 @@ export interface DockerSettingsForm {
 
 export interface ThemeSettingsForm {
   defaultTheme: string;
+  themeMode: ThemeMode;
+  lightTheme: string;
+  darkTheme: string;
+  themeSchedule: ThemeSchedule;
+  themeLightTime: string;
+  themeDarkTime: string;
+  fontFamily: FontId;
 }
 
 export interface BackupSettingsForm {
