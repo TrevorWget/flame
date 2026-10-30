@@ -1,5 +1,6 @@
 import { WeatherData, WeatherProvider } from '../types';
 import { BackupSchedule } from './Backup';
+import { FontId, SunTimes, ThemeMode, ThemeSchedule } from './Theme';
 
 export interface Config {
   hasWeatherKey: boolean;
@@ -34,6 +35,14 @@ export interface Config {
   monthSchema: string;
   showTime: boolean;
   defaultTheme: string;
+  themeMode: ThemeMode;
+  lightTheme: string;
+  darkTheme: string;
+  themeSchedule: ThemeSchedule;
+  themeLightTime: string;
+  themeDarkTime: string;
+  fontFamily: FontId;
+  sunTimes: SunTimes | null;
   isKilometer: boolean;
   weatherData: WeatherData;
   hideDate: boolean;

@@ -41,3 +41,10 @@
     width: 40%;
   }
 }
+
+.ModalForm.Wide {
+  width: min(1100px, 95%);
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 40px 30px 30px;
+}

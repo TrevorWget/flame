@@ -1,0 +1,88 @@
+/* Sizes follow the homepage, scaled down */
+.Preview {
+  background-color: var(--color-background);
+  color: var(--color-primary);
+  border: 1px solid rgba(128, 128, 128, 0.4);
+  border-radius: 6px;
+  padding: 20px 24px;
+  font-size: 12px;
+  transition: background-color 0.2s;
+}
+
+.Header p {
+  color: var(--color-primary);
+  font-weight: 300;
+  text-transform: uppercase;
+}
+
+.Header h1 {
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 2.6em;
+  margin-bottom: 14px;
+}
+
+.Search {
+  color: var(--color-primary);
+  border-bottom: 2px solid var(--color-accent);
+  opacity: 0.5;
+  padding: 6px 0;
+  margin-bottom: 16px;
+}
+
+.Headline {
+  text-transform: uppercase;
+  color: var(--color-primary);
+  font-weight: 900;
+  font-size: 15px;
+  margin-bottom: 10px;
+}
+
+.Grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.Grid h3 {
+  color: var(--color-accent);
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+.App {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.AppIcon {
+  width: 26px;
+  height: 26px;
+  margin-right: 0.5em;
+  flex-shrink: 0;
+}
+
+.AppDetails {
+  text-transform: uppercase;
+  min-width: 0;
+}
+
+.AppDetails h5 {
+  font-size: 1em;
+  font-weight: 500;
+  color: var(--color-primary);
+}
+
+.AppDetails span {
+  color: var(--color-accent);
+  font-size: 0.8em;
+}
+
+.Bookmark {
+  color: var(--color-primary);
+  margin-bottom: 6px;
+}

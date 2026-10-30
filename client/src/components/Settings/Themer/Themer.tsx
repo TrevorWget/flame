@@ -1,61 +1,27 @@
-import { ChangeEvent, FormEvent, Fragment, useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { bindActionCreators } from 'redux';
+import { Fragment } from 'react';
+import { useSelector } from 'react-redux';
 
-import { Theme, ThemeSettingsForm } from '../../../interfaces';
-import { actionCreators } from '../../../store';
 import { State } from '../../../store/reducers';
-import { inputHandler, parseThemeToPAB, themeSettingsTemplate } from '../../../utility';
-import { Button, InputGroup, SettingsHeadline, Spinner } from '../../UI';
+import { SettingsHeadline, Spinner } from '../../UI';
 import { ThemeBuilder } from './ThemeBuilder/ThemeBuilder';
 import { ThemeGrid } from './ThemeGrid/ThemeGrid';
+import { ThemeOptions } from './ThemeOptions/ThemeOptions';
+import classes from './Themer.module.css';
 
-// Redux
-// Typescript
-// Components
-// Other
-export const Themer = (): JSX.Element => {  
+const AUTOMATIC_NOTE = {
+  system: "The theme follows your device's light or dark setting.",
+  time: 'The theme switches between light and dark by time of day.',
+};
+
+export const Themer = (): JSX.Element => {
   const themes = useSelector((state: State) => state.theme.themes);
-  const userThemes = useSelector((state: State) => state.theme.userThemes);  
-  const config = useSelector((state: State) => state.config.config);
-  const loading = useSelector((state: State) => state.config.loading);
-  const isAuthenticated = useSelector((state: State) => state.auth.isAuthenticated);
-
-  const dispatch = useDispatch();
-  const { updateConfig } = bindActionCreators(actionCreators, dispatch);
-
-  // Initial state
-  const [formData, setFormData] = useState<ThemeSettingsForm>(
-    themeSettingsTemplate
+  const userThemes = useSelector((state: State) => state.theme.userThemes);
+  const themeMode = useSelector(
+    (state: State) => state.config.config.themeMode
   );
-
-  // Get config
-  useEffect(() => {
-    setFormData({
-      ...config,
-    });
-  }, [loading]);
-
-  // Form handler
-  const formSubmitHandler = async (e: FormEvent) => {
-    e.preventDefault();
-
-    // Save settings
-    await updateConfig({ ...formData });
-  };
-
-  // Input handler
-  const inputChangeHandler = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-    options?: { isNumber?: boolean; isBool?: boolean }
-  ) => {
-    inputHandler<ThemeSettingsForm>({
-      e,
-      options,
-      setStateHandler: setFormData,
-      state: formData,
-    });
-  };
+  const isAuthenticated = useSelector(
+    (state: State) => state.auth.isAuthenticated
+  );
 
   const customThemesEl = (
     <Fragment>
@@ -67,32 +33,17 @@ export const Themer = (): JSX.Element => {
   return (
     <Fragment>
       <SettingsHeadline text="App themes" />
+      {themeMode !== 'manual' && themeMode in AUTOMATIC_NOTE && (
+        <p className={classes.Note}>
+          {AUTOMATIC_NOTE[themeMode]} Picking a theme here applies it until the
+          next switch.
+        </p>
+      )}
       {!themes.length ? <Spinner /> : <ThemeGrid themes={themes} />}
 
       {!userThemes.length ? isAuthenticated && customThemesEl : customThemesEl}
 
-      {isAuthenticated && (
-        <form onSubmit={formSubmitHandler}>
-          <SettingsHeadline text="Other settings" />
-          <InputGroup>
-            <label htmlFor="defaultTheme">Default theme for new users</label>
-            <select
-              id="defaultTheme"
-              name="defaultTheme"
-              value={formData.defaultTheme}
-              onChange={(e) => inputChangeHandler(e)}
-            >
-              {[...themes, ...userThemes].map((theme: Theme, idx) => (
-                <option key={idx} value={parseThemeToPAB(theme.colors)}>
-                  {theme.isCustom && '+'} {theme.name}
-                </option>
-              ))}
-            </select>
-          </InputGroup>
-
-          <Button>Save changes</Button>
-        </form>
-      )}
+      {isAuthenticated && <ThemeOptions />}
     </Fragment>
   );
 };

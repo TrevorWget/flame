@@ -1,5 +1,36 @@
-.ColorsContainer {
+.Editor {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-gap: 10px;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .Editor {
+    grid-template-columns: minmax(260px, 2fr) 3fr;
+  }
+}
+
+.Color {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.Color input[type='color'] {
+  height: 38px;
+}
+
+/* Beats the InputGroup span style */
+.Fields span.Warning {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.Warning::before {
+  content: '⚠ ';
 }

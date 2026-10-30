@@ -57,6 +57,13 @@ export const dockerSettingsTemplate: DockerSettingsForm = {
 
 export const themeSettingsTemplate: ThemeSettingsForm = {
   defaultTheme: 'tron',
+  themeMode: 'manual',
+  lightTheme: '#35342f;#37bbe4;#f1f2f0',
+  darkTheme: '#EFFBFF;#6EE2FF;#242B33',
+  themeSchedule: 'sun',
+  themeLightTime: '07:00',
+  themeDarkTime: '19:00',
+  fontFamily: 'roboto',
 };
 
 export const backupSettingsTemplate: BackupSettingsForm = {
