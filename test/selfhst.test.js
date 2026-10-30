@@ -454,6 +454,22 @@ test.describe('previews', () => {
     assert.ok(!fs.existsSync(uploadsDir));
   });
 
+  test('are limited in size', async () => {
+    const big = await createCdn({
+      '/webp/plex.webp': (req, res) => {
+        res.setHeader('Content-Type', 'image/webp');
+        res.end(Buffer.concat([WEBP, Buffer.alloc(600 * 1024)]));
+      },
+    });
+
+    try {
+      useCdn(big.base);
+      await assert.rejects(getPreview('plex'), { code: 'TOO_LARGE' });
+    } finally {
+      await big.close();
+    }
+  });
+
   test('check the variant and remember failures briefly', async () => {
     await assert.rejects(getPreview('steam', 'dark'), { code: 'UNAVAILABLE_VARIANT' });
     await assert.rejects(getPreview('../x'), { code: 'INVALID' });

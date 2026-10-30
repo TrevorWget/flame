@@ -36,6 +36,8 @@ const MAX_TAGS = 20;
 // A downloaded icon is reused this long, and kept if refreshing it fails
 const ICON_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const MAX_PREVIEWS = 300;
+const MAX_PREVIEW_BYTES = 512 * 1024;
+const MAX_PREVIEW_CACHE_BYTES = 16 * 1024 * 1024;
 const PREVIEW_FAILURE_TTL_MS = 5 * 60 * 1000;
 const MAX_CONCURRENT_DOWNLOADS = 6;
 
@@ -382,14 +384,14 @@ const checkAvailable = (index, reference, format, variant) => {
   }
 };
 
-const download = async (reference, format, variant, timeoutMs) => {
+const download = async (reference, format, variant, timeoutMs, maxBytes = MAX_ICON_BYTES) => {
   let res;
 
   try {
     res = await withDownloadSlot(() =>
       safeFetch(iconUrl(reference, format, variant), {
         allowPrivate: options.allowPrivate,
-        maxBytes: MAX_ICON_BYTES,
+        maxBytes,
         timeoutMs,
         accept: 'image/*',
       })
@@ -457,13 +459,22 @@ const storeSelfhstIcon = async (
 };
 
 const previews = new Map();
+let previewBytes = 0;
+
+const entryBytes = (entry) => (entry && entry.preview ? entry.preview.body.length : 0);
+
+const forget = (key) => {
+  previewBytes -= entryBytes(previews.get(key));
+  previews.delete(key);
+};
 
 const remember = (key, entry) => {
-  previews.delete(key);
+  forget(key);
   previews.set(key, entry);
+  previewBytes += entryBytes(entry);
 
-  while (previews.size > MAX_PREVIEWS) {
-    previews.delete(previews.keys().next().value);
+  while (previews.size > MAX_PREVIEWS || previewBytes > MAX_PREVIEW_CACHE_BYTES) {
+    forget(previews.keys().next().value);
   }
 };
 
@@ -483,8 +494,7 @@ const getPreview = async (reference, variant = 'standard') => {
   const cached = previews.get(key);
 
   if (cached && !(cached.error && cached.expires <= Date.now())) {
-    previews.delete(key);
-    previews.set(key, cached);
+    remember(key, cached);
     if (cached.error) throw cached.error;
     return cached.preview;
   }
@@ -492,7 +502,7 @@ const getPreview = async (reference, variant = 'standard') => {
   try {
     const preview = {
       contentType: `image/${format}`,
-      body: await download(reference, format, variant, 10000),
+      body: await download(reference, format, variant, 10000, MAX_PREVIEW_BYTES),
     };
     remember(key, { preview });
     return preview;
@@ -513,6 +523,7 @@ const configureSelfhst = (overrides = {}) => {
   refreshing = null;
   lastFailure = 0;
   previews.clear();
+  previewBytes = 0;
   inFlight.clear();
 };
 
