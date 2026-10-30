@@ -42,6 +42,7 @@ export const configTemplate: Config = {
   backupRetention: 7,
   autoFetchIcons: false,
   iconFetchAllowPrivate: false,
+  preferSelfhstIcons: false,
   statusChecks: false,
   statusCheckInterval: 60,
   statusCheckTimeout: 5,

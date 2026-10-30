@@ -38,6 +38,7 @@ export const generalSettingsTemplate: GeneralForm = {
   extraUrlSchemes: '',
   autoFetchIcons: false,
   iconFetchAllowPrivate: false,
+  preferSelfhstIcons: false,
   statusChecks: false,
   statusCheckInterval: 60,
   statusCheckTimeout: 5,

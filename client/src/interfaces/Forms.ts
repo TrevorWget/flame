@@ -24,6 +24,7 @@ export interface GeneralForm {
   extraUrlSchemes: string;
   autoFetchIcons: boolean;
   iconFetchAllowPrivate: boolean;
+  preferSelfhstIcons: boolean;
   statusChecks: boolean;
   statusCheckInterval: number;
   statusCheckTimeout: number;

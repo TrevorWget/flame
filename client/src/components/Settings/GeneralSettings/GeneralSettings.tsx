@@ -329,6 +329,27 @@ export const GeneralSettings = (): JSX.Element => {
           </span>
         </InputGroup>
 
+        <InputGroup>
+          <label htmlFor="preferSelfhstIcons">
+            Prefer selfh.st icons when fetching icons
+          </label>
+          <select
+            id="preferSelfhstIcons"
+            name="preferSelfhstIcons"
+            value={formData.preferSelfhstIcons ? 1 : 0}
+            onChange={(e) => inputChangeHandler(e, { isBool: true })}
+          >
+            <option value={1}>True</option>
+            <option value={0}>False</option>
+          </select>
+          <span>
+            When icons are fetched automatically, use the icon from the
+            selfh.st collection whose name matches the app or bookmark name,
+            and fall back to the site's favicon. The icon is downloaded once
+            and kept in Flame's data folder
+          </span>
+        </InputGroup>
+
         {/* === SEARCH OPTIONS === */}
         <SettingsHeadline text="Search" />
         <InputGroup>

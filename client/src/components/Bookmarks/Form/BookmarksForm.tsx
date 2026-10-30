@@ -10,7 +10,7 @@ import { actionCreators } from '../../../store';
 import { Bookmark, Category, NewBookmark } from '../../../interfaces';
 
 // UI
-import { ModalForm, InputGroup, Button, FetchIcon } from '../../UI';
+import { ModalForm, InputGroup, Button, FetchIcon, SelfhstPicker } from '../../UI';
 
 // CSS
 import classes from './Form.module.css';
@@ -243,6 +243,11 @@ export const BookmarksForm = ({
             url={formData.url}
             icon={formData.icon}
             onFetched={(icon) => setFormData((prev) => ({ ...prev, icon }))}
+          />
+          <SelfhstPicker
+            name={formData.name}
+            icon={formData.icon}
+            onPicked={(icon) => setFormData((prev) => ({ ...prev, icon }))}
           />
           <span
             onClick={() => toggleUseCustomIcon(!useCustomIcon)}
