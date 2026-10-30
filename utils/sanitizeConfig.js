@@ -33,6 +33,14 @@ const PUBLIC_KEYS = [
   'statusColorUp',
   'statusColorUnhealthy',
   'statusColorDown',
+  'appTileStyle',
+  'appDensity',
+  'appIconScale',
+  'homeAppColumns',
+  'appsPageColumns',
+  'hideAppUrls',
+  'hideAppDescriptions',
+  'hideStatusDots',
 ];
 
 // Never returned by any endpoint, even to authenticated admins.

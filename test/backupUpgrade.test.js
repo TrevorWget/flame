@@ -42,6 +42,14 @@ const NEWER_KEYS = [
   'statusColorUp',
   'statusColorUnhealthy',
   'statusColorDown',
+  'appTileStyle',
+  'appDensity',
+  'appIconScale',
+  'homeAppColumns',
+  'appsPageColumns',
+  'hideAppUrls',
+  'hideAppDescriptions',
+  'hideStatusDots',
 ];
 const upstreamConfig = Object.fromEntries(
   Object.entries({

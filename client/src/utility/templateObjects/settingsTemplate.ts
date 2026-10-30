@@ -1,4 +1,4 @@
-import { BackupSettingsForm, DockerSettingsForm, GeneralForm, ThemeSettingsForm, UISettingsForm, WeatherForm } from '../../interfaces';
+import { BackupSettingsForm, DockerSettingsForm, GeneralForm, LayoutSettingsForm, ThemeSettingsForm, UISettingsForm, WeatherForm } from '../../interfaces';
 
 export const uiSettingsTemplate: UISettingsForm = {
   customTitle: document.title,
@@ -46,6 +46,17 @@ export const generalSettingsTemplate: GeneralForm = {
   statusColorUp: '',
   statusColorUnhealthy: '',
   statusColorDown: '',
+};
+
+export const layoutSettingsTemplate: LayoutSettingsForm = {
+  appTileStyle: 'list',
+  appDensity: 'normal',
+  appIconScale: 100,
+  homeAppColumns: 0,
+  appsPageColumns: 0,
+  hideAppUrls: false,
+  hideAppDescriptions: false,
+  hideStatusDots: false,
 };
 
 export const dockerSettingsTemplate: DockerSettingsForm = {

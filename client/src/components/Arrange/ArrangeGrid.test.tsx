@@ -4,7 +4,7 @@ import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { App, Bookmark, Category } from '../../interfaces';
+import { App, Bookmark, Category, Config } from '../../interfaces';
 import { ActionType } from '../../store/action-types';
 import { store } from '../../store/store';
 import { configTemplate } from '../../utility';
@@ -93,10 +93,14 @@ const press = async (
   await tick();
 };
 
-const setup = ({ loggedIn = true, useOrdering = 'orderId' } = {}) => {
+const setup = ({
+  loggedIn = true,
+  useOrdering = 'orderId',
+  config = {} as Partial<Config>,
+} = {}) => {
   store.dispatch({
     type: ActionType.getConfig,
-    payload: { ...configTemplate, useOrdering },
+    payload: { ...configTemplate, useOrdering, ...config },
   });
   store.dispatch({
     type: ActionType.getCategoriesSuccess,
@@ -202,6 +206,53 @@ describe('arranging apps', () => {
       store.getState().apps.categories.map((c) => c.apps.map(({ id }) => id))
     ).toEqual([[1], expect.arrayContaining([2, 3])]);
     expect(screen.getByTestId('arrange-category-2')).toHaveTextContent('App 2');
+  });
+
+  it('arranges icon tiles in the layout of /applications', async () => {
+    setup({
+      config: {
+        appTileStyle: 'tiles',
+        appDensity: 'compact',
+        homeAppColumns: 2,
+        appsPageColumns: 5,
+        hideAppUrls: true,
+      },
+    });
+    renderPage(<Apps searching={false} />);
+    fireEvent.click(screen.getByText('Arrange Apps'));
+
+    const column = screen.getByTestId('arrange-category-1');
+    const arrangeGrid = column.parentElement!;
+    expect(column.className).toMatch(/TileAppCard/);
+    expect(screen.getByTestId('arrange-item-1').className).toMatch(/TileItem/);
+    expect(arrangeGrid.className).toMatch(/FixedColumns/);
+    expect(arrangeGrid.style.getPropertyValue('--app-columns')).toBe('5');
+    expect(arrangeGrid.style.getPropertyValue('--app-row-gap')).toBe('4px');
+    expect(screen.getByTestId('arrange-item-1')).not.toHaveTextContent('app1.local');
+
+    const handle = screen.getByRole('button', { name: 'Move App 2' });
+    handle.focus();
+
+    await press('Space', handle);
+    await press('ArrowRight');
+    await press('Space');
+
+    expect(put).toHaveBeenCalledWith(
+      '/api/apps/2',
+      { categoryId: 2 },
+      expect.anything()
+    );
+  });
+
+  it('keeps bookmarks out of the app layout', () => {
+    setup({ config: { appTileStyle: 'tiles', appsPageColumns: 5 } });
+    renderPage(<Bookmarks searching={false} />);
+    fireEvent.click(screen.getByText('Arrange Bookmarks'));
+
+    const column = screen.getByTestId('arrange-category-3');
+    expect(column.className).not.toMatch(/TileAppCard/);
+    expect(column.parentElement!.className).not.toMatch(/FixedColumns/);
+    expect(screen.getByTestId('arrange-item-4').className).not.toMatch(/TileItem/);
   });
 
   it('cancels a keyboard drag with Escape', async () => {

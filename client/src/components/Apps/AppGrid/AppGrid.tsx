@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom';
 
 import { Category } from '../../../interfaces';
 import { State } from '../../../store/reducers';
+import { appLayoutKey } from '../../../utility';
 import { useMasonry } from '../../Home/Masonry/useMasonry';
 import { Message } from '../../UI';
 import { AppCard, WIDE_CATEGORY_MIN_APPS } from '../AppCard/AppCard';
 import { useAppStatuses } from '../AppStatus/useAppStatuses';
 import classes from './AppGrid.module.css';
+import { useAppLayout } from './useAppLayout';
 
 interface Props {
   categories: Category[];
@@ -25,7 +27,9 @@ export const AppGrid = (props: Props): JSX.Element => {
   } = props;
 
   const config = useSelector((state: State) => state.config.config);
-  const statuses = useAppStatuses();
+  const appLayout = useAppLayout(fromHomepage ? 'home' : 'apps');
+  const { layout } = appLayout;
+  const statuses = useAppStatuses(!layout.hideStatusDots);
 
   const shouldBeShown = (category: Category) => {
     return !config.hideEmptyCategories || category.apps.length > 0 || !fromHomepage
@@ -34,7 +38,8 @@ export const AppGrid = (props: Props): JSX.Element => {
   const shown = categories.filter(shouldBeShown);
   const masonry = useMasonry<HTMLDivElement>(
     fromHomepage,
-    shown.map(({ apps }) => apps.length >= WIDE_CATEGORY_MIN_APPS)
+    shown.map(({ apps }) => apps.length >= WIDE_CATEGORY_MIN_APPS),
+    appLayoutKey(layout)
   );
 
   let apps: JSX.Element;
@@ -45,7 +50,10 @@ export const AppGrid = (props: Props): JSX.Element => {
     } else {
       apps = (
         <div
-          className={`${classes.AppGrid} ${masonry.className}`}
+          className={[classes.AppGrid, appLayout.className, masonry.className]
+            .filter(Boolean)
+            .join(' ')}
+          style={appLayout.style}
           ref={masonry.ref}
         >
         {shown.map(
@@ -55,6 +63,7 @@ export const AppGrid = (props: Props): JSX.Element => {
                 fromHomepage={fromHomepage}
                 statuses={statuses}
                 collapsible={fromHomepage && !searching}
+                layout={layout}
                 key={category.id}
               />
             )

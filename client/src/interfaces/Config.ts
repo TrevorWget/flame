@@ -1,6 +1,9 @@
 import { WeatherData, WeatherProvider } from '../types';
 import { BackupSchedule } from './Backup';
 
+export type AppTileStyle = 'list' | 'tiles';
+export type AppDensity = 'compact' | 'normal' | 'roomy';
+
 export interface Config {
   hasWeatherKey: boolean;
   weatherEnabled: boolean;
@@ -50,4 +53,13 @@ export interface Config {
   statusColorUp: string;
   statusColorUnhealthy: string;
   statusColorDown: string;
+  appTileStyle: AppTileStyle;
+  appDensity: AppDensity;
+  appIconScale: number;
+  // 0 picks the columns from the screen width
+  homeAppColumns: number;
+  appsPageColumns: number;
+  hideAppUrls: boolean;
+  hideAppDescriptions: boolean;
+  hideStatusDots: boolean;
 }
