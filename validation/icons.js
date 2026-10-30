@@ -30,11 +30,12 @@ const previewSelfhst = {
   query: z.strictObject({ variant }),
 };
 
+// 'auto' stores the light and dark versions too, to follow the theme
 const storeSelfhst = {
   body: z.strictObject({
     reference,
     format: z.enum(FORMATS),
-    variant,
+    variant: z.enum([...VARIANTS, 'auto']).default('standard'),
   }),
 };
 

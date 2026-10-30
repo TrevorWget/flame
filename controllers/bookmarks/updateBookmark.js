@@ -2,6 +2,7 @@ const asyncWrapper = require('../../middleware/asyncWrapper');
 const ErrorResponse = require('../../utils/ErrorResponse');
 const Bookmark = require('../../models/Bookmark');
 const { autoFetchIcon } = require('../../utils/autoFetchIcon');
+const { NO_VARIANTS, clearStaleVariants } = require('../../utils/iconVariants');
 
 // @desc      Update bookmark
 // @route     PUT /api/bookmarks/:id
@@ -23,9 +24,9 @@ const updateBookmark = asyncWrapper(async (req, res, next) => {
   let body = { ...req.body };
 
   if (req.file) {
-    body.icon = req.file.filename;
+    body = { ...body, icon: req.file.filename, ...NO_VARIANTS };
   } else {
-    body = await autoFetchIcon(body, bookmark);
+    body = clearStaleVariants(await autoFetchIcon(body, bookmark), bookmark);
   }
 
   bookmark = await bookmark.update(body);

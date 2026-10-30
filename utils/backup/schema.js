@@ -23,6 +23,11 @@ const timestamp = z.iso
 const name = z.string().min(1).max(255);
 const url = z.string().min(1).max(MAX_URL_LENGTH);
 const icon = z.string().max(MAX_URL_LENGTH);
+// Missing from backups made before icons could follow the theme
+const iconVariant = icon
+  .nullable()
+  .transform((value) => value || null)
+  .default(null);
 const orderId = z.number().int().nullable().default(null);
 const isPinned = z.boolean().nullable().default(false);
 const isPublic = z
@@ -55,6 +60,8 @@ const app = z.object({
   url,
   categoryId: id,
   icon: icon.default('cancel'),
+  iconOnDark: iconVariant,
+  iconOnLight: iconVariant,
   isPinned,
   orderId,
   isPublic,
@@ -81,6 +88,8 @@ const bookmark = z.object({
   url,
   categoryId: id,
   icon: icon.default(''),
+  iconOnDark: iconVariant,
+  iconOnLight: iconVariant,
   isPublic,
   orderId,
   ...timestamps,

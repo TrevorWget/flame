@@ -94,6 +94,9 @@ const FAVICON_ICO = Buffer.concat([
 // Icons picked from selfh.st are cached as selfhst-<reference>[_<variant>].<ext>
 const SELFHST_SVG_NAME = 'selfhst-jellyfin.svg';
 const SELFHST_WEBP_NAME = 'selfhst-ghost_light.webp';
+// Shown instead of the standard icon on dark / light themes
+const SELFHST_ON_DARK_NAME = 'selfhst-jellyfin_light.svg';
+const SELFHST_ON_LIGHT_NAME = 'selfhst-jellyfin_dark.svg';
 const SELFHST_WEBP = Buffer.concat([
   Buffer.from('RIFF'),
   Buffer.from([0x20, 0, 0, 0]),
@@ -221,6 +224,8 @@ const seed = async () => {
       [FAVICON_ICO_NAME]: FAVICON_ICO,
       [SELFHST_SVG_NAME]: SVG,
       [SELFHST_WEBP_NAME]: SELFHST_WEBP,
+      [SELFHST_ON_DARK_NAME]: SVG,
+      [SELFHST_ON_LIGHT_NAME]: SVG,
     },
   });
 
@@ -251,6 +256,8 @@ const seed = async () => {
     preferredUrl: 'external',
     categoryId: media.id,
     icon: FAVICON_PNG_NAME,
+    iconOnDark: SELFHST_ON_DARK_NAME,
+    iconOnLight: SELFHST_ON_LIGHT_NAME,
     isPinned: true,
     orderId: 1,
     description: 'Movies',
@@ -278,6 +285,7 @@ const seed = async () => {
     url: 'https://docs.example.com',
     categoryId: links.id,
     icon: FAVICON_ICO_NAME,
+    iconOnDark: SELFHST_ON_DARK_NAME,
   });
   await Bookmark.create({
     name: 'Private',
@@ -416,6 +424,8 @@ test.describe('export', () => {
         `uploads/${FAVICON_ICO_NAME}`,
         `uploads/${SELFHST_SVG_NAME}`,
         `uploads/${SELFHST_WEBP_NAME}`,
+        `uploads/${SELFHST_ON_DARK_NAME}`,
+        `uploads/${SELFHST_ON_LIGHT_NAME}`,
       ].sort()
     );
 
@@ -481,6 +491,17 @@ test.describe('export', () => {
     assert.strictEqual(byName.Jellyfin.icon, FAVICON_PNG_NAME);
     assert.strictEqual(exported.bookmarks[0].icon, FAVICON_ICO_NAME);
     assert.strictEqual(exported.bookmarks[1].icon, SELFHST_WEBP_NAME);
+
+    const themed = ({ iconOnDark, iconOnLight }) => ({ iconOnDark, iconOnLight });
+    assert.deepStrictEqual(themed(byName.Jellyfin), {
+      iconOnDark: SELFHST_ON_DARK_NAME,
+      iconOnLight: SELFHST_ON_LIGHT_NAME,
+    });
+    assert.deepStrictEqual(themed(byName.Sonarr), { iconOnDark: null, iconOnLight: null });
+    assert.deepStrictEqual(themed(exported.bookmarks[0]), {
+      iconOnDark: SELFHST_ON_DARK_NAME,
+      iconOnLight: null,
+    });
 
     assert.deepStrictEqual(
       {
@@ -570,7 +591,7 @@ test.describe('restore', () => {
       queries: 1,
       settings: Object.keys(exported.settings).length,
       css: true,
-      uploads: 6,
+      uploads: 8,
     });
     assert.deepStrictEqual(previewRes.body.data.current, {
       categories: 1,
@@ -1157,6 +1178,21 @@ test.describe('saved backups', () => {
     assert.strictEqual(res.status, 200, res.text);
     assert.strictEqual(res.body.data.backup.apps, 3);
   });
+});
+
+test('backups made before icons followed the theme restore with the standard icon', () => {
+  const data = dataSchema('').parse({
+    categories: [{ id: 1, name: 'Media', type: 'apps' }],
+    apps: [{ id: 1, name: 'Jellyfin', url: 'https://jellyfin.lan', categoryId: 1, icon: 'movie' }],
+    bookmarks: [
+      { id: 1, name: 'Docs', url: 'https://docs.lan', categoryId: 1, icon: '', iconOnDark: '' },
+    ],
+  });
+
+  for (const item of [data.apps[0], data.bookmarks[0]]) {
+    assert.strictEqual(item.iconOnDark, null);
+    assert.strictEqual(item.iconOnLight, null);
+  }
 });
 
 test('the backup schema covers every database column', async () => {

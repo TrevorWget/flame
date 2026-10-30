@@ -2,6 +2,7 @@ const asyncWrapper = require('../../middleware/asyncWrapper');
 const App = require('../../models/App');
 const loadConfig = require('../../utils/loadConfig');
 const { autoFetchIcon } = require('../../utils/autoFetchIcon');
+const { NO_VARIANTS } = require('../../utils/iconVariants');
 const { runStatusChecks } = require('../../utils/statusChecks');
 
 // @desc      Create new app
@@ -13,7 +14,7 @@ const createApp = asyncWrapper(async (req, res, next) => {
   let body = { ...req.body };
 
   if (req.file) {
-    body.icon = req.file.filename;
+    body = { ...body, icon: req.file.filename, ...NO_VARIANTS };
   } else {
     body = await autoFetchIcon(body);
   }

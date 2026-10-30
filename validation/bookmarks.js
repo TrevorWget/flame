@@ -5,6 +5,7 @@ const {
   name,
   url,
   icon,
+  iconVariant,
   reorderList,
   emptyBody,
   writableFields,
@@ -19,6 +20,8 @@ const createBookmark = {
       url,
       categoryId: id,
       icon: icon.optional(),
+      iconOnDark: iconVariant.optional(),
+      iconOnLight: iconVariant.optional(),
       isPublic: visibility.optional(),
     },
     READ_ONLY
@@ -33,6 +36,8 @@ const updateBookmark = {
       url: url.optional(),
       categoryId: id.optional(),
       icon: icon.optional(),
+      iconOnDark: iconVariant.optional(),
+      iconOnLight: iconVariant.optional(),
       isPublic: visibility.optional(),
     },
     READ_ONLY

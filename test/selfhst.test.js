@@ -18,6 +18,7 @@ const {
   defaultFormat,
   iconFilename,
   storeSelfhstIcon,
+  storeSelfhstIconSet,
   getPreview,
   configureSelfhst,
 } = require('../utils/selfhst');
@@ -426,6 +427,42 @@ test.describe('storing icons', () => {
       code: 'NOT_FOUND',
       message: 'selfh.st has no svg file for no-such-app',
     });
+  });
+
+  test('a set for following the theme has the versions the index lists', async () => {
+    reset();
+    useCdn();
+    await getIndex();
+
+    assert.deepStrictEqual(await storeSelfhstIconSet('ghost', { format: 'webp' }), {
+      icon: 'selfhst-ghost.webp',
+      iconOnDark: 'selfhst-ghost_light.webp',
+      iconOnLight: null,
+    });
+    assert.strictEqual(cdn.hits['/webp/ghost-dark.webp'], undefined);
+
+    assert.deepStrictEqual(await storeSelfhstIconSet('jellyfin'), {
+      icon: 'selfhst-jellyfin.svg',
+      iconOnDark: 'selfhst-jellyfin_light.svg',
+      iconOnLight: 'selfhst-jellyfin_dark.svg',
+    });
+
+    await assert.rejects(storeSelfhstIconSet('ghost', { format: 'svg' }), {
+      code: 'UNAVAILABLE_VARIANT',
+    });
+    await assert.rejects(storeSelfhstIconSet('../x'), { code: 'INVALID' });
+  });
+
+  test('a set tries both versions without the index', async () => {
+    reset();
+    useCdn(cdn.base, { indexSources: [`${OFFLINE}/index.json`] });
+
+    assert.deepStrictEqual(await storeSelfhstIconSet('plex', { format: 'png' }), {
+      icon: 'selfhst-plex.png',
+      iconOnDark: 'selfhst-plex_light.png',
+      iconOnLight: 'selfhst-plex_dark.png',
+    });
+    await assert.rejects(storeSelfhstIconSet('no-such-app'), { code: 'NOT_FOUND' });
   });
 
   test('downloads only from public addresses by default', async () => {
