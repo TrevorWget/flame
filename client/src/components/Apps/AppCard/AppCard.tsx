@@ -102,6 +102,7 @@ export const AppCard = (props: Props): JSX.Element => {
         classes.AppCard,
         isWide && classes.WideAppCard,
         isTiles && classes.TileAppCard,
+        layout.columns > 0 && classes.TruncatedAppCard,
         collapse.className,
       ]
         .filter(Boolean)

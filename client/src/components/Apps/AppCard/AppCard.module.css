@@ -57,12 +57,32 @@
   grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
 }
 
-.WideAppCard .AppCardDetails {
+/* Fixed columns can be narrower than the text, so it's cut short too */
+.WideAppCard .AppCardDetails,
+.TruncatedAppCard .AppCardDetails {
   min-width: 0;
 }
 
-.WideAppCard .AppCardDetails > span {
+.TruncatedAppCard .AppIcon {
+  flex-shrink: 0;
+}
+
+.WideAppCard .AppCardDetails > span,
+.TruncatedAppCard .AppCardDetails > span {
   display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Keeps the status dot visible after a cut name */
+.TruncatedAppCard .AppCardDetails h5 {
+  display: flex;
+  align-items: center;
+}
+
+.TruncatedAppCard .AppName {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -105,7 +125,7 @@
 /* === ICON TILES: a big icon with the name underneath === */
 .TileAppCard {
   --app-tile-width: calc(
-    var(--app-icon-size, 56px) + 2 * var(--app-tile-padding, 8px) + 24px
+    var(--app-icon-size, 56px) + 2 * var(--app-tile-padding, 8px) + 8px
   );
 }
 

@@ -34,7 +34,7 @@
       min(
         100%,
         max(
-          var(--app-min-column, 160px),
+          var(--app-min-column, 120px),
           calc(
             (100% - (var(--app-fit-columns) - 1) * var(--app-column-gap, 0px)) /
               var(--app-fit-columns)
