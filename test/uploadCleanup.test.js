@@ -9,10 +9,10 @@ const uploadIcon = require('../middleware/multer');
 const UPLOADS_DIR = join(__dirname, '../data/uploads');
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
 
-// The icon fetching tests run in parallel and add and remove favicon-* files here
+// The icon fetching tests run in parallel and add and remove favicon-* and selfhst-* files here
 const listUploads = () =>
   new Set(
-    fs.readdirSync(UPLOADS_DIR).filter((name) => !name.startsWith('favicon-'))
+    fs.readdirSync(UPLOADS_DIR).filter((name) => !/^(favicon|selfhst)-/.test(name))
   );
 
 const waitFor = async (check) => {

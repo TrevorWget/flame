@@ -80,6 +80,15 @@ const FAVICON_ICO = Buffer.concat([
   Buffer.from([0x00, 0x00, 0x01, 0x00, 0x01, 0x00]),
   crypto.randomBytes(32),
 ]);
+// Icons picked from selfh.st are cached as selfhst-<reference>[_<variant>].<ext>
+const SELFHST_SVG_NAME = 'selfhst-jellyfin.svg';
+const SELFHST_WEBP_NAME = 'selfhst-ghost_light.webp';
+const SELFHST_WEBP = Buffer.concat([
+  Buffer.from('RIFF'),
+  Buffer.from([0x20, 0, 0, 0]),
+  Buffer.from('WEBPVP8 '),
+  crypto.randomBytes(24),
+]);
 
 // Answers the status checks of the restored apps
 const statusServer = http.createServer((req, res) => res.end('ok'));
@@ -153,6 +162,7 @@ const seed = async () => {
       statusColorDown: '#f85149',
       autoFetchIcons: true,
       iconFetchAllowPrivate: true,
+      preferSelfhstIcons: true,
     },
     themes: {
       themes: [
@@ -183,6 +193,8 @@ const seed = async () => {
       [SVG_NAME]: SVG,
       [FAVICON_PNG_NAME]: PNG,
       [FAVICON_ICO_NAME]: FAVICON_ICO,
+      [SELFHST_SVG_NAME]: SVG,
+      [SELFHST_WEBP_NAME]: SELFHST_WEBP,
     },
   });
 
@@ -245,6 +257,7 @@ const seed = async () => {
     name: 'Private',
     url: 'https://private.example.com',
     categoryId: links.id,
+    icon: SELFHST_WEBP_NAME,
     isPublic: 0,
     orderId: 3,
   });
@@ -375,6 +388,8 @@ test.describe('export', () => {
         `uploads/${PNG_NAME}`,
         `uploads/${FAVICON_PNG_NAME}`,
         `uploads/${FAVICON_ICO_NAME}`,
+        `uploads/${SELFHST_SVG_NAME}`,
+        `uploads/${SELFHST_WEBP_NAME}`,
       ].sort()
     );
 
@@ -393,6 +408,8 @@ test.describe('export', () => {
     assert.strictEqual(files.get('flame.css').toString(), seeded.css);
     assert.ok(files.get(`uploads/${PNG_NAME}`).equals(PNG));
     assert.ok(files.get(`uploads/${FAVICON_ICO_NAME}`).equals(FAVICON_ICO));
+    assert.ok(files.get(`uploads/${SELFHST_SVG_NAME}`).equals(SVG));
+    assert.ok(files.get(`uploads/${SELFHST_WEBP_NAME}`).equals(SELFHST_WEBP));
   });
 
   test('contains the external URLs, status checks and their settings', () => {
@@ -434,6 +451,7 @@ test.describe('export', () => {
     );
     assert.strictEqual(byName.Jellyfin.icon, FAVICON_PNG_NAME);
     assert.strictEqual(exported.bookmarks[0].icon, FAVICON_ICO_NAME);
+    assert.strictEqual(exported.bookmarks[1].icon, SELFHST_WEBP_NAME);
 
     assert.deepStrictEqual(
       {
@@ -447,6 +465,7 @@ test.describe('export', () => {
         statusColorDown: exported.settings.statusColorDown,
         autoFetchIcons: exported.settings.autoFetchIcons,
         iconFetchAllowPrivate: exported.settings.iconFetchAllowPrivate,
+        preferSelfhstIcons: exported.settings.preferSelfhstIcons,
       },
       {
         statusChecks: true,
@@ -459,6 +478,7 @@ test.describe('export', () => {
         statusColorDown: '#f85149',
         autoFetchIcons: true,
         iconFetchAllowPrivate: true,
+        preferSelfhstIcons: true,
       }
     );
   });
@@ -506,7 +526,7 @@ test.describe('restore', () => {
       queries: 1,
       settings: Object.keys(exported.settings).length,
       css: true,
-      uploads: 4,
+      uploads: 6,
     });
     assert.deepStrictEqual(previewRes.body.data.current, {
       categories: 1,

@@ -69,6 +69,7 @@ const SETTINGS = {
   backupRetention: z.number().int().min(1).max(365),
   autoFetchIcons: z.boolean(),
   iconFetchAllowPrivate: z.boolean(),
+  preferSelfhstIcons: z.boolean(),
   statusChecks: z.boolean(),
   // Seconds
   statusCheckInterval: z.number().int().min(10).max(86400),

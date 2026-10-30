@@ -34,6 +34,7 @@ const NEWER_KEYS = [
   'backupRetention',
   'autoFetchIcons',
   'iconFetchAllowPrivate',
+  'preferSelfhstIcons',
   'statusChecks',
   'statusCheckInterval',
   'statusCheckTimeout',
