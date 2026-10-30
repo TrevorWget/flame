@@ -12,6 +12,17 @@ const { QueryTypes } = require('sequelize');
 
 const PASSWORD = 'ci-backup-password-5a9d';
 const WEATHER_API_KEY = 'ci-backup-weather-key-never-exported';
+// None of them the defaults, so a restore that drops one is caught
+const LAYOUT_SETTINGS = {
+  appTileStyle: 'tiles',
+  appDensity: 'roomy',
+  appIconScale: 140,
+  homeAppColumns: 6,
+  appsPageColumns: 3,
+  hideAppUrls: true,
+  hideAppDescriptions: true,
+  hideStatusDots: true,
+};
 
 process.env.NODE_ENV = 'test';
 process.env.PASSWORD = PASSWORD;
@@ -81,18 +92,6 @@ const FAVICON_ICO = Buffer.concat([
   crypto.randomBytes(32),
 ]);
 
-// None of them the defaults, so a restore that drops one is caught
-const LAYOUT_SETTINGS = {
-  appTileStyle: 'tiles',
-  appDensity: 'roomy',
-  appIconScale: 140,
-  homeAppColumns: 6,
-  appsPageColumns: 3,
-  hideAppUrls: true,
-  hideAppDescriptions: true,
-  hideStatusDots: true,
-};
-
 // Answers the status checks of the restored apps
 const statusServer = http.createServer((req, res) => res.end('ok'));
 let statusUrl;
@@ -148,6 +147,7 @@ const seed = async () => {
     config: {
       ...initialConfig,
       customTitle: 'Backup Flame',
+      ...LAYOUT_SETTINGS,
       WEATHER_API_KEY,
       dockerHost: 'tcp://10.0.0.5:2375',
       lat: 51.5,
@@ -165,7 +165,6 @@ const seed = async () => {
       statusColorDown: '#f85149',
       autoFetchIcons: true,
       iconFetchAllowPrivate: true,
-      ...LAYOUT_SETTINGS,
     },
     themes: {
       themes: [

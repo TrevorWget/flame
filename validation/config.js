@@ -20,13 +20,13 @@ const dockerHost = text(255).superRefine((value, ctx) => {
 
 const coordinate = (limit) => z.number().min(-limit).max(limit).nullable();
 
+// 0 picks the columns from the screen width
+const appColumns = z.number().int().min(0).max(8);
+
 // Ends up in a CSS custom property; the form's color input sends #rrggbb
 const statusColor = z
   .string()
   .regex(/^(#[0-9a-f]{6})?$/i, 'Must be empty or a hex color, e.g. #3fb950');
-
-// 0 picks the columns from the screen width
-const appColumns = z.number().int().min(0).max(8);
 
 const SETTINGS = {
   weatherProvider: z
