@@ -234,8 +234,9 @@ export const GeneralSettings = (): JSX.Element => {
                 <option value={0}>False</option>
               </select>
               <span>
-                Apps whose container is found (by its flame.name label, or a
-                container or Compose service named like the app) use its state:
+                Apps whose container is found (by its flame.name label, a
+                container or Compose service named like the app, or a main
+                container like authentik-server or immich_server) use its state:
                 running is up; restarting, starting or failing its health check
                 is unhealthy; stopped is down. Other apps, and apps with a check
                 URL, get the HTTP check. Reads GET /containers/json from the

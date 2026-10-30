@@ -84,12 +84,15 @@ const container = (name, State, Status) => ({
 });
 
 // A container without flame labels, like most containers next to manual apps
-const plainContainer = (name, State, Status, service) => ({
+const plainContainer = (name, State, Status, service, project) => ({
   Id: name,
   Names: [`/${name}`],
   State,
   Status,
-  Labels: service ? { 'com.docker.compose.service': service } : {},
+  Labels: {
+    ...(service && { 'com.docker.compose.service': service }),
+    ...(project && { 'com.docker.compose.project': project }),
+  },
 });
 
 let site;
@@ -127,6 +130,10 @@ test.before(async () => {
         plainContainer('yams-digarr-1', 'exited', 'Exited (1) 2 hours ago', 'digarr'),
         plainContainer('immich-db', 'running', 'Up 1 day', 'db'),
         plainContainer('paperless-db', 'running', 'Up 1 day', 'db'),
+        // Authentik's official Compose file
+        plainContainer('authentik-server', 'running', 'Up 6 days (healthy)', 'server', 'authentik'),
+        plainContainer('authentik-worker', 'running', 'Up 6 days (healthy)', 'worker', 'authentik'),
+        plainContainer('authentik-postgresql', 'running', 'Up 6 days (healthy)', 'postgresql', 'authentik'),
       ])
     );
   });
@@ -184,6 +191,8 @@ test.before(async () => {
     // resolve: the container state must be used instead of a failing HTTP check
     { name: 'qBittorrent', url: 'orbit.invalid:8081', categoryId: media.id },
     { name: 'Digarr', url: 'orbit.invalid:6868', categoryId: media.id },
+    // Its URL doesn't answer from the Flame container, its container is running
+    { name: 'Authentik', url: 'orbit.invalid:9901', categoryId: media.id },
     // No container of that name, and the "db" service is ambiguous
     { name: 'Miniflux', url: url('/204'), categoryId: media.id },
     { name: 'DB', url: url('/200'), categoryId: media.id },
@@ -347,6 +356,38 @@ test.describe('container states', () => {
     assert.strictEqual(find({ name: 'db' }), null);
     assert.strictEqual(find({ name: 'Miniflux' }), null);
   });
+
+  test('multi-container apps match their server, web or app container', () => {
+    const compose = (name, project, service) => ({
+      Names: [`/${name}`],
+      State: 'running',
+      Labels: {
+        'com.docker.compose.project': project,
+        'com.docker.compose.service': service,
+      },
+    });
+    const authentik = compose('authentik-server', 'authentik', 'server');
+    const immich = { Names: ['/immich_server'], State: 'running', Labels: {} };
+    const nextcloud = compose('cloud-app-1', 'nextcloud', 'app');
+    const find = containerFinder([
+      compose('authentik-worker', 'authentik', 'worker'),
+      authentik,
+      compose('authentik-postgresql', 'authentik', 'postgresql'),
+      immich,
+      { Names: ['/immich_postgres'], State: 'running', Labels: {} },
+      nextcloud,
+      { Names: ['/penpot-frontend'], State: 'running', Labels: {} },
+      { Names: ['/penpot-web'], State: 'running', Labels: {} },
+    ]);
+
+    assert.strictEqual(find({ name: 'Authentik' }), authentik);
+    assert.strictEqual(find({ name: 'Immich' }), immich);
+    // By Compose project when the container name differs
+    assert.strictEqual(find({ name: 'Nextcloud' }), nextcloud);
+    assert.strictEqual(find({ name: 'cloud' }), nextcloud);
+    // Two candidates are ambiguous
+    assert.strictEqual(find({ name: 'Penpot' }), null);
+  });
 });
 
 test.describe('GET /api/apps/status', () => {
@@ -375,6 +416,7 @@ test.describe('GET /api/apps/status', () => {
       DockerCustomUrl: 'unhealthy: HTTP 503',
       qBittorrent: 'up: Container running',
       Digarr: 'down: Container exited',
+      Authentik: 'up: Container running (healthy)',
       Miniflux: 'up: HTTP 204',
       DB: 'up: HTTP 200',
     });
