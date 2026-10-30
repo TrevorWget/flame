@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 import { Category } from '../../../interfaces';
 import { State } from '../../../store/reducers';
+import { useMasonry } from '../../Home/Masonry/useMasonry';
 import { Message } from '../../UI';
 import { BookmarkCard } from '../BookmarkCard/BookmarkCard';
 import classes from './BookmarkGrid.module.css';
@@ -28,6 +29,12 @@ export const BookmarkGrid = (props: Props): JSX.Element => {
     return !config.hideEmptyCategories || category.bookmarks.length > 0 || !fromHomepage
   }
 
+  const shown = categories.filter(shouldBeShown);
+  const masonry = useMasonry<HTMLDivElement>(
+    fromHomepage,
+    shown.map(() => false)
+  );
+
   let bookmarks: JSX.Element;
 
   if (categories.length && categories.some(shouldBeShown)) {
@@ -35,8 +42,11 @@ export const BookmarkGrid = (props: Props): JSX.Element => {
       bookmarks = <Message>No bookmarks match your search criteria</Message>;
     } else {
       bookmarks = (
-        <div className={classes.BookmarkGrid}>
-          {categories.filter(shouldBeShown).map(
+        <div
+          className={`${classes.BookmarkGrid} ${masonry.className}`}
+          ref={masonry.ref}
+        >
+          {shown.map(
             (category: Category): JSX.Element => (
               <BookmarkCard
                 category={category}

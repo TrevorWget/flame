@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 
 import { Category } from '../../../interfaces';
 import { State } from '../../../store/reducers';
+import { useMasonry } from '../../Home/Masonry/useMasonry';
 import { Message } from '../../UI';
-import { AppCard } from '../AppCard/AppCard';
+import { AppCard, WIDE_CATEGORY_MIN_APPS } from '../AppCard/AppCard';
 import { useAppStatuses } from '../AppStatus/useAppStatuses';
 import classes from './AppGrid.module.css';
 
@@ -30,6 +31,12 @@ export const AppGrid = (props: Props): JSX.Element => {
     return !config.hideEmptyCategories || category.apps.length > 0 || !fromHomepage
   }
 
+  const shown = categories.filter(shouldBeShown);
+  const masonry = useMasonry<HTMLDivElement>(
+    fromHomepage,
+    shown.map(({ apps }) => apps.length >= WIDE_CATEGORY_MIN_APPS)
+  );
+
   let apps: JSX.Element;
 
   if (categories.length && categories.some(shouldBeShown)) {
@@ -37,8 +44,11 @@ export const AppGrid = (props: Props): JSX.Element => {
       apps = <Message>No apps match your search criteria</Message>;
     } else {
       apps = (
-        <div className={classes.AppGrid}>
-        {categories.filter(shouldBeShown).map(
+        <div
+          className={`${classes.AppGrid} ${masonry.className}`}
+          ref={masonry.ref}
+        >
+        {shown.map(
             (category: Category): JSX.Element => (
               <AppCard
                 category={category}
