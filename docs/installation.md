@@ -10,10 +10,10 @@ The [quick start](../README.md#quick-start-docker-compose) covers the common cas
 | --- | --- |
 | `latest` | every push to `master` |
 | `YYYY-MM-DD` | every push to `master` (date of the build) |
-| `sha-<commit>` | every push to `master` |
-| `X.Y.Z`, `X.Y`, `X` | pushing a `vX.Y.Z` git tag |
+| `sha-<commit>` | every push to `master` and every release tag |
+| `X.Y.Z`, `X.Y`, `X` | pushing a `vX.Y.Z` git tag, e.g. by publishing a GitHub release |
 
-Pin a date or `sha-` tag if you don't want every `master` build. The old upstream images (`pawelmalak/flame`, `pawelmalak/flame:multiarch`) are a different project; see [Upgrading from upstream Flame](../README.md#upgrading-from-upstream-flame).
+Pin a version (e.g. `2.5.0`), date or `sha-` tag if you don't want every `master` build. The old upstream images (`pawelmalak/flame`, `pawelmalak/flame:multiarch`) are a different project; see [Upgrading from upstream Flame](../README.md#upgrading-from-upstream-flame).
 
 The image has a `HEALTHCHECK` (an HTTP request to `/` every 30 seconds), so `docker ps` shows whether Flame is responding.
 
@@ -106,7 +106,48 @@ docker buildx build --platform linux/amd64,linux/arm64 -f .docker/Dockerfile -t 
 
 ## Kubernetes
 
-`k8s/base` has a Deployment, Service, Ingress and the RBAC the Kubernetes integration needs (`get`, `list` and `watch` on `ingresses`). These manifests come from upstream and are not maintained here: the Deployment uses the image `shokohsc/flame` and has no data volume or `PASSWORD`, so change those before using them. `skaffold.yaml` is in the same state, and still points at Dockerfiles in the repository root that now live in `.docker/`. See [Kubernetes integration](integrations.md#kubernetes) for the annotations.
+`k8s/base` is a [Kustomize](https://kustomize.io/) base for the namespace `flame`:
+
+- a Deployment of `ghcr.io/trevorwget/flame:latest` (one replica, `Recreate` updates, because SQLite can't be shared between pods), with `/app/data` on a 1 GiB `ReadWriteOnce` PersistentVolumeClaim `flame-data` and `fsGroup: 1000` so the `node` user can write to it;
+- `PASSWORD` from the Secret `flame` (key `password`), generated with the placeholder `change_me`. Flame rejects that value, so login stays disabled until you replace it;
+- a ClusterIP Service on port 80 and an Ingress for the placeholder host `flame.example.com`;
+- the RBAC the [Kubernetes integration](integrations.md#kubernetes) needs (`get`, `list` and `watch` on `ingresses`).
+
+Use it from an overlay that sets your password, host and, if you like, a pinned image tag:
+
+```yaml
+# my-flame/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - https://github.com/TrevorWget/flame//k8s/base?ref=master
+images:
+  - name: ghcr.io/trevorwget/flame
+    newTag: "2.5.0"
+secretGenerator:
+  - name: flame
+    behavior: replace
+    files:
+      - password=password.txt # keep this file out of version control
+patches:
+  - target:
+      kind: Ingress
+      name: flame
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: flame.example.org
+```
+
+```sh
+kubectl apply -k my-flame
+```
+
+The Secret's name gets a hash of its contents, so changing the password restarts the pod. Add your own Ingress class, TLS or storage class in the same overlay.
+
+### Skaffold
+
+`skaffold.yaml` builds `.docker/Dockerfile` and deploys `k8s/base`. `skaffold dev` switches to `.docker/Dockerfile.dev`, which runs the server with nodemon, and syncs changed server files into the pod instead of rebuilding; changes to the client or `package.json` rebuild the image. Images are tagged with the short commit SHA. The base's placeholder password keeps login disabled, so to sign in during development change `password=change_me` in `k8s/base/kustomization.yaml` in your working copy, and don't commit it.
 
 ## Without Docker
 

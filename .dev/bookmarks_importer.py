@@ -1,166 +1,163 @@
-import sqlite3
-from bs4 import BeautifulSoup
-from PIL import Image, UnidentifiedImageError
-from io import BytesIO
-import re
-import base64
-from datetime import datetime, timezone
-import os
-import argparse
-
-
 """
-Imports html bookmarks file into Flame.
-Tested only on Firefox html exports so far.
+Imports an HTML bookmarks file into Flame.
+Tested only on Firefox HTML exports so far.
+
+Stop Flame and back up data/db.sqlite before running it.
 
 Usage:
 python3 bookmarks_importer.py --bookmarks <path to bookmarks file> --data <path to flame data dir>
-
 """
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--bookmarks', type=str, required=True)
-parser.add_argument('--data', type=str, required=True)
-args = parser.parse_args()
+import argparse
+import base64
+import binascii
+import os
+import re
+import sqlite3
+from datetime import datetime, timezone
+from io import BytesIO
 
-bookmarks_path = args.bookmarks
-data_path      = args.data
-created        = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3] + datetime.now().astimezone().strftime(" %z")
-updated        = created
-if data_path[-1] != '/':
-	data_path = data_path + '/'
+from bs4 import BeautifulSoup
+from PIL import Image, UnidentifiedImageError
 
+# Same format Sequelize uses for SQLite dates
+TIMESTAMP = (
+    datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+    + datetime.now().astimezone().strftime(' %z')
+)
 
-
-
-def Base64toPNG(codec, name):
-
-	"""
-	Convert base64 encoded image to png file
-	Reference: https://github.com/python-pillow/Pillow/issues/3400#issuecomment-428104239
-
-		Parameters:
-			codec (str): icon in html bookmark format.e.g. 'data:image/png;base64,<image encoding>'
-			name (str): name for export file
-
-		Returns:
-			icon_name(str): name of png output E.g. 1636473849374--mybookmark.png
-			None: if image not produced successfully
-
-	"""
-
-	try:
-		unix_t     = str(int(datetime.now(tz=timezone.utc).timestamp() * 1000))
-		icon_name  = unix_t + '--' + re.sub(r'\W+', '', name).lower() + '.png'
-		image_path = data_path + 'uploads/' + icon_name
-		if os.path.exists(image_path):
-			return image_path
-		base64_data = re.sub('^data:image/.+;base64,', '', codec)
-		byte_data   = base64.b64decode(base64_data)
-		image_data  = BytesIO(byte_data)
-		img         = Image.open(image_data)
-		img.save(image_path, "PNG")
-		return icon_name
-	except UnidentifiedImageError:
-		return None
+DATA_URI = re.compile(r'^data:image/[^;,]+;base64,', re.IGNORECASE)
 
 
+def base64_to_png(codec, name, uploads_path):
+    """
+    Saves an icon from the bookmarks file as a PNG in uploads_path.
+    Reference: https://github.com/python-pillow/Pillow/issues/3400#issuecomment-428104239
+
+        Parameters:
+            codec (str): icon in html bookmark format, e.g. 'data:image/png;base64,<image encoding>'
+            name (str): bookmark name, used in the file name
+
+        Returns:
+            icon_name (str): file name of the PNG, e.g. 1636473849374--mybookmark.png (ASCII only)
+            None: if the icon is not an image that could be read
+    """
+
+    if not DATA_URI.match(codec):
+        return None
+
+    try:
+        byte_data = base64.b64decode(DATA_URI.sub('', codec), validate=True)
+        img = Image.open(BytesIO(byte_data))
+        img.load()
+    except (binascii.Error, ValueError, OSError, UnidentifiedImageError):
+        return None
+
+    unix_t = str(int(datetime.now(tz=timezone.utc).timestamp() * 1000))
+    base_name = unix_t + '--' + re.sub(r'[^a-z0-9_]+', '', name.lower())
+    icon_name = base_name + '.png'
+    suffix = 1
+    while os.path.exists(os.path.join(uploads_path, icon_name)):
+        icon_name = f'{base_name}-{suffix}.png'
+        suffix += 1
+
+    try:
+        img.save(os.path.join(uploads_path, icon_name), 'PNG')
+    except (OSError, ValueError):
+        return None
+    return icon_name
 
 
-def FlameBookmarkParser(bookmarks_path):
+def add_category(cur, cat_name):
+    """
+    Returns the id of the bookmark category named cat_name, creating it if needed.
+    App categories with the same name are left alone.
+    """
 
-	"""
-	Parses HTML bookmarks file
-	Reference: https://stackoverflow.com/questions/68621107/extracting-bookmarks-and-folder-hierarchy-from-google-chrome-with-beautifulsoup
+    cur.execute(
+        "SELECT id FROM categories WHERE name = ? AND type = 'bookmarks' ORDER BY id LIMIT 1;",
+        [cat_name],
+    )
+    row = cur.fetchone()
+    if row:
+        return row[0]
 
-		Parameters:
-			bookmarks_path (str): path to bookmarks.html
-
-		Returns:
-			None
-
-	"""
-
-	soup = BeautifulSoup()
-	with open(bookmarks_path) as f:
-        	soup = BeautifulSoup(f.read(), 'lxml')
-
-	dt = soup.find_all('dt')
-	folder_name =''
-	for i in dt:
-		n = i.find_next()
-		if n.name == 'h3':
-			folder_name = n.text
-			continue
-		else:
-			url          = n.get("href")
-			website_name = n.text
-			icon         = n.get("icon")
-			if icon != None:
-				icon_name = Base64toPNG(icon, website_name)
-			cat_id = AddFlameCategory(folder_name)
-			AddFlameBookmark(website_name, url, cat_id, icon_name)
+    cur.execute(
+        "INSERT INTO categories(name, type, isPinned, createdAt, updatedAt) VALUES (?, 'bookmarks', 1, ?, ?);",
+        (cat_name, TIMESTAMP, TIMESTAMP),
+    )
+    return cur.lastrowid
 
 
+def add_bookmark(cur, website_name, url, cat_id, icon_name):
+    if icon_name is None:
+        cur.execute(
+            "INSERT INTO bookmarks(name, url, categoryId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?);",
+            (website_name, url, cat_id, TIMESTAMP, TIMESTAMP),
+        )
+    else:
+        cur.execute(
+            "INSERT INTO bookmarks(name, url, categoryId, icon, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?);",
+            (website_name, url, cat_id, icon_name, TIMESTAMP, TIMESTAMP),
+        )
 
 
-def AddFlameCategory(cat_name):
-	"""
-        Parses HTML bookmarks file
+def import_bookmarks(bookmarks_path, data_path):
+    """
+    Parses an HTML bookmarks file and adds each bookmark to the category named after its folder.
+    Reference: https://stackoverflow.com/questions/68621107/extracting-bookmarks-and-folder-hierarchy-from-google-chrome-with-beautifulsoup
 
-		Parameters:
-			cat_name (str): category name
+        Returns:
+            count (int): number of bookmarks added
+    """
 
-		Returns:
-			cat_id (int): primary key id of cat_name
+    with open(bookmarks_path, encoding='utf-8') as f:
+        soup = BeautifulSoup(f.read(), 'lxml')
 
-        """
+    uploads_path = os.path.join(data_path, 'uploads')
+    os.makedirs(uploads_path, exist_ok=True)
 
+    con = sqlite3.connect(os.path.join(data_path, 'db.sqlite'))
+    count = 0
+    try:
+        cur = con.cursor()
+        folder_name = ''
+        for dt in soup.find_all('dt'):
+            n = dt.find_next()
+            if n is None:
+                continue
+            if n.name == 'h3':
+                folder_name = n.text
+                continue
 
+            url = n.get('href')
+            if not url:
+                continue
+            website_name = n.text
+            icon = n.get('icon')
 
-	con       = sqlite3.connect(data_path + 'db.sqlite')
-	cur       = con.cursor()
-	count_sql = ("SELECT count(*) FROM categories WHERE name = ?;")
-	cur.execute(count_sql, [cat_name])
-	count = int(cur.fetchall()[0][0])
-	if count > 0:
-		getid_sql = ("SELECT id FROM categories WHERE name = ?;")
-		cur.execute(getid_sql, [cat_name])
-		cat_id = int(cur.fetchall()[0][0])
-		return cat_id
+            icon_name = None
+            if icon:
+                icon_name = base64_to_png(icon, website_name, uploads_path)
 
-	is_pinned = 1
-
-	insert_sql = "INSERT OR IGNORE INTO categories(name, isPinned, createdAt, updatedAt) VALUES (?, ?, ?, ?);"
-	cur.execute(insert_sql, (cat_name, is_pinned, created, updated))
-	con.commit()
-
-	getid_sql = ("SELECT id FROM categories WHERE name = ?;")
-	cur.execute(getid_sql, [cat_name])
-	cat_id = int(cur.fetchall()[0][0])
-	return cat_id
-
-
-
-
-def AddFlameBookmark(website_name, url, cat_id, icon_name):
-	con = sqlite3.connect(data_path + 'db.sqlite')
-	cur = con.cursor()
-	if icon_name == None:
-		insert_sql = "INSERT OR IGNORE INTO bookmarks(name, url, categoryId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?);"
-		cur.execute(insert_sql, (website_name, url, cat_id, created, updated))
-		con.commit()
-	else:
-		insert_sql = "INSERT OR IGNORE INTO bookmarks(name, url, categoryId, icon, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?);"
-		cur.execute(insert_sql, (website_name, url, cat_id, icon_name, created, updated))
-		con.commit()
+            cat_id = add_category(cur, folder_name)
+            add_bookmark(cur, website_name, url, cat_id, icon_name)
+            count += 1
+        con.commit()
+    finally:
+        con.close()
+    return count
 
 
+def main():
+    parser = argparse.ArgumentParser(description='Import an HTML bookmarks file into Flame.')
+    parser.add_argument('--bookmarks', type=str, required=True)
+    parser.add_argument('--data', type=str, required=True)
+    args = parser.parse_args()
+
+    count = import_bookmarks(args.bookmarks, args.data)
+    print(f'Imported {count} bookmarks')
 
 
-
-
-
-
-if __name__ == "__main__":
-	FlameBookmarkParser(bookmarks_path)
+if __name__ == '__main__':
+    main()

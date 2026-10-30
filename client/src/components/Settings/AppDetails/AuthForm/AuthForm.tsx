@@ -151,13 +151,14 @@ export const AuthForm = (): JSX.Element => {
                 }
               />
               <span>
-                See
+                See the{' '}
                 <a
-                  href="https://github.com/pawelmalak/flame/wiki/Authentication"
-                  target="blank"
+                  href="https://github.com/TrevorWget/flame/blob/master/docs/authentication.md"
+                  target="_blank"
+                  rel="noreferrer"
                 >
-                  {` project wiki `}
-                </a>
+                  authentication docs
+                </a>{' '}
                 to read more about authentication
               </span>
             </InputGroup>

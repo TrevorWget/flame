@@ -286,13 +286,19 @@ npm run lint && npm test          # server: ESLint and node:test (test/*.test.js
 
 cd client
 npm run lint && npm run typecheck && npm test && npm run build   # client: ESLint, tsc, Vitest, production bundle in client/dist
+cd ..
+
+# bookmark importer: Python 3 with .dev/requirements-importer.txt installed
+python3 -m unittest discover -s .dev -p "test_*.py"
 ```
 
-**CI:** `.github/workflows/ci.yml` runs the server and client checks and an `npm audit` gate (high and critical advisories in production dependencies) on every push. `.github/workflows/docker-publish.yml` builds the image on pull requests and checks that it becomes healthy and runs as uid 1000; pushes to `master` and `v*.*.*` tags also publish it to GHCR for amd64 and arm64. Renovate keeps dependencies and pinned action digests up to date.
+**CI:** `.github/workflows/ci.yml` runs the server and client checks, the bookmark importer tests and an `npm audit` gate (high and critical advisories in production dependencies) on every push. `.github/workflows/docker-publish.yml` builds the image on pull requests and checks that it becomes healthy and runs as uid 1000; pushes to `master` and `v*.*.*` tags also publish it to GHCR for amd64 and arm64. Renovate keeps dependencies and pinned action digests up to date.
 
-**Versioning:** the version comes from `VITE_APP_VERSION` in `client/.env` (shown in **Settings > App**, used by the update check and the image); keep `VERSION` in the root `.env` the same. Add changes to [CHANGELOG.md](CHANGELOG.md).
+**Versioning:** the version comes from `VITE_APP_VERSION` in `client/.env` (shown in **Settings > App** and used by the image); keep `VERSION` in the root `.env` the same. Add changes to [CHANGELOG.md](CHANGELOG.md).
 
-See [Installation](docs/installation.md) for building the image and running without Docker, and [.dev/DEV_GUIDELINES.md](.dev/DEV_GUIDELINES.md) for adding a setting.
+**Releases:** bump both versions, move the changelog entries under the new version and merge to `master`, then publish a GitHub release with the tag `vX.Y.Z` (e.g. `gh release create v2.5.0 --target master`). The tag publishes the `X.Y.Z`, `X.Y` and `X` image tags. The update check in Flame (when the dashboard is opened, and **Settings > App > Check for updates**) compares `VITE_APP_VERSION` with the latest published release of this repository and links to it when it is newer.
+
+See [Installation](docs/installation.md) for building the image, running without Docker and Kubernetes, and [.dev/DEV_GUIDELINES.md](.dev/DEV_GUIDELINES.md) for adding a setting.
 
 ## Contributing
 
