@@ -16,11 +16,18 @@ const READ_ONLY = ['id', 'createdAt', 'updatedAt', 'orderId', 'source'];
 
 const description = z.string().trim().max(1000);
 
+// Optional, so an empty string clears it
+const externalUrl = z.literal('').or(url);
+
+const preferredUrl = z.enum(['internal', 'external']);
+
 const createApp = {
   body: writableFields(
     {
       name,
       url,
+      externalUrl: externalUrl.optional(),
+      preferredUrl: preferredUrl.optional(),
       categoryId: id,
       icon: icon.optional(),
       description: description.optional(),
@@ -37,6 +44,8 @@ const updateApp = {
     {
       name: name.optional(),
       url: url.optional(),
+      externalUrl: externalUrl.optional(),
+      preferredUrl: preferredUrl.optional(),
       categoryId: id.optional(),
       icon: icon.optional(),
       description: description.optional(),

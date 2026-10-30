@@ -6,6 +6,7 @@ import { App, Category } from '../../../interfaces';
 import { actionCreators } from '../../../store';
 import { State } from '../../../store/reducers';
 import { iconParser, isImage, isSvg, isUrl, urlParser } from '../../../utility';
+import { resolveAppUrl } from '../../../utility/appUrl';
 import { useCollapsibleCategory } from '../../Home/CollapsibleCategory/CollapsibleCategory';
 import { Icon, SvgIcon } from '../../UI';
 import classes from './AppCard.module.css';
@@ -62,7 +63,7 @@ export const AppCard = (props: Props): JSX.Element => {
       >
         {category.apps.map((app: App) => {
           const [displayUrl, redirectUrl] = urlParser(
-            app.url,
+            resolveAppUrl(app).url,
             config.extraUrlSchemes
           );
 

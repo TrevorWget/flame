@@ -6,6 +6,7 @@ import { Category } from '../../interfaces';
 import { actionCreators } from '../../store';
 import { State } from '../../store/reducers';
 import { redirectUrl, searchParser } from '../../utility';
+import { resolveAppUrl } from '../../utility/appUrl';
 import classes from './SearchBar.module.css';
 
 // Redux
@@ -97,7 +98,7 @@ export const SearchBar = (props: Props): JSX.Element => {
         // Local query -> redirect if at least 1 result found
         if (appSearchResult?.[0]?.apps?.length) {
           redirectUrl(
-            appSearchResult[0].apps[0].url,
+            resolveAppUrl(appSearchResult[0].apps[0]).url,
             sameTab,
             config.extraUrlSchemes
           );
