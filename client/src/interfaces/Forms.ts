@@ -1,5 +1,6 @@
 import { WeatherData, WeatherProvider } from '../types';
 import { BackupSchedule } from './Backup';
+import { AppDensity, AppTileStyle } from './Config';
 
 export interface WeatherForm {
   weatherProvider: WeatherProvider;
@@ -47,6 +48,17 @@ export interface UISettingsForm {
   hideDate: boolean;
   hideSearch: boolean;
   disableAutofocus: boolean;
+}
+
+export interface LayoutSettingsForm {
+  appTileStyle: AppTileStyle;
+  appDensity: AppDensity;
+  appIconScale: number;
+  homeAppColumns: number;
+  appsPageColumns: number;
+  hideAppUrls: boolean;
+  hideAppDescriptions: boolean;
+  hideStatusDots: boolean;
 }
 
 export interface DockerSettingsForm {

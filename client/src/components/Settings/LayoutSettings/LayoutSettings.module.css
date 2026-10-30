@@ -1,0 +1,16 @@
+/* Beats the text input look of InputGroup */
+input[type='range'].Slider {
+  padding: 0;
+  background-color: transparent;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+/* About as wide as one home page column */
+.Preview {
+  max-width: 340px;
+  margin-bottom: 15px;
+  padding: 12px 12px 0;
+  border: 1px dashed rgba(127, 127, 127, 0.35);
+  border-radius: 4px;
+}

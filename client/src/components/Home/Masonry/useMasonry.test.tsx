@@ -5,7 +5,9 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { App, Category } from '../../../interfaces';
+import { ActionType } from '../../../store/action-types';
 import { store } from '../../../store/store';
+import { configTemplate } from '../../../utility';
 import { AppGrid } from '../../Apps/AppGrid/AppGrid';
 import { WIDE_CATEGORY_MIN_APPS } from '../../Apps/AppCard/AppCard';
 
@@ -200,6 +202,25 @@ describe('useMasonry', () => {
     expect(placement('Category 1')).toEqual({ column: '1', row: '1 / span 150' });
     expect(placement('Category 2')).toEqual({ column: '1', row: '151 / span 70' });
     expect(placement('Category 3')).toEqual({ column: '1', row: '221 / span 110' });
+  });
+
+  it('follows a new column setting without a resize', () => {
+    renderGrid([category(1, 3), category(2, 1), category(3, 2)]);
+    expect(placement('Category 3')).toEqual({ column: '3', row: '1 / span 110' });
+
+    columns = 2;
+    act(() => {
+      store.dispatch({
+        type: ActionType.getConfig,
+        payload: { ...configTemplate, homeAppColumns: 2 },
+      });
+    });
+
+    expect(placement('Category 3')).toEqual({ column: '1', row: '151 / span 110' });
+
+    act(() => {
+      store.dispatch({ type: ActionType.getConfig, payload: configTemplate });
+    });
   });
 
   it('places cards that appear later', () => {

@@ -50,4 +50,12 @@ export const configTemplate: Config = {
   statusColorUp: '',
   statusColorUnhealthy: '',
   statusColorDown: '',
+  appTileStyle: 'list',
+  appDensity: 'normal',
+  appIconScale: 100,
+  homeAppColumns: 0,
+  appsPageColumns: 0,
+  hideAppUrls: false,
+  hideAppDescriptions: false,
+  hideStatusDots: false,
 };

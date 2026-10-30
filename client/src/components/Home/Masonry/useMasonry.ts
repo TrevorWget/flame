@@ -43,6 +43,7 @@ class Masonry {
   private animations = new Map<Element, Animation>();
   private lastKey = '';
   private lastWidth = -1;
+  private layoutKey = '';
   private columns = 0;
 
   constructor(grid: HTMLElement, isWide: () => boolean[]) {
@@ -61,8 +62,14 @@ class Masonry {
     this.observer.observe(grid);
   }
 
-  update(): void {
+  // A new layoutKey means the CSS columns may have changed at the same width
+  update(layoutKey = ''): void {
     const cards = new Set(this.grid.children);
+
+    if (layoutKey !== this.layoutKey) {
+      this.layoutKey = layoutKey;
+      this.lastWidth = -1;
+    }
 
     for (const card of this.observed) {
       if (!cards.has(card)) {
@@ -192,10 +199,11 @@ class Masonry {
 }
 
 // Wide cards span every column. Needs ResizeObserver; without it the grid
-// keeps its normal row layout.
+// keeps its normal row layout. `layoutKey` changes with the grid's settings.
 export const useMasonry = <T extends HTMLElement>(
   enabled: boolean,
-  wide: boolean[]
+  wide: boolean[],
+  layoutKey = ''
 ): { ref: RefObject<T>; className: string } => {
   const ref = useRef<T>(null);
   const masonry = useRef<Masonry | null>(null);
@@ -213,7 +221,7 @@ export const useMasonry = <T extends HTMLElement>(
       masonry.current = grid ? new Masonry(grid, () => wideRef.current) : null;
     }
 
-    masonry.current?.update();
+    masonry.current?.update(layoutKey);
   });
 
   useLayoutEffect(

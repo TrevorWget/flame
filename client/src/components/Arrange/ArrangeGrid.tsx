@@ -34,11 +34,20 @@ import { useSelector } from 'react-redux';
 
 import { App, Category } from '../../interfaces';
 import { State } from '../../store/reducers';
-import { iconParser, isImage, isSvg, isUrl, urlParser } from '../../utility';
+import {
+  AppLayout,
+  appSubtitle,
+  iconParser,
+  isImage,
+  isSvg,
+  isUrl,
+  urlParser,
+} from '../../utility';
 import { categoryItems, Item, ItemsKey } from '../../utility/moveItem';
 import { WIDE_CATEGORY_MIN_APPS } from '../Apps/AppCard/AppCard';
 import appCardClasses from '../Apps/AppCard/AppCard.module.css';
 import appGridClasses from '../Apps/AppGrid/AppGrid.module.css';
+import { useAppLayout } from '../Apps/AppGrid/useAppLayout';
 import bookmarkCardClasses from '../Bookmarks/BookmarkCard/BookmarkCard.module.css';
 import bookmarkGridClasses from '../Bookmarks/BookmarkGrid/BookmarkGrid.module.css';
 import { Icon, SvgIcon } from '../UI';
@@ -96,8 +105,22 @@ const ItemIcon = ({ item, kind }: { item: Item; kind: ItemsKey }) => {
   );
 };
 
-const TileContent = ({ item, kind }: { item: Item; kind: ItemsKey }) => {
+interface TileContentProps {
+  item: Item;
+  kind: ItemsKey;
+  layout: AppLayout;
+}
+
+const TileContent = ({ item, kind, layout }: TileContentProps) => {
   const config = useSelector((state: State) => state.config.config);
+  const subtitle =
+    kind === 'apps'
+      ? appSubtitle(
+          (item as App).description,
+          urlParser(item.url, config.extraUrlSchemes)[0],
+          layout
+        )
+      : '';
 
   return (
     <>
@@ -105,10 +128,7 @@ const TileContent = ({ item, kind }: { item: Item; kind: ItemsKey }) => {
       {kind === 'apps' ? (
         <div className={`${appCardClasses.AppCardDetails} ${classes.Details}`}>
           <h5>{item.name}</h5>
-          <span>
-            {(item as App).description ||
-              urlParser(item.url, config.extraUrlSchemes)[0]}
-          </span>
+          {subtitle && <span>{subtitle}</span>}
         </div>
       ) : (
         <span className={classes.Details}>{item.name}</span>
@@ -125,11 +145,14 @@ const TileContent = ({ item, kind }: { item: Item; kind: ItemsKey }) => {
 interface TileProps {
   item: Item;
   kind: ItemsKey;
+  layout: AppLayout;
+  isTile: boolean;
   disabled: boolean;
   onEdit: (item: Item) => void;
 }
 
-const SortableTile = ({ item, kind, disabled, onEdit }: TileProps) => {
+const SortableTile = (props: TileProps) => {
+  const { item, kind, layout, isTile, disabled, onEdit } = props;
   const {
     attributes,
     listeners,
@@ -145,7 +168,13 @@ const SortableTile = ({ item, kind, disabled, onEdit }: TileProps) => {
   return (
     <div
       ref={setNodeRef}
-      className={`${classes.Item} ${isDragging ? classes.Placeholder : ''}`}
+      className={[
+        classes.Item,
+        isTile && classes.TileItem,
+        isDragging && classes.Placeholder,
+      ]
+        .filter(Boolean)
+        .join(' ')}
       style={{ transform: CSS.Translate.toString(transform), transition }}
       data-testid={`arrange-item-${item.id}`}
       {...listeners}
@@ -160,7 +189,7 @@ const SortableTile = ({ item, kind, disabled, onEdit }: TileProps) => {
       >
         <Icon icon="mdiDragVertical" color="var(--color-accent)" />
       </button>
-      <TileContent item={item} kind={kind} />
+      <TileContent item={item} kind={kind} layout={layout} />
       <button
         type="button"
         className={classes.Edit}
@@ -179,6 +208,8 @@ const SortableTile = ({ item, kind, disabled, onEdit }: TileProps) => {
 interface ColumnProps {
   category: Category;
   kind: ItemsKey;
+  layout: AppLayout;
+  isTile: boolean;
   ids: number[];
   itemsById: Map<number, Item>;
   customOrder: boolean;
@@ -191,6 +222,8 @@ const CategoryColumn = (props: ColumnProps) => {
   const {
     category,
     kind,
+    layout,
+    isTile,
     ids,
     itemsById,
     customOrder,
@@ -206,9 +239,13 @@ const CategoryColumn = (props: ColumnProps) => {
 
   if (kind === 'apps') {
     const isWide = category.apps.length >= WIDE_CATEGORY_MIN_APPS;
-    cardClass = isWide
-      ? `${appCardClasses.AppCard} ${appCardClasses.WideAppCard}`
-      : appCardClasses.AppCard;
+    cardClass = [
+      appCardClasses.AppCard,
+      isWide && appCardClasses.WideAppCard,
+      isTile && appCardClasses.TileAppCard,
+    ]
+      .filter(Boolean)
+      .join(' ');
     listClass = appCardClasses.Apps;
   }
 
@@ -234,6 +271,8 @@ const CategoryColumn = (props: ColumnProps) => {
                 key={itemId}
                 item={item}
                 kind={kind}
+                layout={layout}
+                isTile={isTile}
                 disabled={disabled}
                 onEdit={onEdit}
               />
@@ -266,6 +305,10 @@ export const ArrangeGrid = ({
   );
   const customOrder = useOrdering === 'orderId';
   const noun = kind === 'apps' ? 'app' : 'bookmark';
+  // Arranging happens on /applications, so apps follow its layout
+  const appLayout = useAppLayout('apps');
+  const { layout } = appLayout;
+  const isTile = kind === 'apps' && layout.tileStyle === 'tiles';
 
   const base = useMemo<Containers>(
     () =>
@@ -491,11 +534,16 @@ export const ArrangeGrid = ({
       onDragCancel={resetDrag}
     >
       <div
-        className={`${
+        className={[
           kind === 'apps'
             ? appGridClasses.AppGrid
-            : bookmarkGridClasses.BookmarkGrid
-        } ${classes.Arranging}`}
+            : bookmarkGridClasses.BookmarkGrid,
+          kind === 'apps' && appLayout.className,
+          classes.Arranging,
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        style={kind === 'apps' ? appLayout.style : undefined}
       >
         {categories.map((category) => {
           const key = containerId(category.id);
@@ -505,6 +553,8 @@ export const ArrangeGrid = ({
               key={category.id}
               category={category}
               kind={kind}
+              layout={layout}
+              isTile={isTile}
               ids={containers[key] ?? []}
               itemsById={itemsById}
               customOrder={customOrder}
@@ -516,13 +566,22 @@ export const ArrangeGrid = ({
         })}
       </div>
 
-      <DragOverlay dropAnimation={customOrder ? undefined : null}>
+      {/* Outside the grid, so it needs the layout's properties and tile styles too */}
+      <DragOverlay
+        dropAnimation={customOrder ? undefined : null}
+        style={kind === 'apps' ? appLayout.style : undefined}
+        className={isTile ? appCardClasses.TileAppCard : undefined}
+      >
         {activeItem ? (
-          <div className={`${classes.Item} ${classes.Overlay}`}>
+          <div
+            className={[classes.Item, isTile && classes.TileItem, classes.Overlay]
+              .filter(Boolean)
+              .join(' ')}
+          >
             <span className={classes.Handle}>
               <Icon icon="mdiDragVertical" color="var(--color-accent)" />
             </span>
-            <TileContent item={activeItem} kind={kind} />
+            <TileContent item={activeItem} kind={kind} layout={layout} />
           </div>
         ) : null}
       </DragOverlay>
