@@ -25,6 +25,9 @@ const statusColor = z
   .string()
   .regex(/^(#[0-9a-f]{6})?$/i, 'Must be empty or a hex color, e.g. #3fb950');
 
+// 0 picks the columns from the screen width
+const appColumns = z.number().int().min(0).max(8);
+
 const SETTINGS = {
   weatherProvider: z
     .string()
@@ -80,6 +83,15 @@ const SETTINGS = {
   statusColorUp: statusColor,
   statusColorUnhealthy: statusColor,
   statusColorDown: statusColor,
+  appTileStyle: z.enum(['list', 'tiles']),
+  appDensity: z.enum(['compact', 'normal', 'roomy']),
+  // Percent of each tile style's default icon size
+  appIconScale: z.number().int().min(50).max(200),
+  homeAppColumns: appColumns,
+  appsPageColumns: appColumns,
+  hideAppUrls: z.boolean(),
+  hideAppDescriptions: z.boolean(),
+  hideStatusDots: z.boolean(),
 };
 
 const isUnchanged = (value, stored) =>

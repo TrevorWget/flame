@@ -81,6 +81,18 @@ const FAVICON_ICO = Buffer.concat([
   crypto.randomBytes(32),
 ]);
 
+// None of them the defaults, so a restore that drops one is caught
+const LAYOUT_SETTINGS = {
+  appTileStyle: 'tiles',
+  appDensity: 'roomy',
+  appIconScale: 140,
+  homeAppColumns: 6,
+  appsPageColumns: 3,
+  hideAppUrls: true,
+  hideAppDescriptions: true,
+  hideStatusDots: true,
+};
+
 // Answers the status checks of the restored apps
 const statusServer = http.createServer((req, res) => res.end('ok'));
 let statusUrl;
@@ -153,6 +165,7 @@ const seed = async () => {
       statusColorDown: '#f85149',
       autoFetchIcons: true,
       iconFetchAllowPrivate: true,
+      ...LAYOUT_SETTINGS,
     },
     themes: {
       themes: [
@@ -609,6 +622,28 @@ test.describe('restore', () => {
     );
   });
 
+  test('layout settings survive an export, wipe and restore', async () => {
+    const pick = (settings) =>
+      Object.fromEntries(
+        Object.keys(LAYOUT_SETTINGS).map((key) => [key, settings[key]])
+      );
+
+    assert.deepStrictEqual(pick(exported.settings), LAYOUT_SETTINGS);
+
+    await wipe();
+    assert.notDeepStrictEqual(
+      pick(readJson('data/config.json')),
+      LAYOUT_SETTINGS
+    );
+
+    const res = await restore(archive);
+    assert.strictEqual(res.status, 200, res.text);
+    assert.deepStrictEqual(pick(readJson('data/config.json')), LAYOUT_SETTINGS);
+
+    const publicConfig = await request(api).get('/api/config');
+    assert.deepStrictEqual(pick(publicConfig.body.data), LAYOUT_SETTINGS);
+  });
+
   test('a backup cannot set the weather API key', async () => {
     const data = structuredClone(exported);
     data.settings.WEATHER_API_KEY = 'from-a-backup';
@@ -864,6 +899,18 @@ test.describe('invalid archives', () => {
       withData((d) => (d.settings.dockerHost = 'ftp://nope')),
       400,
       /settings\.dockerHost/,
+    ],
+    [
+      'an unknown tile style',
+      withData((d) => (d.settings.appTileStyle = 'carousel')),
+      400,
+      /settings\.appTileStyle/,
+    ],
+    [
+      'too many app columns',
+      withData((d) => (d.settings.homeAppColumns = 20)),
+      400,
+      /settings\.homeAppColumns/,
     ],
     [
       'custom CSS over the size limit',
