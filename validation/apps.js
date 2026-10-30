@@ -1,5 +1,6 @@
 const { z } = require('zod');
 const {
+  MAX_URL_LENGTH,
   id,
   idParam,
   visibility,
@@ -11,10 +12,26 @@ const {
   emptyBody,
   writableFields,
 } = require('./fields');
+const { isHttpUrl } = require('../utils/urlSchemes');
 
 const READ_ONLY = ['id', 'createdAt', 'updatedAt', 'orderId', 'source'];
 
 const description = z.string().trim().max(1000);
+
+// Same inputs as visibility (JSON booleans, multipart "1"/"0"), stored as a boolean
+const statusCheck = visibility.transform(Boolean);
+
+// Empty means "check the app URL"
+const statusUrl = z
+  .string()
+  .trim()
+  .max(MAX_URL_LENGTH)
+  .nullable()
+  .refine(
+    (value) => !value || isHttpUrl(value),
+    'Status check URL must be an http:// or https:// URL'
+  )
+  .transform((value) => value || null);
 
 // Optional, so an empty string clears it
 const externalUrl = z.literal('').or(url);
@@ -32,6 +49,8 @@ const createApp = {
       icon: icon.optional(),
       description: description.optional(),
       isPublic: visibility.optional(),
+      statusCheck: statusCheck.optional(),
+      statusUrl: statusUrl.optional(),
     },
     // New apps are pinned according to the pinAppsByDefault setting
     [...READ_ONLY, 'isPinned']
@@ -51,6 +70,8 @@ const updateApp = {
       description: description.optional(),
       isPublic: visibility.optional(),
       isPinned: flag.optional(),
+      statusCheck: statusCheck.optional(),
+      statusUrl: statusUrl.optional(),
     },
     READ_ONLY
   ),

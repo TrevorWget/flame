@@ -20,6 +20,10 @@ export interface GeneralForm {
   appsSameTab: boolean;
   bookmarksSameTab: boolean;
   extraUrlSchemes: string;
+  statusChecks: boolean;
+  statusCheckInterval: number;
+  statusCheckTimeout: number;
+  statusCheckDocker: boolean;
 }
 
 export interface UISettingsForm {

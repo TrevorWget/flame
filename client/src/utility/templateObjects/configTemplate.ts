@@ -38,4 +38,8 @@ export const configTemplate: Config = {
   weatherData: 'cloud',
   hideDate: false,
   extraUrlSchemes: '',
+  statusChecks: false,
+  statusCheckInterval: 60,
+  statusCheckTimeout: 5,
+  statusCheckDocker: false,
 };

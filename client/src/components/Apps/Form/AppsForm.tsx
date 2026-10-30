@@ -38,7 +38,7 @@ export const AppsForm = ({
   // Load app data if provided for editing
   useEffect(() => {
     if (app) {
-      setFormData({ ...app });
+      setFormData({ ...app, statusUrl: app.statusUrl ?? '' });
     } else {
       setFormData(newAppTemplate);
     }
@@ -110,6 +110,8 @@ export const AppsForm = ({
       data.append('preferredUrl', formData.preferredUrl ?? 'internal');
       data.append('categoryId', `${formData.categoryId}`);
       data.append('isPublic', `${formData.isPublic ? 1 : 0}`);
+      data.append('statusCheck', `${formData.statusCheck ? 1 : 0}`);
+      data.append('statusUrl', formData.statusUrl ?? '');
 
       return data;
     };
@@ -338,6 +340,41 @@ export const AppsForm = ({
           <option value={0}>Hidden (authentication required)</option>
         </select>
       </InputGroup>
+
+      {/* STATUS INDICATOR */}
+      {config.statusChecks && (
+        <InputGroup>
+          <label htmlFor="statusCheck">Status indicator</label>
+          <select
+            id="statusCheck"
+            name="statusCheck"
+            value={formData.statusCheck ? 1 : 0}
+            onChange={(e) => inputChangeHandler(e, { isBool: true })}
+          >
+            <option value={1}>Check this app</option>
+            <option value={0}>Don't check this app</option>
+          </select>
+        </InputGroup>
+      )}
+
+      {config.statusChecks && formData.statusCheck && (
+        <InputGroup>
+          <label htmlFor="statusUrl">Status check URL</label>
+          <input
+            type="text"
+            name="statusUrl"
+            id="statusUrl"
+            placeholder="http://192.168.1.2:8096/health"
+            value={formData.statusUrl ?? ''}
+            onChange={(e) => inputChangeHandler(e)}
+          />
+          <span>
+            Optional - checked instead of the app URL, e.g. when the app URL
+            can't be reached from the Flame server. Docker apps with a check
+            URL get an HTTP check instead of their container state
+          </span>
+        </InputGroup>
+      )}
 
       <Button>{app ? 'Update app' : 'Add new app'}</Button>
     </ModalForm>

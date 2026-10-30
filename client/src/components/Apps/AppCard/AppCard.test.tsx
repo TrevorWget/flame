@@ -18,6 +18,8 @@ const app = (name: string, fields: Partial<App>): App => ({
   icon: '',
   isPublic: true,
   description: '',
+  statusCheck: true,
+  statusUrl: null,
   orderId: 1,
   isPinned: true,
   ...fields,
