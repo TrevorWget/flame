@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { resolveAppUrl } from './appUrl';
 
-const internal = 'http://192.168.1.2:8096';
+const internal = 'http://192.0.2.10:8096';
 const external = 'https://jellyfin.example.com';
 
 describe('resolveAppUrl', () => {
