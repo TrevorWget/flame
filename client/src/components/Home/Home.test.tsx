@@ -216,7 +216,16 @@ describe('Home collapsible categories', () => {
   it('forgets deleted categories once a signed-in user loads them all', () => {
     localStorage.setItem(COLLAPSED_CATEGORIES_KEY, '[1,99]');
     act(() => {
-      store.dispatch({ type: ActionType.login, payload: Date.now() + 60_000 });
+      store.dispatch({
+        type: ActionType.login,
+        payload: {
+          isAuthenticated: true,
+          expiresAt: Date.now() + 60_000,
+          method: 'password',
+          user: null,
+          logoutUrl: null,
+        },
+      });
     });
 
     renderHome(categories());

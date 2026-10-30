@@ -2,15 +2,11 @@ import axios, { AxiosError } from 'axios';
 import { Dispatch } from 'redux';
 
 import { getAdminConfig, getCategories, getConfig } from '.';
-import { ApiResponse } from '../../interfaces';
+import { ApiResponse, Session } from '../../interfaces';
 import { applyAuth } from '../../utility';
 import { ActionType } from '../action-types';
 import { AuthErrorAction, AutoLoginAction, LoginAction, LogoutAction } from '../actions/auth';
-
-interface Session {
-  isAuthenticated: boolean;
-  expiresAt: number | null;
-}
+import { State } from '../reducers';
 
 export const login =
   (formData: { password: string; duration: string }) =>
@@ -24,7 +20,7 @@ export const login =
 
       dispatch({
         type: ActionType.login,
-        payload: res.data.data.expiresAt as number,
+        payload: res.data.data,
       });
 
       dispatch<any>(getCategories());
@@ -44,14 +40,23 @@ const clearSession = (dispatch: Dispatch<LogoutAction>) => {
 };
 
 // Also used when the session has expired, so a failed request to clear the
-// cookie must not keep the user logged in
-export const logout = () => async (dispatch: Dispatch<LogoutAction>) => {
-  await axios
-    .post('/api/auth/logout', {}, { headers: applyAuth() })
-    .catch(() => {});
+// cookie must not keep the user logged in. A proxy session can only be ended
+// at the proxy.
+export const logout =
+  () => async (dispatch: Dispatch<LogoutAction>, getState: () => State) => {
+    const { method, logoutUrl } = getState().auth;
 
-  clearSession(dispatch);
-};
+    await axios
+      .post('/api/auth/logout', {}, { headers: applyAuth() })
+      .catch(() => {});
+
+    if (method === 'proxy' && logoutUrl) {
+      window.location.assign(logoutUrl);
+      return;
+    }
+
+    clearSession(dispatch);
+  };
 
 export const logoutAll = () => async (dispatch: Dispatch<LogoutAction>) => {
   try {
@@ -79,16 +84,15 @@ export const logoutAll = () => async (dispatch: Dispatch<LogoutAction>) => {
 export const autoLogin = () => async (dispatch: Dispatch<AutoLoginAction>) => {
   try {
     const res = await axios.get<ApiResponse<Session>>('/api/auth');
-    const { isAuthenticated, expiresAt } = res.data.data;
 
-    if (!isAuthenticated) {
+    if (!res.data.data.isAuthenticated) {
       dispatch<any>({ type: ActionType.authError });
       return;
     }
 
     dispatch({
       type: ActionType.autoLogin,
-      payload: expiresAt as number,
+      payload: res.data.data,
     });
 
     dispatch<any>(getCategories());

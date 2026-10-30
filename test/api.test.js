@@ -242,11 +242,15 @@ test.describe('session cookie and CSRF', () => {
     assert.deepStrictEqual(anonymous.body.data, {
       isAuthenticated: false,
       expiresAt: null,
+      method: null,
+      user: null,
+      logoutUrl: null,
     });
 
     const token = await getToken();
     const res = await withCookie(request(api).get('/api/auth'), token);
     assert.strictEqual(res.body.data.isAuthenticated, true);
+    assert.strictEqual(res.body.data.method, 'password');
     assert.strictEqual(res.body.data.expiresAt, jwt.decode(token).exp * 1000);
 
     const forged = await withCookie(request(api).get('/api/auth'), 'not-a-jwt');

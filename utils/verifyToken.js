@@ -1,11 +1,12 @@
 const jwt = require('jsonwebtoken');
 const { isLoginEnabled, getPasswordFingerprint } = require('./password');
+const { isOidcEnabled, getOidcFingerprint } = require('./oidc');
 const { getTokenVersion } = require('./tokenVersion');
 
-// Returns the payload of an unexpired HS256 token issued for the current
-// PASSWORD and token version, or null
+// Returns the payload of an unexpired HS256 token issued for the current token
+// version and the current PASSWORD (or OIDC settings, for OIDC sessions), or null
 const readToken = (token) => {
-  if (!token || typeof token !== 'string' || !isLoginEnabled()) {
+  if (!token || typeof token !== 'string') {
     return null;
   }
 
@@ -14,10 +15,17 @@ const readToken = (token) => {
       algorithms: ['HS256'],
     });
 
+    if (payload.app !== 'flame' || payload.ver !== getTokenVersion()) {
+      return null;
+    }
+
     const isValid =
-      payload.app === 'flame' &&
-      payload.pwd === getPasswordFingerprint() &&
-      payload.ver === getTokenVersion();
+      payload.sso === undefined
+        ? isLoginEnabled() && payload.pwd === getPasswordFingerprint()
+        : payload.sso === 'oidc' &&
+          typeof payload.sub === 'string' &&
+          isOidcEnabled() &&
+          payload.sfp === getOidcFingerprint();
 
     return isValid ? payload : null;
   } catch {

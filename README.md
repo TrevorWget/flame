@@ -15,7 +15,7 @@ Flame is self-hosted startpage for your server. Its design is inspired (heavily)
 - 📝 Create, update, delete your applications and bookmarks directly from the app using built-in GUI editors
 - 📌 Pin your favourite items to the homescreen for quick and easy access
 - 🔍 Integrated search bar with local filtering, 11 web search providers and ability to add your own
-- 🔑 Authentication system to protect your settings, apps and bookmarks
+- 🔑 Authentication system to protect your settings, apps and bookmarks, with optional single sign-on (OIDC or a forward-auth header from your reverse proxy)
 - 🔨 Dozens of options to customize Flame interface to your needs, including support for custom CSS, 15 built-in color themes and custom theme builder
 - ☀️ Weather widget with current temperature, cloud coverage and animated weather status
 - 🐳 Docker integration to automatically pick and add apps based on their labels
@@ -54,7 +54,7 @@ The image has a `HEALTHCHECK`, so `docker ps` shows whether Flame is responding.
 
 `PASSWORD` is required. If it is missing or set to one of the old example values (`flame_password`, `change_me`, ...), Flame still serves the dashboard but login is disabled and an error is logged at startup.
 
-Login attempts are rate limited per client IP. If Flame runs behind a reverse proxy, set `TRUST_PROXY` so the real client IP is used: `true` (trust all proxies), a hop count such as `1`, or a list of trusted addresses/subnets such as `loopback, 172.16.0.0/12` (see [Express "trust proxy"](https://expressjs.com/en/guide/behind-proxies.html)). `TRUST_PROXY` also lets Flame see that the proxy serves HTTPS, so the session cookie is marked `Secure`.
+Login attempts are rate limited per client IP. If Flame runs behind a reverse proxy, set `TRUST_PROXY` so the real client IP is used: `true` (trust all proxies), a hop count such as `1`, or a list of trusted addresses/subnets such as `loopback, 172.16.0.0/12` (see [Express "trust proxy"](https://expressjs.com/en/guide/behind-proxies.html)). `TRUST_PROXY` also lets Flame see that the proxy serves HTTPS, so the session cookie is marked `Secure`. To sign in through Authentik or another identity provider, see [Single sign-on](#single-sign-on-authentik-authelia-keycloak-).
 
 Leave `SECRET` unset to have a random JWT secret generated in `data/.secret`. Flame refuses to start if `SECRET` is set to the value that was committed to this repository before v2.4.0.
 
@@ -207,6 +207,91 @@ The session is stored in an `HttpOnly`, `SameSite=Strict` cookie (`Secure` over 
 Browsers send cookies to every port of a host, so other web apps served from the same hostname as Flame (e.g. `http://server:8080` next to `http://server:5005`) receive Flame's session cookie. Give Flame its own hostname if you don't trust the other services on that host.
 
 API clients can log in with `POST /api/auth` and keep the returned `flame_token` cookie, or send its value as `Authorization-Flame: Bearer <token>`. Login (`POST /api/auth`) and logout (`POST /api/auth/logout`) always need an `X-Flame-CSRF: 1` header; other requests that change data need it when they are authenticated by the cookie.
+
+#### Single sign-on (Authentik, Authelia, Keycloak, ...)
+
+Besides the password, Flame can sign you in through an identity provider in two ways. Both are off by default and can be combined with each other and with the password.
+
+- **Forward-auth header**: your reverse proxy already authenticates every request (e.g. Nginx Proxy Manager + Authentik forward auth) and passes the user name in a header. Flame trusts that header, so there is no second login.
+- **OIDC**: Flame shows a "Log in with ..." button and uses the OpenID Connect authorization code flow with PKCE. Use this when Flame isn't behind forward auth, or when only the settings should need a login.
+
+`PASSWORD` can be left unset when SSO is configured; password login is then disabled and only SSO works.
+
+##### Forward-auth header
+
+| Variable | Description |
+| --- | --- |
+| `AUTH_PROXY_HEADER` | Header that carries the authenticated user name, e.g. `X-authentik-username` (Authentik) or `Remote-User` (Authelia). Unset disables forward-auth login. |
+| `TRUST_PROXY` | **Required.** The proxy's IP address(es) or subnet(s), e.g. `172.18.0.5`. The header is only accepted when the TCP connection comes directly from one of them. `true` and hop counts are refused for forward auth because they trust every client. |
+| `AUTH_PROXY_LOGOUT_URL` | Optional. Where Flame's Logout button sends you to end the proxy session, e.g. `/outpost.goauthentik.io/sign_out`. Without it, proxy sessions have no Logout button, because Flame can't end them. |
+
+Requests carrying the header from any other address are ignored and logged, so a client can't simply send `X-authentik-username: admin` itself. To keep it that way:
+
+- The proxy must **replace** the header on every request it forwards (nginx's `proxy_set_header` does), so clients can't pass their own value through it.
+- Only the proxy may be able to reach Flame from a trusted address. Don't publish Flame's port (drop `ports:` and reach it through the proxy only), and prefer the proxy container's fixed IP over a whole Docker subnet: connections through a published port can appear to come from the Docker network's gateway (e.g. `172.18.0.1`), which is inside `172.18.0.0/16`.
+
+The proxy authenticates each request, so the header acts like the session cookie: requests that change data still need the `X-Flame-CSRF` header, and there is no session expiry on Flame's side.
+
+##### OIDC
+
+| Variable | Description |
+| --- | --- |
+| `OIDC_DISCOVERY_URL` | The provider's `.well-known/openid-configuration` URL (or its issuer URL). Must be the public URL your browser uses. |
+| `OIDC_CLIENT_ID` | Client ID. |
+| `OIDC_CLIENT_SECRET` | Client secret (or `OIDC_CLIENT_SECRET_FILE`, see [Docker Secrets](#docker-secrets)). Leave unset for public clients. |
+| `OIDC_REDIRECT_URI` | Recommended. `https://<your-flame-host>/api/auth/oidc/callback`; register exactly this URL with the provider. Defaults to the URL the request came in on. |
+| `OIDC_ALLOWED_GROUPS` | Optional comma-separated list. Only users in at least one of these groups can log in. |
+| `OIDC_GROUPS_CLAIM` | Claim with the user's groups, default `groups`. Read from the ID token, or from userinfo when it isn't there. |
+| `OIDC_USERNAME_CLAIM` | Claim shown as the user name, default `preferred_username` (falls back to `email`, then `sub`). |
+| `OIDC_SCOPES` | Default `openid profile email`. |
+| `OIDC_PROVIDER_NAME` | Button label: "Log in with `<name>`", default `SSO`. |
+| `OIDC_ALLOW_INSECURE_HTTP` | `true` allows plain-HTTP provider and redirect URLs. Only for testing. |
+
+A successful login gives you the usual `flame_token` session cookie, for the duration chosen in the login form, so "Log out all sessions" covers OIDC sessions too. Changing the provider, client ID or allowed groups ends existing OIDC sessions. Flame's Logout ends the Flame session only, not the provider's. If something goes wrong, the login page shows a short message and the details are in Flame's log.
+
+##### Authentik
+
+Forward auth with Nginx Proxy Manager (no second login):
+
+1. In Authentik, go to **Applications > Applications > Create with provider**. Pick **Proxy Provider** in **Forward auth (single application)** mode, with the external host `https://flame.example.com`. Restrict access under the application's **Policy / Group / User Bindings**.
+2. Under **Applications > Outposts**, add the application to the **authentik Embedded Outpost**.
+3. In Nginx Proxy Manager, open the `flame.example.com` proxy host and follow the **Nginx Proxy Manager** tab of Authentik's [nginx guide](https://docs.goauthentik.io/add-secure-apps/providers/proxy/server_nginx/). The `/outpost.goauthentik.io` location goes in the **Advanced** tab, pointing at your Authentik server. The `auth_request` directives go on a `/` **Custom Location** that forwards to Flame. Keep these lines, which pass the user name and overwrite any value the client sent:
+
+   ```nginx
+   auth_request_set $authentik_username $upstream_http_x_authentik_username;
+   proxy_set_header X-authentik-username $authentik_username;
+   ```
+
+   Enable **Websockets Support**; Flame's weather widget uses a WebSocket.
+4. Configure Flame. `172.18.0.5` stands for NPM's address on the network it shares with Flame (`docker network inspect <network>`; give NPM a fixed `ipv4_address` so it can't change):
+
+   ```yaml
+   environment:
+     - AUTH_PROXY_HEADER=X-authentik-username
+     - TRUST_PROXY=172.18.0.5
+     - AUTH_PROXY_LOGOUT_URL=/outpost.goauthentik.io/sign_out
+   ```
+
+   On startup Flame logs `Forward-auth login enabled: trusting the X-authentik-username header from 172.18.0.5`. If it logs `Ignoring X-authentik-username header from <address>`, add that address to `TRUST_PROXY` after checking that it really is the proxy.
+
+OIDC:
+
+1. In Authentik, go to **Applications > Applications > Create with provider** and pick **OAuth2/OpenID Provider**. Client type **Confidential**. Add the strict redirect URI `https://flame.example.com/api/auth/oidc/callback` and select a signing key (e.g. the self-signed certificate).
+2. Copy the **Client ID**, the **Client Secret** and, from the provider's overview page, the **OpenID Configuration URL**.
+3. Configure Flame:
+
+   ```yaml
+   environment:
+     - OIDC_DISCOVERY_URL=https://auth.example.com/application/o/flame/.well-known/openid-configuration
+     - OIDC_CLIENT_ID=<client id>
+     - OIDC_CLIENT_SECRET_FILE=/run/secrets/flame_oidc_client_secret
+     - OIDC_REDIRECT_URI=https://flame.example.com/api/auth/oidc/callback
+     - OIDC_PROVIDER_NAME=Authentik
+     - OIDC_ALLOWED_GROUPS=Flame Admins # optional; Authentik sends group names in the `groups` claim
+     - TRUST_PROXY=172.18.0.5 # so Flame sees HTTPS and marks cookies Secure
+   ```
+
+   Flame must be able to reach `auth.example.com` itself. Use the public URL, not an internal one such as `http://authentik-server:9000`, because the issuer and endpoints in the discovery document have to match what the browser uses.
 
 ### Search bar
 

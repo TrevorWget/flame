@@ -1,8 +1,9 @@
+import { Session } from '../../interfaces';
 import { ActionType } from '../action-types';
 
 export interface LoginAction {
   type: ActionType.login;
-  payload: number;
+  payload: Session;
 }
 
 export interface LogoutAction {
@@ -11,7 +12,7 @@ export interface LogoutAction {
 
 export interface AutoLoginAction {
   type: ActionType.autoLogin;
-  payload: number;
+  payload: Session;
 }
 
 export interface AuthErrorAction {

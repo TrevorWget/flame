@@ -3,12 +3,14 @@ const initFiles = require('./initFiles');
 const initDockerSecrets = require('./initDockerSecrets');
 const initSecret = require('./initSecret');
 const initPassword = require('./initPassword');
+const initSso = require('./initSso');
 const sanitizeUploads = require('./sanitizeUploads');
 
 const initApp = async () => {
   initDockerSecrets();
   initSecret();
   initPassword();
+  initSso();
   await initFiles();
   await initConfig();
   await sanitizeUploads();
