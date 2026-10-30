@@ -75,10 +75,6 @@ const checkHttp = async (url, timeoutSeconds) => {
 };
 
 const containerStatus = (container) => {
-  if (!container) {
-    return down('Container not found');
-  }
-
   const { State, Status = '' } = container;
 
   if (State !== 'running') {
@@ -96,26 +92,58 @@ const containerStatus = (container) => {
   );
 };
 
-// Docker apps are named after their flame.name label (one container can
-// define several apps). A running container wins over stopped duplicates.
-const containersByAppName = (containers) => {
+// "qBittorrent", "qbittorrent" and "q-bittorrent" all match
+const normalizeName = (name) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+/**
+ * Returns a function that finds the container of an app, or null. Apps from
+ * the Docker integration are named after their flame.name label (one
+ * container can define several apps); other apps match a container named
+ * like them, or a Compose service name that only one container uses.
+ */
+const containerFinder = (containers) => {
+  const byLabel = new Map();
   const byName = new Map();
+  const byService = new Map();
+
+  // A running container wins over stopped duplicates
+  const addLabel = (name, container) => {
+    const existing = byLabel.get(name);
+
+    if (!existing || (existing.State !== 'running' && container.State === 'running')) {
+      byLabel.set(name, container);
+    }
+  };
 
   for (const container of containers) {
-    const names = container.Labels && container.Labels['flame.name'];
+    const labels = container.Labels || {};
 
-    if (!names) continue;
-
-    for (const name of names.split(';')) {
-      const existing = byName.get(name);
-
-      if (!existing || (existing.State !== 'running' && container.State === 'running')) {
-        byName.set(name, container);
+    if (labels['flame.name']) {
+      for (const name of labels['flame.name'].split(';')) {
+        addLabel(name, container);
       }
+    }
+
+    for (const name of container.Names || []) {
+      const key = normalizeName(name);
+      if (key) byName.set(key, container);
+    }
+
+    const service = normalizeName(labels['com.docker.compose.service'] || '');
+
+    if (service) {
+      // Services like "db" or "server" exist in many projects
+      byService.set(service, byService.has(service) ? null : container);
     }
   }
 
-  return byName;
+  return (app) => {
+    const key = normalizeName(app.name);
+
+    return (
+      byLabel.get(app.name) || byName.get(key) || byService.get(key) || null
+    );
+  };
 };
 
 const mapLimit = async (items, limit, fn) => {
@@ -136,10 +164,10 @@ const mapLimit = async (items, limit, fn) => {
 
 const loadContainers = async (dockerHost) => {
   try {
-    const containers = containersByAppName(await listAllContainers(dockerHost));
+    const findContainer = containerFinder(await listAllContainers(dockerHost));
     lastDockerError = null;
 
-    return containers;
+    return findContainer;
   } catch (err) {
     if (err.message !== lastDockerError) {
       lastDockerError = err.message;
@@ -164,21 +192,23 @@ const runChecks = async () => {
 
   const apps = (await App.findAll()).filter((app) => app.statusCheck);
 
-  // Container state replaces the HTTP check of Docker apps, unless a check URL is set
-  const usesContainer = (app) =>
-    config.statusCheckDocker &&
-    config.dockerApps &&
-    app.source === 'docker' &&
-    !app.statusUrl;
+  // The container state replaces the HTTP check of every app whose container
+  // is found, manual apps included, unless the app has a check URL. Apps
+  // without a container, or all of them when the Docker API can't be
+  // reached, get the HTTP check.
+  const mayUseContainer = (app) =>
+    config.statusCheckDocker && config.dockerApps && !app.statusUrl;
 
-  const containers = apps.some(usesContainer)
+  const findContainer = apps.some(mayUseContainer)
     ? await loadContainers(config.dockerHost)
     : null;
 
   const results = await mapLimit(apps, CONCURRENCY, async (app) => {
-    if (usesContainer(app)) {
-      // Unknown when the Docker API can't be reached
-      return containers ? containerStatus(containers.get(app.name)) : null;
+    const container =
+      findContainer && mayUseContainer(app) ? findContainer(app) : null;
+
+    if (container) {
+      return containerStatus(container);
     }
 
     const url = toHttpUrl(app.statusUrl || app.url);
@@ -259,5 +289,5 @@ module.exports = {
   getStatuses,
   checkHttp,
   containerStatus,
-  containersByAppName,
+  containerFinder,
 };
