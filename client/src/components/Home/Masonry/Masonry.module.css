@@ -1,0 +1,6 @@
+/* useMasonry places every card explicitly, spanning its height in 1px rows.
+   Cards must keep their natural height for it to measure. */
+.Masonry {
+  grid-auto-rows: 1px;
+  align-items: start;
+}

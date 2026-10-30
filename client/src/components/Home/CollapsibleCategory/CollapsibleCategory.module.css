@@ -1,28 +1,7 @@
-/* Animating the content row between 1fr and 0fr collapses it to its real
-   height without measuring it */
-.Collapsible {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  align-content: start;
-  transition: grid-template-rows 0.2s ease;
-}
-
-.Collapsed {
-  grid-template-rows: auto 0fr;
-}
-
-/* Two classes so the cards' own list styles can't override the transition */
-.Collapsible > .Content {
-  min-height: 0;
-  overflow: hidden;
-  overflow: clip;
-  overflow-clip-margin: 4px;
-  transition: visibility 0.2s;
-}
-
-/* Also takes the hidden links out of the tab order */
-.Collapsed .Content {
-  visibility: hidden;
+/* The card resizes at once and the homepage grid slides the cards around it
+   (useMasonry). Three classes so the cards' own list styles can't override it. */
+.Collapsible.Collapsed > .Content {
+  display: none;
 }
 
 .Toggle {
@@ -62,8 +41,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .Collapsible,
-  .Collapsible > .Content,
   .Chevron {
     transition: none;
   }

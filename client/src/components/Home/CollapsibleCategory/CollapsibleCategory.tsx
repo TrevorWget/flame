@@ -1,9 +1,10 @@
 import { mdiChevronDown } from '@mdi/js';
 import { Icon } from '@mdi/react';
-import { useId } from 'react';
+import { useId, useLayoutEffect, useRef } from 'react';
 
 import { Category } from '../../../interfaces';
 import { useCollapsedCategory } from '../../../utility/collapsedCategories';
+import { prefersReducedMotion } from '../Masonry/useMasonry';
 import classes from './CollapsibleCategory.module.css';
 
 interface ToggleProps {
@@ -45,6 +46,21 @@ export const useCollapsibleCategory = (
 ): CollapsibleCategory => {
   const [collapsed, toggle] = useCollapsedCategory(category.id);
   const contentId = useId();
+  const wasCollapsed = useRef(collapsed);
+
+  useLayoutEffect(() => {
+    const expanded = wasCollapsed.current && !collapsed;
+    wasCollapsed.current = collapsed;
+
+    const content = document.getElementById(contentId);
+
+    if (enabled && expanded && content?.animate && !prefersReducedMotion()) {
+      content.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 250,
+        easing: 'ease-out',
+      });
+    }
+  }, [collapsed, contentId, enabled]);
 
   if (!enabled) {
     return { className: '', title: category.name, contentClassName: '' };
