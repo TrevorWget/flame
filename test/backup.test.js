@@ -81,6 +81,30 @@ const FAVICON_ICO = Buffer.concat([
   crypto.randomBytes(32),
 ]);
 
+const CUSTOM_THEMES = [
+  {
+    name: 'Custom',
+    colors: { background: '#101010', primary: '#fafafa', accent: '#ff0066' },
+    isCustom: true,
+  },
+  {
+    name: 'Custom copy',
+    colors: { background: '#fdf6e3', primary: '#073642', accent: '#b58900' },
+    isCustom: true,
+  },
+];
+
+// None of these are the defaults, so a restore over a wiped state changes them
+const THEME_OPTIONS = {
+  themeMode: 'time',
+  lightTheme: '#073642;#b58900;#fdf6e3',
+  darkTheme: '#fafafa;#ff0066;#101010',
+  themeSchedule: 'fixed',
+  themeLightTime: '06:45',
+  themeDarkTime: '20:30',
+  fontFamily: 'source-serif',
+};
+
 // Answers the status checks of the restored apps
 const statusServer = http.createServer((req, res) => res.end('ok'));
 let statusUrl;
@@ -153,20 +177,10 @@ const seed = async () => {
       statusColorDown: '#f85149',
       autoFetchIcons: true,
       iconFetchAllowPrivate: true,
+      ...THEME_OPTIONS,
     },
     themes: {
-      themes: [
-        ...initialThemes.themes,
-        {
-          name: 'Custom',
-          colors: {
-            background: '#101010',
-            primary: '#fafafa',
-            accent: '#ff0066',
-          },
-          isCustom: true,
-        },
-      ],
+      themes: [...initialThemes.themes, ...CUSTOM_THEMES],
     },
     queries: {
       queries: [
@@ -386,7 +400,10 @@ test.describe('export', () => {
     assert.strictEqual(exported.categories.length, 3);
     assert.strictEqual(exported.apps.length, 3);
     assert.strictEqual(exported.bookmarks.length, 2);
-    assert.strictEqual(exported.themes.length, initialThemes.themes.length + 1);
+    assert.strictEqual(
+      exported.themes.length,
+      initialThemes.themes.length + CUSTOM_THEMES.length
+    );
     assert.deepStrictEqual(exported.queries, seeded.queries.queries);
     assert.strictEqual(exported.settings.customTitle, 'Backup Flame');
     assert.strictEqual(exported.settings.dockerHost, 'tcp://10.0.0.5:2375');
@@ -463,6 +480,21 @@ test.describe('export', () => {
     );
   });
 
+  test('contains the theme options and custom themes', () => {
+    assert.deepStrictEqual(
+      Object.fromEntries(
+        Object.keys(THEME_OPTIONS).map((key) => [key, exported.settings[key]])
+      ),
+      THEME_OPTIONS
+    );
+    assert.deepStrictEqual(
+      exported.themes.filter((t) => t.isCustom),
+      CUSTOM_THEMES
+    );
+    // Worked out from the location when the config is read, never stored
+    assert.ok(!('sunTimes' in exported.settings));
+  });
+
   test('never contains the weather API key, the password or the JWT secret', async () => {
     assert.ok(!('WEATHER_API_KEY' in exported.settings));
 
@@ -502,7 +534,7 @@ test.describe('restore', () => {
       categories: 3,
       apps: 3,
       bookmarks: 2,
-      themes: initialThemes.themes.length + 1,
+      themes: initialThemes.themes.length + CUSTOM_THEMES.length,
       queries: 1,
       settings: Object.keys(exported.settings).length,
       css: true,
@@ -534,6 +566,17 @@ test.describe('restore', () => {
     );
     // Secrets are not in the backup, so the current ones are kept
     assert.strictEqual(restored.weatherKey, 'key-set-after-the-backup');
+
+    const themeOptions = ({ config }) =>
+      Object.fromEntries(
+        Object.keys(THEME_OPTIONS).map((key) => [key, config[key]])
+      );
+    assert.notDeepStrictEqual(themeOptions(wiped), THEME_OPTIONS);
+    assert.deepStrictEqual(themeOptions(restored), THEME_OPTIONS);
+    assert.deepStrictEqual(
+      restored.themes.themes.filter((t) => t.isCustom),
+      CUSTOM_THEMES
+    );
 
     // The restored settings turned status checks on, and they run right away
     const sonarr = restored.apps.find((a) => a.name === 'Sonarr');

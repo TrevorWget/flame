@@ -1,4 +1,5 @@
 const { hasWeatherKey, isWeatherEnabled } = require('./weatherProviders');
+const { themeSunTimes } = require('./sunTimes');
 
 // Keys safe to expose to unauthenticated visitors. Anything not listed here
 // (including keys added in the future) is admin-only by default.
@@ -22,6 +23,13 @@ const PUBLIC_KEYS = [
   'monthSchema',
   'showTime',
   'defaultTheme',
+  'themeMode',
+  'lightTheme',
+  'darkTheme',
+  'themeSchedule',
+  'themeLightTime',
+  'themeDarkTime',
+  'fontFamily',
   'isCelsius',
   'isKilometer',
   'weatherProvider',
@@ -39,11 +47,13 @@ const PUBLIC_KEYS = [
 const SECRET_KEYS = ['WEATHER_API_KEY'];
 
 // Computed by the server; must never be written back to config.json.
-const DERIVED_KEYS = ['hasWeatherKey', 'weatherEnabled'];
+const DERIVED_KEYS = ['hasWeatherKey', 'weatherEnabled', 'sunTimes'];
 
 const addDerivedKeys = (target, config) => {
   target.hasWeatherKey = hasWeatherKey(config);
   target.weatherEnabled = isWeatherEnabled(config);
+  // The location itself stays admin-only
+  target.sunTimes = themeSunTimes(config);
 };
 
 const toPublicConfig = (config) => {

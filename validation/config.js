@@ -25,6 +25,20 @@ const statusColor = z
   .string()
   .regex(/^(#[0-9a-f]{6})?$/i, 'Must be empty or a hex color, e.g. #3fb950');
 
+const timeOfDay = z
+  .string()
+  .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Must be a time, e.g. 07:30');
+
+// Bundled with the client (client/src/utility/fonts.ts)
+const FONTS = [
+  'roboto',
+  'inter',
+  'nunito',
+  'source-serif',
+  'jetbrains-mono',
+  'system',
+];
+
 const SETTINGS = {
   weatherProvider: z
     .string()
@@ -61,6 +75,15 @@ const SETTINGS = {
   monthSchema: text(1000),
   showTime: z.boolean(),
   defaultTheme: text(255),
+  // 'system' follows prefers-color-scheme, 'time' the schedule below
+  themeMode: z.enum(['manual', 'system', 'time']),
+  lightTheme: text(255),
+  darkTheme: text(255),
+  // 'sun' uses sunrise and sunset at the weather location, if one is set
+  themeSchedule: z.enum(['sun', 'fixed']),
+  themeLightTime: timeOfDay,
+  themeDarkTime: timeOfDay,
+  fontFamily: z.enum(FONTS),
   isKilometer: z.boolean(),
   weatherData: z.enum(['cloud', 'humidity']),
   hideDate: z.boolean(),
@@ -112,4 +135,4 @@ const updateCSS = {
   body: z.strictObject({ styles: z.string().max(100000) }),
 };
 
-module.exports = { SETTINGS, updateConfig, updateCSS };
+module.exports = { SETTINGS, FONTS, updateConfig, updateCSS };
