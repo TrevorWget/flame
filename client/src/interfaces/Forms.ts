@@ -26,7 +26,11 @@ export interface GeneralForm {
   statusChecks: boolean;
   statusCheckInterval: number;
   statusCheckTimeout: number;
+  statusCheckSlow: number;
   statusCheckDocker: boolean;
+  statusColorUp: string;
+  statusColorUnhealthy: string;
+  statusColorDown: string;
 }
 
 export interface UISettingsForm {

@@ -1,21 +1,29 @@
 .StatusDot {
   display: inline-block;
   flex-shrink: 0;
-  width: 8px;
-  height: 8px;
+  box-sizing: border-box;
+  width: 9px;
+  height: 9px;
   margin-left: 6px;
+  border: 1.5px solid var(--status-color);
   border-radius: 50%;
   vertical-align: middle;
   position: relative;
   top: -1px;
 }
 
+/* Filled */
 .Up {
-  background-color: #3fb950;
-  box-shadow: 0 0 4px rgba(63, 185, 80, 0.6);
+  background-color: var(--status-color);
+  box-shadow: 0 0 4px color-mix(in srgb, var(--status-color) 60%, transparent);
 }
 
+/* Half filled */
+.Unhealthy {
+  background: linear-gradient(to top, var(--status-color) 50%, transparent 50%);
+}
+
+/* Hollow */
 .Down {
-  background-color: #f85149;
-  box-shadow: 0 0 4px rgba(248, 81, 73, 0.6);
+  background-color: transparent;
 }

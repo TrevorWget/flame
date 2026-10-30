@@ -30,6 +30,9 @@ const PUBLIC_KEYS = [
   'extraUrlSchemes',
   'statusChecks',
   'statusCheckInterval',
+  'statusColorUp',
+  'statusColorUnhealthy',
+  'statusColorDown',
 ];
 
 // Never returned by any endpoint, even to authenticated admins.

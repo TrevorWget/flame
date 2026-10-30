@@ -45,5 +45,9 @@ export const configTemplate: Config = {
   statusChecks: false,
   statusCheckInterval: 60,
   statusCheckTimeout: 5,
+  statusCheckSlow: 3,
   statusCheckDocker: false,
+  statusColorUp: '',
+  statusColorUnhealthy: '',
+  statusColorDown: '',
 };

@@ -18,3 +18,4 @@ export * from './parseTheme';
 export * from './arrayPartition';
 export * from './pinnedApps';
 export * from './backupPreview';
+export * from './statusColors';
