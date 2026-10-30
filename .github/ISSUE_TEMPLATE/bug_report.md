@@ -8,9 +8,10 @@ assignees: ''
 ---
 
 **Deployment details:**
-- App version [e.g. v1.7.4]: 
-- Platform [e.g. amd64, arm64, arm/v7]: 
-- Docker image tag [e.g. latest, multiarch]: 
+- App version, from Settings > App [e.g. 2.5.0]: 
+- Platform [amd64 or arm64]: 
+- Docker image tag [e.g. latest, 2.5.0, 2.5, sha-1a2b3c4]: 
+- How you run Flame [e.g. Docker Compose, Kubernetes, without Docker]: 
 
 ---
 
