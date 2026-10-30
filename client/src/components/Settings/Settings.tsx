@@ -6,6 +6,7 @@ import { State } from '../../store/reducers';
 import { ProtectedRoute } from '../Routing/ProtectedRoute';
 import { Container, Headline } from '../UI';
 import { AppDetails } from './AppDetails/AppDetails';
+import { BackupSettings } from './BackupSettings/BackupSettings';
 import { DockerSettings } from './DockerSettings/DockerSettings';
 import { GeneralSettings } from './GeneralSettings/GeneralSettings';
 import clientRoutes from './settings.json';
@@ -69,6 +70,9 @@ export const Settings = (): JSX.Element => {
             </Route>
             <Route path="css" element={<ProtectedRoute/>}>
               <Route path="" element={<StyleSettings/>}/>
+            </Route>
+            <Route path="backup" element={<ProtectedRoute/>}>
+              <Route path="" element={<BackupSettings/>}/>
             </Route>
             <Route path="app" element={<AppDetails/>} />
           </Routes>

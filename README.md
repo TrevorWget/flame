@@ -19,6 +19,7 @@ Flame is self-hosted startpage for your server. Its design is inspired (heavily)
 - 🔨 Dozens of options to customize Flame interface to your needs, including support for custom CSS, 15 built-in color themes and custom theme builder
 - ☀️ Weather widget with current temperature, cloud coverage and animated weather status
 - 🐳 Docker integration to automatically pick and add apps based on their labels
+- 💾 Backup and restore from the settings, with optional scheduled backups
 
 ## Installation
 
@@ -417,6 +418,17 @@ metadata:
 > "Use Kubernetes Ingress API" option must be enabled for this to work. You can find it in Settings > Docker
 
 Like Docker labels, annotations can describe several apps separated by `;`, and `url.external` works like `flame.url.external`. Flame uses the pod's service account by default (it needs `list` on `ingresses`, see `k8s/base/rbac.yaml`); set `KUBECONFIG` to use a kubeconfig file instead, e.g. when Flame runs outside the cluster.
+
+### Backup and restore
+
+Settings > Backup (requires login):
+
+- **Download backup** saves a zip with your apps (including their external URLs and status check options), bookmarks, categories, settings, themes, search providers, custom CSS and uploaded or fetched icons. The password, the JWT secret and the weather API key are never included.
+- **Restore** checks the chosen backup and shows what it contains next to what you have now. Nothing changes until you confirm. Restoring replaces all apps, bookmarks and categories, plus the settings, themes, search providers and custom CSS stored in the backup; uploaded icons are added to the existing ones. Secrets such as the weather API key keep their current values.
+- Before every restore, Flame saves the current state to `data/backups/pre-restore-<time>.zip` (the last 5 are kept), so a restore can be undone by restoring that file. The restore is applied all at once: if anything fails, the database and files stay as they were.
+- **Scheduled backups** can be saved to `data/backups/flame-backup-<time>.zip` daily or weekly at 03:30 server time, keeping the newest 7 by default. Saved backups are listed with download links.
+
+Backups are checked before anything is restored: unknown or misplaced files (e.g. `../` paths, symlinks), files that are not PNG, JPEG, ICO, WebP or SVG icons, links with disallowed URL schemes and invalid settings are rejected, and SVG icons are sanitized. Uploads are limited to 50 MB (`BACKUP_MAX_SIZE_MB`) and 2 MB per icon. Backups made by a newer Flame version with a newer backup format are refused instead of partly restored.
 
 ### Import HTML Bookmarks (Experimental)
 

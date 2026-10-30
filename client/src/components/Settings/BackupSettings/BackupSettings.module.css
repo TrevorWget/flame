@@ -1,0 +1,92 @@
+.section {
+  margin-bottom: 30px;
+}
+
+.text {
+  color: var(--color-primary);
+  margin-bottom: 15px;
+}
+
+.text span {
+  color: var(--color-accent);
+}
+
+.error {
+  color: var(--color-primary);
+  border-left: 3px solid var(--color-accent);
+  padding-left: 10px;
+  margin-bottom: 15px;
+}
+
+.linkButton {
+  display: inline-block;
+  padding: 8px 15px;
+  border: 1px solid var(--color-accent);
+  background-color: var(--color-background);
+  color: var(--color-primary);
+  border-radius: 4px;
+  text-decoration: none;
+}
+
+.linkButton:hover {
+  background-color: var(--color-accent);
+  color: var(--color-background);
+}
+
+.table {
+  border-collapse: collapse;
+  margin-bottom: 15px;
+  color: var(--color-primary);
+}
+
+.table th,
+.table td {
+  padding: 4px 24px 4px 0;
+  text-align: left;
+}
+
+.table thead th {
+  border-bottom: 1px solid var(--color-primary);
+  font-weight: 500;
+}
+
+.table tbody th {
+  font-weight: 400;
+}
+
+.table td {
+  color: var(--color-accent);
+}
+
+.notes {
+  color: var(--color-primary);
+  margin: 0 0 15px 20px;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.files {
+  list-style: none;
+}
+
+.files li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-bottom: 8px;
+  color: var(--color-primary);
+}
+
+.files a {
+  color: var(--color-accent);
+  word-break: break-all;
+}
+
+.files span {
+  font-size: 12px;
+  align-self: center;
+}

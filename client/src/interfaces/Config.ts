@@ -1,4 +1,5 @@
 import { WeatherData, WeatherProvider } from '../types';
+import { BackupSchedule } from './Backup';
 
 export interface Config {
   hasWeatherKey: boolean;
@@ -37,6 +38,8 @@ export interface Config {
   weatherData: WeatherData;
   hideDate: boolean;
   extraUrlSchemes: string;
+  backupSchedule: BackupSchedule;
+  backupRetention: number;
   autoFetchIcons: boolean;
   iconFetchAllowPrivate: boolean;
   statusChecks: boolean;

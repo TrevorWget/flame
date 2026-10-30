@@ -1,4 +1,5 @@
 import { WeatherData, WeatherProvider } from '../types';
+import { BackupSchedule } from './Backup';
 
 export interface WeatherForm {
   weatherProvider: WeatherProvider;
@@ -53,4 +54,9 @@ export interface DockerSettingsForm {
 
 export interface ThemeSettingsForm {
   defaultTheme: string;
+}
+
+export interface BackupSettingsForm {
+  backupSchedule: BackupSchedule;
+  backupRetention: number;
 }

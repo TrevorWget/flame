@@ -1,7 +1,7 @@
 const { z } = require('zod');
 const { url, emptyBody } = require('./fields');
 
-const query = z.strictObject({
+const queryFields = {
   name: z.string().trim().min(1, 'Must not be empty').max(100),
   // The search bar only matches "/<letters> <query>"
   prefix: z
@@ -9,8 +9,9 @@ const query = z.strictObject({
     .trim()
     .regex(/^[a-z]+$/i, 'Prefix must only contain letters')
     .max(20),
-  template: url,
-});
+};
+
+const query = z.strictObject({ ...queryFields, template: url });
 
 // Loose on purpose, so queries saved before validation can still be removed
 const prefixParam = z.strictObject({ prefix: z.string().min(1).max(255) });
@@ -21,4 +22,4 @@ const updateQuery = { params: prefixParam, body: query };
 
 const deleteQuery = { params: prefixParam, body: emptyBody };
 
-module.exports = { addQuery, updateQuery, deleteQuery };
+module.exports = { queryFields, addQuery, updateQuery, deleteQuery };

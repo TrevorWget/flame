@@ -1,4 +1,4 @@
-import { DockerSettingsForm, GeneralForm, ThemeSettingsForm, UISettingsForm, WeatherForm } from '../../interfaces';
+import { BackupSettingsForm, DockerSettingsForm, GeneralForm, ThemeSettingsForm, UISettingsForm, WeatherForm } from '../../interfaces';
 
 export const uiSettingsTemplate: UISettingsForm = {
   customTitle: document.title,
@@ -53,4 +53,9 @@ export const dockerSettingsTemplate: DockerSettingsForm = {
 
 export const themeSettingsTemplate: ThemeSettingsForm = {
   defaultTheme: 'tron',
+};
+
+export const backupSettingsTemplate: BackupSettingsForm = {
+  backupSchedule: 'off',
+  backupRetention: 7,
 };
