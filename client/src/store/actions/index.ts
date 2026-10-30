@@ -18,6 +18,7 @@ import {
 } from './bookmark';
 import {
   AddCategoryAction,
+  ArrangeItemsAction,
   DeleteCategoryAction,
   GetCategoriesAction,
   PinCategoryAction,
@@ -81,6 +82,7 @@ export type Action =
   | SortCategoriesAction
   | ReorderCategoriesAction
   | SetEditCategoryAction
+  | ArrangeItemsAction
   // Bookmarks
   | AddBookmarkAction
   | DeleteBookmarkAction

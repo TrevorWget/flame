@@ -93,6 +93,15 @@ export const categoriesReducer = <T extends CategoriesState>(
       };
     }
 
+    case ActionType.arrangeItems: {
+      if (action.payload.type !== state.type) return state;
+
+      return {
+        ...state,
+        categories: action.payload.categories,
+      };
+    }
+
     case ActionType.setEditCategory: {
       return {
         ...state,
