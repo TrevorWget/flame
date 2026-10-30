@@ -6,24 +6,28 @@ import { Bookmark, Category } from '../../../interfaces';
 import { actionCreators } from '../../../store';
 import { State } from '../../../store/reducers';
 import { iconParser, isImage, isSvg, isUrl, urlParser } from '../../../utility';
+import { useCollapsibleCategory } from '../../Home/CollapsibleCategory/CollapsibleCategory';
 import { Icon, SvgIcon } from '../../UI';
 import classes from './BookmarkCard.module.css';
 
 interface Props {
   category: Category;
   fromHomepage?: boolean;
+  collapsible?: boolean;
 }
 
 export const BookmarkCard = (props: Props): JSX.Element => {
-  const { category, fromHomepage = false } = props;
+  const { category, fromHomepage = false, collapsible = false } = props;
   const config = useSelector((state: State) => state.config.config);
   const isAuthenticated = useSelector((state: State) => state.auth.isAuthenticated);
 
   const dispatch = useDispatch();
   const { setEditCategory } = bindActionCreators(actionCreators, dispatch);
 
+  const collapse = useCollapsibleCategory(category, collapsible);
+
   return (
-    <div className={classes.BookmarkCard}>
+    <div className={`${classes.BookmarkCard} ${collapse.className}`}>
       <h3
         className={
           fromHomepage || !isAuthenticated ? '' : classes.BookmarkHeader
@@ -34,10 +38,13 @@ export const BookmarkCard = (props: Props): JSX.Element => {
           }
         }}
       >
-        {category.name}
+        {collapse.title}
       </h3>
 
-      <div className={classes.Bookmarks}>
+      <div
+        className={`${classes.Bookmarks} ${collapse.contentClassName}`}
+        id={collapse.contentId}
+      >
         {category.bookmarks.map((bookmark: Bookmark) => {
           const redirectUrl = urlParser(
             bookmark.url,

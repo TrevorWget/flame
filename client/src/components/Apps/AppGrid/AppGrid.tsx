@@ -41,6 +41,7 @@ export const AppGrid = (props: Props): JSX.Element => {
               <AppCard
                 category={category}
                 fromHomepage={fromHomepage}
+                collapsible={fromHomepage && !searching}
                 key={category.id}
               />
             )
