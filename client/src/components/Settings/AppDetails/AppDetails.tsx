@@ -28,7 +28,7 @@ export const AppDetails = (): JSX.Element => {
             <SettingsHeadline text="App version" />
             <p className={classes.text}>
               <a
-                href="https://github.com/pawelmalak/flame"
+                href="https://github.com/TrevorWget/flame"
                 target="_blank"
                 rel="noreferrer"
               >
@@ -40,7 +40,7 @@ export const AppDetails = (): JSX.Element => {
             <p className={classes.text}>
               See changelog{' '}
               <a
-                href="https://github.com/pawelmalak/flame/blob/master/CHANGELOG.md"
+                href="https://github.com/TrevorWget/flame/blob/master/CHANGELOG.md"
                 target="_blank"
                 rel="noreferrer"
               >
