@@ -37,7 +37,11 @@ const NEWER_KEYS = [
   'statusChecks',
   'statusCheckInterval',
   'statusCheckTimeout',
+  'statusCheckSlow',
   'statusCheckDocker',
+  'statusColorUp',
+  'statusColorUnhealthy',
+  'statusColorDown',
 ];
 const upstreamConfig = Object.fromEntries(
   Object.entries({

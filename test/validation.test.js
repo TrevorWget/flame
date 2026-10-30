@@ -500,6 +500,9 @@ test.describe('config', () => {
       [{ dockerHost: 'ftp://docker:21' }, /^dockerHost: Invalid Docker host: /],
       [{ WEATHER_API_KEY: 42 }, /^WEATHER_API_KEY: /],
       [{ customTitle: 't'.repeat(256) }, /^customTitle: /],
+      [{ statusCheckSlow: -1 }, /^statusCheckSlow: /],
+      [{ statusColorUp: 'red' }, /^statusColorUp: Must be empty or a hex color/],
+      [{ statusColorDown: '#fff;}body{' }, /^statusColorDown: /],
       [{ isAdmin: true }, /Unrecognized key: "isAdmin"/],
       [{ [LEGACY_KEY]: 'changed' }, /Unrecognized key/],
     ];
@@ -524,6 +527,18 @@ test.describe('config', () => {
     });
     assert.strictEqual(res.status, 200, JSON.stringify(res.body));
     assert.strictEqual(readStored().dockerHost, 'tcp://10.0.0.2:2375');
+  });
+
+  test('status colors are hex colors or empty', async () => {
+    const res = await authed('put', '/api/config').send({
+      statusCheckSlow: 1.5,
+      statusColorUp: '#3FB950',
+      statusColorUnhealthy: '',
+    });
+    assert.strictEqual(res.status, 200, JSON.stringify(res.body));
+    assert.strictEqual(readStored().statusCheckSlow, 1.5);
+    assert.strictEqual(readStored().statusColorUp, '#3FB950');
+    assert.strictEqual(readStored().statusColorUnhealthy, '');
   });
 
   test('custom CSS must be a string', async () => {

@@ -13,6 +13,7 @@ import {
 import searchQueries from '../../../utility/searchQueries.json';
 import { Button, InputGroup, SettingsHeadline } from '../../UI';
 import { CustomQueries } from './CustomQueries/CustomQueries';
+import { StatusColorSettings } from './StatusColorSettings/StatusColorSettings';
 
 export const GeneralSettings = (): JSX.Element => {
   const config = useSelector((state: State) => state.config);
@@ -158,9 +159,11 @@ export const GeneralSettings = (): JSX.Element => {
             <option value={0}>False</option>
           </select>
           <span>
-            The Flame server checks every app and shows a green or red dot next
-            to it. Any HTTP answer below 500 counts as up. Apps can be excluded
-            or given another check URL in their settings
+            The Flame server checks every app and shows a dot next to it: filled
+            when it is up, half filled when it is unhealthy and hollow when it
+            is down. An HTTP answer below 500 within the slow response time is
+            up; a 5xx answer or a slow one is unhealthy; no answer is down. Apps
+            can be excluded or given another check URL in their settings
           </span>
         </InputGroup>
 
@@ -198,6 +201,26 @@ export const GeneralSettings = (): JSX.Element => {
             </InputGroup>
 
             <InputGroup>
+              <label htmlFor="statusCheckSlow">
+                Slow response time (seconds)
+              </label>
+              <input
+                type="number"
+                id="statusCheckSlow"
+                name="statusCheckSlow"
+                min={0}
+                max={60}
+                step={0.1}
+                value={formData.statusCheckSlow ?? ''}
+                onChange={(e) => inputChangeHandler(e, { isNumber: true })}
+              />
+              <span>
+                Apps that take longer than this to answer are unhealthy. 0 turns
+                it off; it only applies when lower than the timeout
+              </span>
+            </InputGroup>
+
+            <InputGroup>
               <label htmlFor="statusCheckDocker">
                 Use the container state of Docker apps
               </label>
@@ -212,12 +235,19 @@ export const GeneralSettings = (): JSX.Element => {
               </select>
               <span>
                 Apps whose container is found (by its flame.name label, or a
-                container or Compose service named like the app) are up while
-                it runs and isn't unhealthy. Other apps, and apps with a check
+                container or Compose service named like the app) use its state:
+                running is up; restarting, starting or failing its health check
+                is unhealthy; stopped is down. Other apps, and apps with a check
                 URL, get the HTTP check. Reads GET /containers/json from the
                 Docker host
               </span>
             </InputGroup>
+
+            <StatusColorSettings
+              formData={formData}
+              setFormData={setFormData}
+              onChange={inputChangeHandler}
+            />
           </Fragment>
         )}
 

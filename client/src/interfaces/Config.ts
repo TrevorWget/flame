@@ -45,5 +45,9 @@ export interface Config {
   statusChecks: boolean;
   statusCheckInterval: number;
   statusCheckTimeout: number;
+  statusCheckSlow: number;
   statusCheckDocker: boolean;
+  statusColorUp: string;
+  statusColorUnhealthy: string;
+  statusColorDown: string;
 }

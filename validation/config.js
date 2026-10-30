@@ -20,6 +20,11 @@ const dockerHost = text(255).superRefine((value, ctx) => {
 
 const coordinate = (limit) => z.number().min(-limit).max(limit).nullable();
 
+// Ends up in a CSS custom property; the form's color input sends #rrggbb
+const statusColor = z
+  .string()
+  .regex(/^(#[0-9a-f]{6})?$/i, 'Must be empty or a hex color, e.g. #3fb950');
+
 const SETTINGS = {
   weatherProvider: z
     .string()
@@ -68,7 +73,13 @@ const SETTINGS = {
   // Seconds
   statusCheckInterval: z.number().int().min(10).max(86400),
   statusCheckTimeout: z.number().int().min(1).max(60),
+  // 0 turns the slow check off
+  statusCheckSlow: z.number().min(0).max(60),
   statusCheckDocker: z.boolean(),
+  // An empty string uses the color derived from the theme
+  statusColorUp: statusColor,
+  statusColorUnhealthy: statusColor,
+  statusColorDown: statusColor,
 };
 
 const isUnchanged = (value, stored) =>

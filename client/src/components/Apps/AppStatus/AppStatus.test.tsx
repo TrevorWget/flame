@@ -48,13 +48,22 @@ const respond = (statuses: AppStatuses) =>
     data: { success: true, data: { enabled: true, statuses } },
   });
 
-const setStatusChecks = (statusChecks: boolean) =>
+const setStatusChecks = (statusChecks: boolean, colors = {}) =>
   act(() => {
     store.dispatch({
       type: ActionType.getConfig,
-      payload: { statusChecks, statusCheckInterval: 60 },
+      payload: { statusChecks, statusCheckInterval: 60, ...colors },
     });
   });
+
+const TRON = { background: '#242B33', primary: '#EFFBFF', accent: '#6EE2FF' };
+
+const setTheme = (colors: typeof TRON) =>
+  act(() => {
+    store.dispatch({ type: ActionType.setTheme, payload: colors });
+  });
+
+const dotColor = (dot: HTMLElement) => dot.style.getPropertyValue('--status-color');
 
 const renderGrid = (apps: App[]) =>
   render(
@@ -74,22 +83,61 @@ describe('app status indicators', () => {
     setStatusChecks(false);
   });
 
-  it('shows an up or down dot from the server results', async () => {
+  it('shows an up, unhealthy or down dot from the server results', async () => {
     respond({
       1: { status: 'up', detail: 'HTTP 200', since },
       2: { status: 'down', detail: 'Container exited', since },
+      4: { status: 'unhealthy', detail: 'HTTP 503', since },
     });
     setStatusChecks(true);
 
-    renderGrid([app(1, 'Jellyfin'), app(2, 'Radarr'), app(3, 'Unchecked')]);
+    renderGrid([
+      app(1, 'Jellyfin'),
+      app(2, 'Radarr'),
+      app(3, 'Unchecked'),
+      app(4, 'Sonarr'),
+    ]);
 
     const up = await screen.findByRole('img', { name: /^Up: HTTP 200/ });
     const down = screen.getByRole('img', { name: /^Down: Container exited/ });
+    const unhealthy = screen.getByRole('img', { name: /^Unhealthy: HTTP 503/ });
 
     expect(up.parentElement).toHaveTextContent('Jellyfin');
     expect(down.parentElement).toHaveTextContent('Radarr');
-    expect(screen.getAllByRole('img')).toHaveLength(2);
+    expect(unhealthy.parentElement).toHaveTextContent('Sonarr');
+    expect(unhealthy).toHaveAttribute('title', unhealthy.getAttribute('aria-label'));
+    expect(screen.getAllByRole('img')).toHaveLength(3);
     expect(axios.get).toHaveBeenCalledWith('/api/apps/status');
+
+    // Shapes tell the states apart without color
+    expect(new Set([up, down, unhealthy].map((dot) => dot.className)).size).toBe(3);
+  });
+
+  it('colors the dots from the theme unless custom colors are set', async () => {
+    respond({
+      1: { status: 'up', detail: 'HTTP 200', since },
+      2: { status: 'down', detail: 'Connection refused', since },
+    });
+    setTheme(TRON);
+    setStatusChecks(true);
+
+    renderGrid([app(1, 'Jellyfin'), app(2, 'Radarr')]);
+
+    const up = await screen.findByRole('img', { name: /^Up/ });
+    const down = screen.getByRole('img', { name: /^Down/ });
+    expect(dotColor(up)).toBe('#6ee2ff');
+    expect(dotColor(down)).toBe('#effbff');
+
+    setTheme({ background: '#ffffff', primary: '#222222', accent: '#dddddd' });
+    // The faint accent of the white theme is darkened to stay visible
+    expect(dotColor(up)).not.toBe('#dddddd');
+    expect(dotColor(down)).toBe('#222222');
+
+    setStatusChecks(true, { statusColorUp: '#3fb950', statusColorDown: '' });
+    expect(dotColor(up)).toBe('#3fb950');
+    expect(dotColor(down)).toBe('#222222');
+
+    setTheme(TRON);
   });
 
   it('does not poll or show dots when disabled', async () => {

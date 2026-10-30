@@ -53,9 +53,17 @@ const listen = async (handler) => {
   };
 };
 
-// Answers with the status code in the path, /hang never answers
+const SLOW_MS = 500;
+
+// Answers with the status code in the path, /hang never answers, /slow answers
+// with 200 after SLOW_MS
 const appServer = (req, res) => {
   if (req.url === '/hang') return;
+
+  if (req.url === '/slow') {
+    setTimeout(() => res.end(), SLOW_MS);
+    return;
+  }
 
   const code = Number(req.url.slice(1)) || 200;
 
@@ -98,6 +106,8 @@ const writeConfig = (overrides) =>
       dockerApps: true,
       dockerHost: `tcp://${docker.host}`,
       statusCheckTimeout: 1,
+      // Off unless a test turns it on, so a busy CI runner can't make apps slow
+      statusCheckSlow: 0,
       ...overrides,
     })
   );
@@ -112,6 +122,7 @@ test.before(async () => {
         container('Sonarr', 'running', 'Up 2 hours (healthy)'),
         container('Radarr', 'exited', 'Exited (0) 3 minutes ago'),
         container('Lidarr', 'running', 'Up 5 minutes (unhealthy)'),
+        container('Bazarr', 'restarting', 'Restarting (1) 5 seconds ago'),
         plainContainer('qbittorrent', 'running', 'Up 3 hours', 'qbittorrent'),
         plainContainer('yams-digarr-1', 'exited', 'Exited (1) 2 hours ago', 'digarr'),
         plainContainer('immich-db', 'running', 'Up 1 day', 'db'),
@@ -144,6 +155,7 @@ test.before(async () => {
     { name: 'Redirect', url: url('/302'), categoryId: media.id },
     { name: 'Login', url: url('/401'), categoryId: media.id },
     { name: 'Broken', url: url('/503'), categoryId: media.id },
+    { name: 'Sluggish', url: url('/slow'), categoryId: media.id },
     // Scheme-less, like the app form allows
     { name: 'NoScheme', url: `${site.host}/204`, categoryId: media.id },
     {
@@ -159,6 +171,7 @@ test.before(async () => {
     { name: 'Sonarr', url: url('/503'), source: 'docker', categoryId: media.id },
     { name: 'Radarr', url: url('/200'), source: 'docker', categoryId: media.id },
     { name: 'Lidarr', url: url('/200'), source: 'docker', categoryId: media.id },
+    { name: 'Bazarr', url: url('/200'), source: 'docker', categoryId: media.id },
     { name: 'Gone', url: url('/200'), source: 'docker', categoryId: media.id },
     {
       name: 'DockerCustomUrl',
@@ -203,9 +216,9 @@ const summary = (statuses) =>
   );
 
 test.describe('HTTP checks', () => {
-  test('any answer below 500 is up, redirects are not followed', async () => {
-    const url = (path) => `http://${site.host}${path}`;
+  const url = (path) => `http://${site.host}${path}`;
 
+  test('any answer below 500 is up, redirects are not followed', async () => {
     assert.deepStrictEqual(await checkHttp(url('/200'), 1), {
       status: 'up',
       detail: 'HTTP 200',
@@ -218,9 +231,32 @@ test.describe('HTTP checks', () => {
       status: 'up',
       detail: 'HTTP 404',
     });
+  });
+
+  test('server errors are unhealthy, not down', async () => {
     assert.deepStrictEqual(await checkHttp(url('/502'), 1), {
-      status: 'down',
+      status: 'unhealthy',
       detail: 'HTTP 502',
+    });
+    assert.deepStrictEqual(await checkHttp(url('/500'), 1), {
+      status: 'unhealthy',
+      detail: 'HTTP 500',
+    });
+  });
+
+  test('answers slower than the threshold are unhealthy', async () => {
+    const slow = await checkHttp(url('/slow'), 2, 0.2);
+    assert.strictEqual(slow.status, 'unhealthy');
+    assert.match(slow.detail, /^Slow: HTTP 200 in \d+\.\d s$/);
+
+    // 0 turns the slow check off
+    assert.deepStrictEqual(await checkHttp(url('/slow'), 2, 0), {
+      status: 'up',
+      detail: 'HTTP 200',
+    });
+    assert.deepStrictEqual(await checkHttp(url('/slow'), 2, 1.5), {
+      status: 'up',
+      detail: 'HTTP 200',
     });
   });
 
@@ -242,20 +278,39 @@ test.describe('HTTP checks', () => {
 });
 
 test.describe('container states', () => {
-  test('running and not unhealthy is up', () => {
-    assert.strictEqual(containerStatus(container('a', 'running', 'Up 1 hour')).status, 'up');
-    assert.strictEqual(
-      containerStatus(container('a', 'running', 'Up 1 hour (health: starting)')).status,
-      'up'
-    );
-    assert.deepStrictEqual(containerStatus(container('a', 'running', 'Up (unhealthy)')), {
-      status: 'down',
+  const stateOf = (State, Status) => containerStatus(container('a', State, Status));
+
+  test('a running container is up unless its health check says otherwise', () => {
+    assert.deepStrictEqual(stateOf('running', 'Up 1 hour'), {
+      status: 'up',
+      detail: 'Container running',
+    });
+    assert.deepStrictEqual(stateOf('running', 'Up 1 hour (healthy)'), {
+      status: 'up',
+      detail: 'Container running (healthy)',
+    });
+    assert.deepStrictEqual(stateOf('running', 'Up 5 seconds (health: starting)'), {
+      status: 'unhealthy',
+      detail: 'Container starting',
+    });
+    assert.deepStrictEqual(stateOf('running', 'Up 2 hours (unhealthy)'), {
+      status: 'unhealthy',
       detail: 'Container unhealthy',
     });
-    assert.deepStrictEqual(containerStatus(container('a', 'paused', 'Up (Paused)')), {
-      status: 'down',
-      detail: 'Container paused',
+  });
+
+  test('a restarting container is unhealthy, a stopped one is down', () => {
+    assert.deepStrictEqual(stateOf('restarting', 'Restarting (1) 5 seconds ago'), {
+      status: 'unhealthy',
+      detail: 'Container restarting',
     });
+
+    for (const State of ['exited', 'dead', 'created', 'paused']) {
+      assert.deepStrictEqual(stateOf(State, ''), {
+        status: 'down',
+        detail: `Container ${State}`,
+      });
+    }
   });
 
   test('flame.name labels match first and running containers win', () => {
@@ -305,17 +360,19 @@ test.describe('GET /api/apps/status', () => {
       Up: 'up: HTTP 200',
       Redirect: 'up: HTTP 302',
       Login: 'up: HTTP 401',
-      Broken: 'down: HTTP 503',
+      Broken: 'unhealthy: HTTP 503',
+      Sluggish: 'up: HTTP 200',
       NoScheme: 'up: HTTP 204',
       CustomUrl: 'up: HTTP 200',
       Private: 'up: HTTP 200',
       InHidden: 'up: HTTP 200',
       Sonarr: 'up: Container running (healthy)',
       Radarr: 'down: Container exited',
-      Lidarr: 'down: Container unhealthy',
+      Lidarr: 'unhealthy: Container unhealthy',
+      Bazarr: 'unhealthy: Container restarting',
       // A Docker app whose container is gone falls back to the HTTP check
       Gone: 'up: HTTP 200',
-      DockerCustomUrl: 'down: HTTP 503',
+      DockerCustomUrl: 'unhealthy: HTTP 503',
       qBittorrent: 'up: Container running',
       Digarr: 'down: Container exited',
       Miniflux: 'up: HTTP 204',
@@ -357,7 +414,7 @@ test.describe('GET /api/apps/status', () => {
     await runStatusChecks();
 
     const after = getStatuses();
-    assert.strictEqual(after.get(apps.Up).status, 'down');
+    assert.strictEqual(after.get(apps.Up).status, 'unhealthy');
     assert.notStrictEqual(after.get(apps.Up).since, before.get(apps.Up).since);
     assert.strictEqual(after.get(apps.Broken).since, before.get(apps.Broken).since);
   });
@@ -372,7 +429,7 @@ test.describe('GET /api/apps/status', () => {
 
     const statuses = summary((await getStatus(true)).body.data.statuses);
     assert.strictEqual(statuses.Login, 'up: HTTP 401');
-    assert.strictEqual(statuses.Sonarr, 'down: HTTP 503');
+    assert.strictEqual(statuses.Sonarr, 'unhealthy: HTTP 503');
     assert.strictEqual(statuses.Radarr, 'up: HTTP 200');
     assert.match(statuses.qBittorrent, /^down: (Host not found|Timed out)/);
   });
@@ -382,8 +439,16 @@ test.describe('GET /api/apps/status', () => {
     await runStatusChecks();
 
     const statuses = summary((await getStatus(true)).body.data.statuses);
-    assert.strictEqual(statuses.Sonarr, 'down: HTTP 503');
+    assert.strictEqual(statuses.Sonarr, 'unhealthy: HTTP 503');
     assert.strictEqual(statuses.Radarr, 'up: HTTP 200');
+  });
+
+  test('the slow response threshold comes from the settings', async () => {
+    writeConfig({ statusChecks: true, statusCheckSlow: 0.2 });
+    await runStatusChecks();
+
+    const statuses = summary((await getStatus(true)).body.data.statuses);
+    assert.match(statuses.Sluggish, /^unhealthy: Slow: HTTP 200 in /);
   });
 
   test('disabling the checks clears the results', async () => {

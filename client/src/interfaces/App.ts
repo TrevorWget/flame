@@ -16,10 +16,14 @@ export interface NewApp {
   statusUrl: string | null;
 }
 
+// unhealthy: the app answers with a server error or slowly, or its container
+// is restarting or failing its health check
+export type AppStatusName = 'up' | 'unhealthy' | 'down';
+
 export interface AppStatus {
-  status: 'up' | 'down';
+  status: AppStatusName;
   detail: string;
-  // ISO date of the last change between up and down
+  // ISO date of the last change of status
   since: string;
 }
 

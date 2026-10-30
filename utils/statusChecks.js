@@ -14,7 +14,7 @@ const RETRY_INTERVAL = 60;
 // credentials and only reads the status code, so certificates aren't verified.
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 
-// appId -> { status: 'up' | 'down', detail, since }
+// appId -> { status: 'up' | 'unhealthy' | 'down', detail, since }
 let statuses = new Map();
 
 let timer = null;
@@ -22,7 +22,11 @@ let running = null;
 let rerun = false;
 let lastDockerError = null;
 
+// up: the app answers normally. unhealthy: it answers, but with a server
+// error or slowly, or its container is restarting or failing its health
+// check. down: no answer at all, or its container isn't running.
 const up = (detail) => ({ status: 'up', detail });
+const unhealthy = (detail) => ({ status: 'unhealthy', detail });
 const down = (detail) => ({ status: 'down', detail });
 
 // Error messages can contain internal addresses and are shown to guests, so
@@ -48,10 +52,14 @@ const describeError = (err, timeoutSeconds) => {
   }
 };
 
+const formatSeconds = (ms) => `${(ms / 1000).toFixed(1)} s`;
+
 // Any answer below 500 means the service is up: redirects to a login page and
-// 401/403 are normal for apps behind auth
-const checkHttp = async (url, timeoutSeconds) => {
+// 401/403 are normal for apps behind auth. The response time is measured up to
+// the response headers; slowSeconds 0 turns the slow check off.
+const checkHttp = async (url, timeoutSeconds, slowSeconds = 0) => {
   const timeout = timeoutSeconds * 1000;
+  const started = performance.now();
 
   try {
     const res = await axios.get(url, {
@@ -64,25 +72,43 @@ const checkHttp = async (url, timeoutSeconds) => {
       headers: { 'User-Agent': 'Flame status check', Accept: '*/*' },
     });
 
+    const elapsed = performance.now() - started;
     res.data.destroy();
 
-    return res.status < 500
-      ? up(`HTTP ${res.status}`)
-      : down(`HTTP ${res.status}`);
+    if (res.status >= 500) {
+      return unhealthy(`HTTP ${res.status}`);
+    }
+
+    if (slowSeconds > 0 && elapsed > slowSeconds * 1000) {
+      return unhealthy(`Slow: HTTP ${res.status} in ${formatSeconds(elapsed)}`);
+    }
+
+    return up(`HTTP ${res.status}`);
   } catch (err) {
     return down(describeError(err, timeoutSeconds));
   }
 };
 
+// State is created, running, paused, restarting, removing, exited or dead.
+// Status is text like "Up 2 hours (healthy)" or "Up 5 seconds (health: starting)".
 const containerStatus = (container) => {
   const { State, Status = '' } = container;
+
+  // A restart loop usually means a crashing app that is about to come back
+  if (State === 'restarting') {
+    return unhealthy('Container restarting');
+  }
 
   if (State !== 'running') {
     return down(`Container ${State}`);
   }
 
   if (Status.includes('(unhealthy)')) {
-    return down('Container unhealthy');
+    return unhealthy('Container unhealthy');
+  }
+
+  if (Status.includes('(health: starting)')) {
+    return unhealthy('Container starting');
   }
 
   return up(
@@ -214,7 +240,9 @@ const runChecks = async () => {
     const url = toHttpUrl(app.statusUrl || app.url);
 
     // Links like ssh:// or steam:// can't be checked
-    return url ? checkHttp(url, config.statusCheckTimeout) : null;
+    return url
+      ? checkHttp(url, config.statusCheckTimeout, config.statusCheckSlow)
+      : null;
   });
 
   const now = new Date().toISOString();

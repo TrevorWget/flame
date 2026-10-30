@@ -41,7 +41,11 @@ export const generalSettingsTemplate: GeneralForm = {
   statusChecks: false,
   statusCheckInterval: 60,
   statusCheckTimeout: 5,
+  statusCheckSlow: 3,
   statusCheckDocker: false,
+  statusColorUp: '',
+  statusColorUnhealthy: '',
+  statusColorDown: '',
 };
 
 export const dockerSettingsTemplate: DockerSettingsForm = {
