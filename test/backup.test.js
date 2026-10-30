@@ -12,6 +12,17 @@ const { QueryTypes } = require('sequelize');
 
 const PASSWORD = 'ci-backup-password-5a9d';
 const WEATHER_API_KEY = 'ci-backup-weather-key-never-exported';
+// None of them the defaults, so a restore that drops one is caught
+const LAYOUT_SETTINGS = {
+  appTileStyle: 'tiles',
+  appDensity: 'roomy',
+  appIconScale: 140,
+  homeAppColumns: 6,
+  appsPageColumns: 3,
+  hideAppUrls: true,
+  hideAppDescriptions: true,
+  hideStatusDots: true,
+};
 
 process.env.NODE_ENV = 'test';
 process.env.PASSWORD = PASSWORD;
@@ -79,6 +90,15 @@ const FAVICON_ICO_NAME = `favicon-${crypto.randomBytes(8).toString('hex')}.ico`;
 const FAVICON_ICO = Buffer.concat([
   Buffer.from([0x00, 0x00, 0x01, 0x00, 0x01, 0x00]),
   crypto.randomBytes(32),
+]);
+// Icons picked from selfh.st are cached as selfhst-<reference>[_<variant>].<ext>
+const SELFHST_SVG_NAME = 'selfhst-jellyfin.svg';
+const SELFHST_WEBP_NAME = 'selfhst-ghost_light.webp';
+const SELFHST_WEBP = Buffer.concat([
+  Buffer.from('RIFF'),
+  Buffer.from([0x20, 0, 0, 0]),
+  Buffer.from('WEBPVP8 '),
+  crypto.randomBytes(24),
 ]);
 
 const CUSTOM_THEMES = [
@@ -160,6 +180,7 @@ const seed = async () => {
     config: {
       ...initialConfig,
       customTitle: 'Backup Flame',
+      ...LAYOUT_SETTINGS,
       WEATHER_API_KEY,
       dockerHost: 'tcp://10.0.0.5:2375',
       lat: 51.5,
@@ -177,6 +198,7 @@ const seed = async () => {
       statusColorDown: '#f85149',
       autoFetchIcons: true,
       iconFetchAllowPrivate: true,
+      preferSelfhstIcons: true,
       ...THEME_OPTIONS,
     },
     themes: {
@@ -197,6 +219,8 @@ const seed = async () => {
       [SVG_NAME]: SVG,
       [FAVICON_PNG_NAME]: PNG,
       [FAVICON_ICO_NAME]: FAVICON_ICO,
+      [SELFHST_SVG_NAME]: SVG,
+      [SELFHST_WEBP_NAME]: SELFHST_WEBP,
     },
   });
 
@@ -259,6 +283,7 @@ const seed = async () => {
     name: 'Private',
     url: 'https://private.example.com',
     categoryId: links.id,
+    icon: SELFHST_WEBP_NAME,
     isPublic: 0,
     orderId: 3,
   });
@@ -389,6 +414,8 @@ test.describe('export', () => {
         `uploads/${PNG_NAME}`,
         `uploads/${FAVICON_PNG_NAME}`,
         `uploads/${FAVICON_ICO_NAME}`,
+        `uploads/${SELFHST_SVG_NAME}`,
+        `uploads/${SELFHST_WEBP_NAME}`,
       ].sort()
     );
 
@@ -410,6 +437,8 @@ test.describe('export', () => {
     assert.strictEqual(files.get('flame.css').toString(), seeded.css);
     assert.ok(files.get(`uploads/${PNG_NAME}`).equals(PNG));
     assert.ok(files.get(`uploads/${FAVICON_ICO_NAME}`).equals(FAVICON_ICO));
+    assert.ok(files.get(`uploads/${SELFHST_SVG_NAME}`).equals(SVG));
+    assert.ok(files.get(`uploads/${SELFHST_WEBP_NAME}`).equals(SELFHST_WEBP));
   });
 
   test('contains the external URLs, status checks and their settings', () => {
@@ -451,6 +480,7 @@ test.describe('export', () => {
     );
     assert.strictEqual(byName.Jellyfin.icon, FAVICON_PNG_NAME);
     assert.strictEqual(exported.bookmarks[0].icon, FAVICON_ICO_NAME);
+    assert.strictEqual(exported.bookmarks[1].icon, SELFHST_WEBP_NAME);
 
     assert.deepStrictEqual(
       {
@@ -464,6 +494,7 @@ test.describe('export', () => {
         statusColorDown: exported.settings.statusColorDown,
         autoFetchIcons: exported.settings.autoFetchIcons,
         iconFetchAllowPrivate: exported.settings.iconFetchAllowPrivate,
+        preferSelfhstIcons: exported.settings.preferSelfhstIcons,
       },
       {
         statusChecks: true,
@@ -476,6 +507,7 @@ test.describe('export', () => {
         statusColorDown: '#f85149',
         autoFetchIcons: true,
         iconFetchAllowPrivate: true,
+        preferSelfhstIcons: true,
       }
     );
   });
@@ -538,7 +570,7 @@ test.describe('restore', () => {
       queries: 1,
       settings: Object.keys(exported.settings).length,
       css: true,
-      uploads: 4,
+      uploads: 6,
     });
     assert.deepStrictEqual(previewRes.body.data.current, {
       categories: 1,
@@ -649,6 +681,87 @@ test.describe('restore', () => {
         queries: before.queries,
         css: before.css,
       }
+    );
+  });
+
+  test('layout settings survive an export, wipe and restore', async () => {
+    const pick = (settings) =>
+      Object.fromEntries(
+        Object.keys(LAYOUT_SETTINGS).map((key) => [key, settings[key]])
+      );
+
+    assert.deepStrictEqual(pick(exported.settings), LAYOUT_SETTINGS);
+
+    await wipe();
+    assert.notDeepStrictEqual(
+      pick(readJson('data/config.json')),
+      LAYOUT_SETTINGS
+    );
+
+    const res = await restore(archive);
+    assert.strictEqual(res.status, 200, res.text);
+    assert.deepStrictEqual(pick(readJson('data/config.json')), LAYOUT_SETTINGS);
+
+    const publicConfig = await request(api).get('/api/config');
+    assert.deepStrictEqual(pick(publicConfig.body.data), LAYOUT_SETTINGS);
+  });
+
+  test('layout, selfh.st and theme settings survive an export, wipe and restore together', async () => {
+    const SETTINGS = {
+      ...LAYOUT_SETTINGS,
+      preferSelfhstIcons: true,
+      ...THEME_OPTIONS,
+    };
+    const SELFHST_ICONS = [SELFHST_SVG_NAME, SELFHST_WEBP_NAME];
+    const pick = (settings) =>
+      Object.fromEntries(
+        Object.keys(SETTINGS).map((key) => [key, settings[key]])
+      );
+    const customThemes = () =>
+      readJson('data/themes.json').themes.filter((t) => t.isCustom);
+
+    assert.deepStrictEqual(pick(exported.settings), SETTINGS);
+
+    await wipe();
+    const wiped = pick(readJson('data/config.json'));
+    for (const key of Object.keys(SETTINGS)) {
+      assert.notDeepStrictEqual(wiped[key], SETTINGS[key], key);
+    }
+    assert.deepStrictEqual(customThemes(), []);
+    assert.deepStrictEqual(fs.readdirSync('data/uploads'), []);
+
+    const res = await restore(archive);
+    assert.strictEqual(res.status, 200, res.text);
+
+    assert.deepStrictEqual(pick(readJson('data/config.json')), SETTINGS);
+    assert.deepStrictEqual(customThemes(), CUSTOM_THEMES);
+    for (const name of SELFHST_ICONS) {
+      assert.strictEqual(
+        fs.readFileSync(join('data/uploads', name)).toString('base64'),
+        seeded.uploads[name],
+        name
+      );
+    }
+    const restoredBookmark = (
+      await rows("SELECT icon FROM bookmarks WHERE name = 'Private'")
+    )[0];
+    assert.strictEqual(restoredBookmark.icon, SELFHST_WEBP_NAME);
+
+    // The dashboard reads layout and theme settings without logging in;
+    // preferSelfhstIcons only matters to the server
+    const publicConfig = (await request(api).get('/api/config')).body.data;
+    const { preferSelfhstIcons, ...publicSettings } = SETTINGS;
+    assert.deepStrictEqual(
+      Object.fromEntries(
+        Object.keys(publicSettings).map((key) => [key, publicConfig[key]])
+      ),
+      publicSettings
+    );
+    assert.ok(!('preferSelfhstIcons' in publicConfig));
+    assert.strictEqual(
+      (await authed(request(api).get('/api/config/admin'))).body.data
+        .preferSelfhstIcons,
+      preferSelfhstIcons
     );
   });
 
@@ -907,6 +1020,18 @@ test.describe('invalid archives', () => {
       withData((d) => (d.settings.dockerHost = 'ftp://nope')),
       400,
       /settings\.dockerHost/,
+    ],
+    [
+      'an unknown tile style',
+      withData((d) => (d.settings.appTileStyle = 'carousel')),
+      400,
+      /settings\.appTileStyle/,
+    ],
+    [
+      'too many app columns',
+      withData((d) => (d.settings.homeAppColumns = 20)),
+      400,
+      /settings\.homeAppColumns/,
     ],
     [
       'custom CSS over the size limit',

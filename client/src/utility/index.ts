@@ -19,5 +19,6 @@ export * from './arrayPartition';
 export * from './pinnedApps';
 export * from './backupPreview';
 export * from './statusColors';
+export * from './appLayout';
 export * from './themeMode';
 export * from './fonts';

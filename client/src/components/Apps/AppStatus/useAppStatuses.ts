@@ -16,9 +16,9 @@ const NO_STATUSES: AppStatuses = {};
 /**
  * Latest server-side status check results, polled while the page is visible.
  * The endpoint answers 304 to the browser's ETag revalidation until a status
- * changes, so polling is cheap.
+ * changes, so polling is cheap. Doesn't poll while `enabled` is false.
  */
-export const useAppStatuses = (): AppStatuses => {
+export const useAppStatuses = (enabled = true): AppStatuses => {
   const { statusChecks, statusCheckInterval } = useSelector(
     (state: State) => state.config.config
   );
@@ -28,7 +28,7 @@ export const useAppStatuses = (): AppStatuses => {
   const [statuses, setStatuses] = useState<AppStatuses>(NO_STATUSES);
 
   useEffect(() => {
-    if (!statusChecks) {
+    if (!statusChecks || !enabled) {
       setStatuses(NO_STATUSES);
       return;
     }
@@ -79,7 +79,7 @@ export const useAppStatuses = (): AppStatuses => {
       window.clearTimeout(timer);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [statusChecks, statusCheckInterval, isAuthenticated]);
+  }, [statusChecks, statusCheckInterval, isAuthenticated, enabled]);
 
   return statuses;
 };

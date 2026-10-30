@@ -121,16 +121,45 @@ const containerStatus = (container) => {
 // "qBittorrent", "qbittorrent" and "q-bittorrent" all match
 const normalizeName = (name) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
 
+// Multi-container apps usually call their web container <app>-server,
+// <app>_server-1 and so on, next to <app>-worker, <app>-db...
+const MAIN_SUFFIXES = ['server', 'web', 'webserver', 'app', 'frontend'];
+const MAIN_NAME = new RegExp(
+  `^(.+?)[-_.](?:${MAIN_SUFFIXES.join('|')})(?:[-_.]\\d+)?$`
+);
+
+const mainContainerKeys = (container) => {
+  const labels = container.Labels || {};
+  const keys = new Set();
+
+  for (const name of container.Names || []) {
+    const match = name.replace(/^\//, '').toLowerCase().match(MAIN_NAME);
+    if (match) keys.add(normalizeName(match[1]));
+  }
+
+  const project = labels['com.docker.compose.project'];
+  const service = (labels['com.docker.compose.service'] || '').toLowerCase();
+
+  if (project && MAIN_SUFFIXES.includes(service)) {
+    keys.add(normalizeName(project));
+  }
+
+  keys.delete('');
+  return keys;
+};
+
 /**
  * Returns a function that finds the container of an app, or null. Apps from
  * the Docker integration are named after their flame.name label (one
  * container can define several apps); other apps match a container named
- * like them, or a Compose service name that only one container uses.
+ * like them, a Compose service name that only one container uses, or the
+ * main container of a multi-container app (authentik-server for Authentik).
  */
 const containerFinder = (containers) => {
   const byLabel = new Map();
   const byName = new Map();
   const byService = new Map();
+  const byMain = new Map();
 
   // A running container wins over stopped duplicates
   const addLabel = (name, container) => {
@@ -161,13 +190,23 @@ const containerFinder = (containers) => {
       // Services like "db" or "server" exist in many projects
       byService.set(service, byService.has(service) ? null : container);
     }
+
+    for (const key of mainContainerKeys(container)) {
+      // Two candidates, e.g. immich-server and immich-web, match neither
+      const existing = byMain.get(key);
+      byMain.set(key, existing === undefined || existing === container ? container : null);
+    }
   }
 
   return (app) => {
     const key = normalizeName(app.name);
 
     return (
-      byLabel.get(app.name) || byName.get(key) || byService.get(key) || null
+      byLabel.get(app.name) ||
+      byName.get(key) ||
+      byService.get(key) ||
+      byMain.get(key) ||
+      null
     );
   };
 };

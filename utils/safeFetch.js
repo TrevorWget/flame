@@ -239,7 +239,9 @@ const requestOnce = (url, target, { maxBytes, truncate, signal, accept }) =>
 
         if (statusCode < 200 || statusCode >= 300) {
           res.resume();
-          return reject(new FetchError(`${url.href} returned HTTP ${statusCode}`, 'HTTP'));
+          const error = new FetchError(`${url.href} returned HTTP ${statusCode}`, 'HTTP');
+          error.status = statusCode;
+          return reject(error);
         }
 
         const declared = Number(headers['content-length']);

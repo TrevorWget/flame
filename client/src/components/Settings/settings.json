@@ -16,6 +16,11 @@
       "authRequired": true
     },
     {
+      "name": "Layout",
+      "dest": "/settings/layout",
+      "authRequired": true
+    },
+    {
       "name": "Weather",
       "dest": "/settings/weather",
       "authRequired": true

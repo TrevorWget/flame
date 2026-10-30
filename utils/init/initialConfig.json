@@ -45,6 +45,7 @@
   "backupRetention": 7,
   "autoFetchIcons": false,
   "iconFetchAllowPrivate": false,
+  "preferSelfhstIcons": false,
   "statusChecks": false,
   "statusCheckInterval": 60,
   "statusCheckTimeout": 5,
@@ -52,5 +53,13 @@
   "statusCheckDocker": false,
   "statusColorUp": "",
   "statusColorUnhealthy": "",
-  "statusColorDown": ""
+  "statusColorDown": "",
+  "appTileStyle": "list",
+  "appDensity": "normal",
+  "appIconScale": 100,
+  "homeAppColumns": 0,
+  "appsPageColumns": 0,
+  "hideAppUrls": false,
+  "hideAppDescriptions": false,
+  "hideStatusDots": false
 }

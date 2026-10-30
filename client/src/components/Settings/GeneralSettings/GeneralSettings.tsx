@@ -234,8 +234,9 @@ export const GeneralSettings = (): JSX.Element => {
                 <option value={0}>False</option>
               </select>
               <span>
-                Apps whose container is found (by its flame.name label, or a
-                container or Compose service named like the app) use its state:
+                Apps whose container is found (by its flame.name label, a
+                container or Compose service named like the app, or a main
+                container like authentik-server or immich_server) use its state:
                 running is up; restarting, starting or failing its health check
                 is unhealthy; stopped is down. Other apps, and apps with a check
                 URL, get the HTTP check. Reads GET /containers/json from the
@@ -325,6 +326,27 @@ export const GeneralSettings = (): JSX.Element => {
             *.local, localhost, link-local). The server may then connect to
             any device on your network when fetching an icon, and accepts
             self-signed certificates from those addresses
+          </span>
+        </InputGroup>
+
+        <InputGroup>
+          <label htmlFor="preferSelfhstIcons">
+            Prefer selfh.st icons when fetching icons
+          </label>
+          <select
+            id="preferSelfhstIcons"
+            name="preferSelfhstIcons"
+            value={formData.preferSelfhstIcons ? 1 : 0}
+            onChange={(e) => inputChangeHandler(e, { isBool: true })}
+          >
+            <option value={1}>True</option>
+            <option value={0}>False</option>
+          </select>
+          <span>
+            When icons are fetched automatically, use the icon from the
+            selfh.st collection whose name matches the app or bookmark name,
+            and fall back to the site's favicon. The icon is downloaded once
+            and kept in Flame's data folder
           </span>
         </InputGroup>
 

@@ -2,6 +2,9 @@ import { WeatherData, WeatherProvider } from '../types';
 import { BackupSchedule } from './Backup';
 import { FontId, SunTimes, ThemeMode, ThemeSchedule } from './Theme';
 
+export type AppTileStyle = 'list' | 'tiles';
+export type AppDensity = 'compact' | 'normal' | 'roomy';
+
 export interface Config {
   hasWeatherKey: boolean;
   weatherEnabled: boolean;
@@ -51,6 +54,7 @@ export interface Config {
   backupRetention: number;
   autoFetchIcons: boolean;
   iconFetchAllowPrivate: boolean;
+  preferSelfhstIcons: boolean;
   statusChecks: boolean;
   statusCheckInterval: number;
   statusCheckTimeout: number;
@@ -59,4 +63,13 @@ export interface Config {
   statusColorUp: string;
   statusColorUnhealthy: string;
   statusColorDown: string;
+  appTileStyle: AppTileStyle;
+  appDensity: AppDensity;
+  appIconScale: number;
+  // 0 picks the columns from the screen width
+  homeAppColumns: number;
+  appsPageColumns: number;
+  hideAppUrls: boolean;
+  hideAppDescriptions: boolean;
+  hideStatusDots: boolean;
 }

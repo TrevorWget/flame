@@ -503,6 +503,13 @@ test.describe('config', () => {
       [{ statusCheckSlow: -1 }, /^statusCheckSlow: /],
       [{ statusColorUp: 'red' }, /^statusColorUp: Must be empty or a hex color/],
       [{ statusColorDown: '#fff;}body{' }, /^statusColorDown: /],
+      [{ appTileStyle: 'grid' }, /^appTileStyle: /],
+      [{ appDensity: 'tight' }, /^appDensity: /],
+      [{ appIconScale: 20 }, /^appIconScale: /],
+      [{ appIconScale: 110.5 }, /^appIconScale: /],
+      [{ homeAppColumns: 9 }, /^homeAppColumns: /],
+      [{ appsPageColumns: -1 }, /^appsPageColumns: /],
+      [{ hideStatusDots: 1 }, /^hideStatusDots: /],
       [{ isAdmin: true }, /Unrecognized key: "isAdmin"/],
       [{ [LEGACY_KEY]: 'changed' }, /Unrecognized key/],
     ];
@@ -539,6 +546,26 @@ test.describe('config', () => {
     assert.strictEqual(readStored().statusCheckSlow, 1.5);
     assert.strictEqual(readStored().statusColorUp, '#3FB950');
     assert.strictEqual(readStored().statusColorUnhealthy, '');
+  });
+
+  test('layout settings are saved', async () => {
+    const layout = {
+      appTileStyle: 'tiles',
+      appDensity: 'compact',
+      appIconScale: 150,
+      homeAppColumns: 6,
+      appsPageColumns: 0,
+      hideAppUrls: true,
+      hideAppDescriptions: false,
+      hideStatusDots: true,
+    };
+    const res = await authed('put', '/api/config').send(layout);
+    assert.strictEqual(res.status, 200, JSON.stringify(res.body));
+
+    const stored = readStored();
+    for (const [key, value] of Object.entries(layout)) {
+      assert.strictEqual(stored[key], value, key);
+    }
   });
 
   test('custom CSS must be a string', async () => {

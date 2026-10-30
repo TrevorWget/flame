@@ -1,5 +1,7 @@
+/* The --app-* custom properties come from the layout settings (appLayoutStyle);
+   the fallbacks are the "normal" density */
 .AppCard {
-  margin-bottom: 20px;
+  margin-bottom: var(--app-category-gap, 20px);
 }
 
 .WideAppCard {
@@ -8,7 +10,7 @@
 
 .AppCard h3 {
   color: var(--color-accent);
-  margin-bottom: 10px;
+  margin-bottom: var(--app-heading-gap, 10px);
   font-size: 16px;
   font-weight: 400;
   text-transform: uppercase;
@@ -19,8 +21,8 @@
 }
 
 .AppIcon {
-  width: 35px;
-  height: 35px;
+  width: var(--app-icon-size, 35px);
+  height: var(--app-icon-size, 35px);
   margin-right: 0.5em;
 }
 
@@ -34,7 +36,7 @@
   color: var(--color-primary);
 }
 
-.AppCardDetails span {
+.AppCardDetails > span {
   color: var(--color-accent);
   font-weight: 400;
   font-size: 0.8em;
@@ -55,12 +57,32 @@
   grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
 }
 
-.WideAppCard .AppCardDetails {
+/* Fixed columns can be narrower than the text, so it's cut short too */
+.WideAppCard .AppCardDetails,
+.TruncatedAppCard .AppCardDetails {
   min-width: 0;
 }
 
-.WideAppCard .AppCardDetails > span {
+.TruncatedAppCard .AppIcon {
+  flex-shrink: 0;
+}
+
+.WideAppCard .AppCardDetails > span,
+.TruncatedAppCard .AppCardDetails > span {
   display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Keeps the status dot visible after a cut name */
+.TruncatedAppCard .AppCardDetails h5 {
+  display: flex;
+  align-items: center;
+}
+
+.TruncatedAppCard .AppName {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -71,7 +93,7 @@
   display: flex;
   width: 100%;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: var(--app-row-gap, 10px);
 }
 
 .Apps a:hover {
@@ -84,4 +106,77 @@
   margin-top: 2px;
   margin-left: 2px;
   object-fit: contain;
+}
+
+/* Shown in icon tiles for apps without an icon */
+.IconLetter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 90%;
+  height: 90%;
+  border: 2px solid var(--color-primary);
+  border-radius: 22%;
+  color: var(--color-primary);
+  font-size: calc(var(--app-icon-size, 56px) * 0.45);
+  font-weight: 500;
+}
+
+/* === ICON TILES: a big icon with the name underneath === */
+.TileAppCard {
+  --app-tile-width: calc(
+    var(--app-icon-size, 56px) + 2 * var(--app-tile-padding, 8px) + 8px
+  );
+}
+
+.TileAppCard .Apps {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(var(--app-tile-width), 100%), 1fr)
+  );
+  gap: var(--app-row-gap, 10px);
+}
+
+.TileAppCard .Apps a {
+  flex-direction: column;
+  justify-content: flex-start;
+  min-width: 0;
+  margin-bottom: 0;
+  padding: var(--app-tile-padding, 8px) 4px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.TileAppCard .AppIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 6px;
+}
+
+.TileAppCard .AppCardDetails {
+  width: 100%;
+  min-width: 0;
+}
+
+.TileAppCard .AppCardDetails h5 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85em;
+}
+
+.TileAppCard .AppName,
+.TileAppCard .AppCardDetails > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.TileAppCard .AppCardDetails > span {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.7em;
 }

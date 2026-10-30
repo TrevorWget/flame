@@ -1,5 +1,6 @@
 import { WeatherData, WeatherProvider } from '../types';
 import { BackupSchedule } from './Backup';
+import { AppDensity, AppTileStyle } from './Config';
 import { FontId, ThemeMode, ThemeSchedule } from './Theme';
 
 export interface WeatherForm {
@@ -24,6 +25,7 @@ export interface GeneralForm {
   extraUrlSchemes: string;
   autoFetchIcons: boolean;
   iconFetchAllowPrivate: boolean;
+  preferSelfhstIcons: boolean;
   statusChecks: boolean;
   statusCheckInterval: number;
   statusCheckTimeout: number;
@@ -48,6 +50,17 @@ export interface UISettingsForm {
   hideDate: boolean;
   hideSearch: boolean;
   disableAutofocus: boolean;
+}
+
+export interface LayoutSettingsForm {
+  appTileStyle: AppTileStyle;
+  appDensity: AppDensity;
+  appIconScale: number;
+  homeAppColumns: number;
+  appsPageColumns: number;
+  hideAppUrls: boolean;
+  hideAppDescriptions: boolean;
+  hideStatusDots: boolean;
 }
 
 export interface DockerSettingsForm {

@@ -20,6 +20,9 @@ const dockerHost = text(255).superRefine((value, ctx) => {
 
 const coordinate = (limit) => z.number().min(-limit).max(limit).nullable();
 
+// 0 picks the columns from the screen width
+const appColumns = z.number().int().min(0).max(8);
+
 // Ends up in a CSS custom property; the form's color input sends #rrggbb
 const statusColor = z
   .string()
@@ -92,6 +95,7 @@ const SETTINGS = {
   backupRetention: z.number().int().min(1).max(365),
   autoFetchIcons: z.boolean(),
   iconFetchAllowPrivate: z.boolean(),
+  preferSelfhstIcons: z.boolean(),
   statusChecks: z.boolean(),
   // Seconds
   statusCheckInterval: z.number().int().min(10).max(86400),
@@ -103,6 +107,15 @@ const SETTINGS = {
   statusColorUp: statusColor,
   statusColorUnhealthy: statusColor,
   statusColorDown: statusColor,
+  appTileStyle: z.enum(['list', 'tiles']),
+  appDensity: z.enum(['compact', 'normal', 'roomy']),
+  // Percent of each tile style's default icon size
+  appIconScale: z.number().int().min(50).max(200),
+  homeAppColumns: appColumns,
+  appsPageColumns: appColumns,
+  hideAppUrls: z.boolean(),
+  hideAppDescriptions: z.boolean(),
+  hideStatusDots: z.boolean(),
 };
 
 const isUnchanged = (value, stored) =>
