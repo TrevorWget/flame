@@ -6,7 +6,12 @@ import { App, Category, NewApp } from '../../../interfaces';
 import { actionCreators } from '../../../store';
 import { State } from '../../../store/reducers';
 import { inputHandler, newAppTemplate, normalizeUrl } from '../../../utility';
-import { followsTheme, NO_THEMED_ICONS } from '../../../utility/themedIcon';
+import {
+  followsTheme,
+  NO_THEMED_ICONS,
+  themedIcon,
+  useIsDarkTheme,
+} from '../../../utility/themedIcon';
 import { Button, FetchIcon, InputGroup, ModalForm, SelfhstPicker } from '../../UI';
 import classes from './Form.module.css';
 
@@ -26,6 +31,7 @@ export const AppsForm = ({
 }: Props): JSX.Element => {
   const { categories } = useSelector((state: State) => state.apps);
   const { config } = useSelector((state: State) => state.config);
+  const isDark = useIsDarkTheme();
 
   const dispatch = useDispatch();
   const { addApp, updateApp, createNotification } =
@@ -304,6 +310,7 @@ export const AppsForm = ({
           <FetchIcon
             url={formData.url}
             icon={formData.icon}
+            previewIcon={themedIcon(formData, isDark)}
             onFetched={(icon) =>
               setFormData((prev) => ({ ...prev, icon, ...NO_THEMED_ICONS }))
             }

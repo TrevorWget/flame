@@ -21,7 +21,12 @@ import {
   newBookmarkTemplate,
   normalizeUrl,
 } from '../../../utility';
-import { followsTheme, NO_THEMED_ICONS } from '../../../utility/themedIcon';
+import {
+  followsTheme,
+  NO_THEMED_ICONS,
+  themedIcon,
+  useIsDarkTheme,
+} from '../../../utility/themedIcon';
 
 interface Props {
   modalHandler: () => void;
@@ -34,6 +39,7 @@ export const BookmarksForm = ({
 }: Props): JSX.Element => {
   const { categories } = useSelector((state: State) => state.bookmarks);
   const { config } = useSelector((state: State) => state.config);
+  const isDark = useIsDarkTheme();
 
   const dispatch = useDispatch();
   const { addBookmark, updateBookmark, createNotification } =
@@ -246,6 +252,7 @@ export const BookmarksForm = ({
           <FetchIcon
             url={formData.url}
             icon={formData.icon}
+            previewIcon={themedIcon(formData, isDark)}
             onFetched={(icon) =>
               setFormData((prev) => ({ ...prev, icon, ...NO_THEMED_ICONS }))
             }

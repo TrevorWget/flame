@@ -369,9 +369,10 @@ describe('AppsForm selfh.st icons', () => {
     await waitFor(() =>
       expect(screen.getByLabelText('App icon')).toHaveValue('selfhst-jellyfin.svg')
     );
+    // The default theme is dark, so the preview is the light version
     expect(screen.getByAltText('Current icon')).toHaveAttribute(
       'src',
-      '/uploads/selfhst-jellyfin.svg'
+      '/uploads/selfhst-jellyfin_light.svg'
     );
     expect(screen.queryByText(/selfh.st has an icon/)).not.toBeInTheDocument();
     expect(screen.getByText(/This icon follows the theme/)).toBeInTheDocument();
