@@ -6,6 +6,8 @@ export const newAppTemplate: NewApp = {
   externalUrl: '',
   preferredUrl: 'internal',
   icon: '',
+  iconOnDark: null,
+  iconOnLight: null,
   categoryId: -1,
   isPublic: true,
   description: '',

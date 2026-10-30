@@ -6,6 +6,7 @@ import { Bookmark, Category } from '../../../interfaces';
 import { actionCreators } from '../../../store';
 import { State } from '../../../store/reducers';
 import { iconParser, isImage, isSvg, isUrl, urlParser } from '../../../utility';
+import { themedIcon, useIsDarkTheme } from '../../../utility/themedIcon';
 import { useCollapsibleCategory } from '../../Home/CollapsibleCategory/CollapsibleCategory';
 import { Icon, SvgIcon } from '../../UI';
 import classes from './BookmarkCard.module.css';
@@ -20,6 +21,7 @@ export const BookmarkCard = (props: Props): JSX.Element => {
   const { category, fromHomepage = false, collapsible = false } = props;
   const config = useSelector((state: State) => state.config.config);
   const isAuthenticated = useSelector((state: State) => state.auth.isAuthenticated);
+  const isDark = useIsDarkTheme();
 
   const dispatch = useDispatch();
   const { setEditCategory } = bindActionCreators(actionCreators, dispatch);
@@ -54,7 +56,8 @@ export const BookmarkCard = (props: Props): JSX.Element => {
           let iconEl: JSX.Element = <Fragment></Fragment>;
 
           if (bookmark.icon) {
-            const { icon, name } = bookmark;
+            const icon = themedIcon(bookmark, isDark);
+            const { name } = bookmark;
 
             if (isImage(icon)) {
               const source = isUrl(icon) ? icon : `/uploads/${icon}`;

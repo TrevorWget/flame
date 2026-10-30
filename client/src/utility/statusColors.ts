@@ -56,6 +56,15 @@ const ratio = (a: Rgb, b: Rgb): number => {
   return (light + 0.05) / (dark + 0.05);
 };
 
+/**
+ * Whether white stands out more than black on a hex background (WCAG relative
+ * luminance below about 0.18). Colors that can't be parsed count as dark.
+ */
+export const isDarkColor = (color: string): boolean => {
+  const rgb = parseHex(color);
+  return !rgb || ratio(WHITE, rgb) >= ratio(BLACK, rgb);
+};
+
 /** WCAG contrast ratio of two hex colors, or null if one can't be parsed */
 export const contrastRatio = (a: string, b: string): number | null => {
   const [rgbA, rgbB] = [parseHex(a), parseHex(b)];

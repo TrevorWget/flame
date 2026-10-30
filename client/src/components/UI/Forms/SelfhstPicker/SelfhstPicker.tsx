@@ -27,14 +27,25 @@ interface SearchResult {
 }
 
 type Format = 'svg' | 'png' | 'webp';
-type Variant = 'standard' | 'light' | 'dark';
+type FileVariant = 'standard' | 'light' | 'dark';
+// 'auto' stores the light and dark versions too and switches with the theme
+type Variant = FileVariant | 'auto';
+
+export interface PickedIcon {
+  icon: string;
+  // Missing versions are null, so the standard icon is shown instead
+  iconOnDark: string | null;
+  iconOnLight: string | null;
+}
 
 interface Props {
   // App or bookmark name, used to search and to suggest an icon
   name: string;
   // Current value of the icon field
   icon: string;
-  onPicked: (icon: string) => void;
+  // Whether the current icon has light/dark versions that follow the theme
+  followsTheme?: boolean;
+  onPicked: (picked: PickedIcon) => void;
 }
 
 const SEARCH_DELAY_MS = 250;
@@ -48,12 +59,13 @@ const FORMATS: { value: Format; label: string }[] = [
 ];
 
 const VARIANTS: { value: Variant; label: string }[] = [
+  { value: 'auto', label: 'Automatic (light on dark themes, dark on light themes)' },
   { value: 'standard', label: 'Standard colours' },
   { value: 'light', label: 'Light (for dark themes)' },
   { value: 'dark', label: 'Dark (for light themes)' },
 ];
 
-export const previewUrl = (reference: string, variant: Variant = 'standard') =>
+export const previewUrl = (reference: string, variant: FileVariant = 'standard') =>
   `/api/icons/selfhst/preview/${reference}${
     variant === 'standard' ? '' : `?variant=${variant}`
   }`;
@@ -62,7 +74,25 @@ export const defaultFormat = (icon: SelfhstIcon): Format =>
   icon.svg ? 'svg' : icon.webp ? 'webp' : 'png';
 
 const hasVariant = (icon: SelfhstIcon, variant: Variant) =>
-  variant === 'standard' || icon[variant];
+  variant === 'standard' ||
+  (variant === 'auto' ? icon.light || icon.dark : icon[variant]);
+
+export const defaultVariant = (icon: SelfhstIcon): Variant =>
+  hasVariant(icon, 'auto') ? 'auto' : 'standard';
+
+// File names the server stores picked icons under
+const STORED_ICON = /^selfhst-([a-z0-9][a-z0-9-]*?)(?:_(light|dark))?\.(svg|png|webp)$/;
+
+/** The selfh.st icon a stored file name belongs to, e.g. selfhst-jellyfin_light.svg */
+export const parseStoredIcon = (
+  icon: string
+): { reference: string; variant: FileVariant; format: Format } | null => {
+  const match = STORED_ICON.exec(icon.trim());
+  if (!match) return null;
+
+  const [, reference, variant = 'standard', format] = match;
+  return { reference, variant: variant as FileVariant, format: format as Format };
+};
 
 const errorMessage = (err: unknown, fallback: string) => {
   const error = err as AxiosError<{ error: string }>;
@@ -79,7 +109,12 @@ const errorMessage = (err: unknown, fallback: string) => {
  * caches the list) and stores the picked icon in Flame's local icon cache.
  * Also suggests the icon named like the app while the icon field is empty.
  */
-export const SelfhstPicker = ({ name, icon, onPicked }: Props): JSX.Element => {
+export const SelfhstPicker = ({
+  name,
+  icon,
+  followsTheme = false,
+  onPicked,
+}: Props): JSX.Element => {
   const dispatch = useDispatch();
   const { createNotification } = bindActionCreators(actionCreators, dispatch);
 
@@ -93,10 +128,41 @@ export const SelfhstPicker = ({ name, icon, onPicked }: Props): JSX.Element => {
   const [format, setFormat] = useState<Format>('svg');
   const [storing, setStoring] = useState(false);
   const [suggestion, setSuggestion] = useState<SelfhstIcon | null>(null);
+  const [upgrade, setUpgrade] = useState<SelfhstIcon | null>(null);
   const searchId = useRef(0);
 
   const iconEmpty = !icon.trim();
   const trimmedName = name.trim();
+  const stored = parseStoredIcon(icon);
+  const storedReference = stored?.reference;
+
+  // Icons picked before Automatic existed (or as one version) can switch to it
+  useEffect(() => {
+    setUpgrade(null);
+    if (!storedReference || followsTheme) return;
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await axios.get<ApiResponse<SelfhstIcon | null>>(
+          '/api/icons/selfhst/suggest',
+          { params: { name: storedReference }, headers: applyAuth() }
+        );
+        const match = res.data.data;
+
+        if (!cancelled && match?.reference === storedReference && hasVariant(match, 'auto')) {
+          setUpgrade(match);
+        }
+      } catch {
+        // Only a hint
+      }
+    }, SUGGEST_DELAY_MS);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [storedReference, followsTheme]);
 
   useEffect(() => {
     setSuggestion(null);
@@ -158,7 +224,7 @@ export const SelfhstPicker = ({ name, icon, onPicked }: Props): JSX.Element => {
 
   const select = (choice: SelfhstIcon) => {
     setSelected(choice);
-    setVariant('standard');
+    setVariant(defaultVariant(choice));
     setFormat(defaultFormat(choice));
   };
 
@@ -166,13 +232,14 @@ export const SelfhstPicker = ({ name, icon, onPicked }: Props): JSX.Element => {
     setStoring(true);
 
     try {
-      const res = await axios.post<ApiResponse<{ icon: string }>>(
+      const res = await axios.post<ApiResponse<PickedIcon>>(
         '/api/icons/selfhst',
         { reference: choice.reference, format: choiceFormat, variant: choiceVariant },
         { headers: applyAuth() }
       );
+      const { icon, iconOnDark = null, iconOnLight = null } = res.data.data;
 
-      onPicked(res.data.data.icon);
+      onPicked({ icon, iconOnDark, iconOnLight });
       setOpen(false);
       setSelected(null);
     } catch (err) {
@@ -199,9 +266,32 @@ export const SelfhstPicker = ({ name, icon, onPicked }: Props): JSX.Element => {
             type="button"
             className={classes.Link}
             disabled={storing}
-            onClick={() => store(suggestion, defaultFormat(suggestion), 'standard')}
+            onClick={() => store(suggestion, defaultFormat(suggestion), defaultVariant(suggestion))}
           >
             {storing ? 'Storing icon...' : 'Use it'}
+          </button>
+        </div>
+      )}
+
+      {stored && followsTheme && !open && (
+        <p className={classes.Note}>
+          This icon follows the theme: light version on dark themes, dark version on light
+          themes.
+        </p>
+      )}
+
+      {upgrade && stored && !followsTheme && !open && (
+        <div className={classes.Suggestion}>
+          <p>{upgrade.name} has light and dark versions on selfh.st.</p>
+          <button
+            type="button"
+            className={classes.Link}
+            disabled={storing}
+            onClick={() =>
+              store(upgrade, upgrade[stored.format] ? stored.format : defaultFormat(upgrade), 'auto')
+            }
+          >
+            {storing ? 'Storing icons...' : 'Switch to Automatic'}
           </button>
         </div>
       )}
@@ -263,11 +353,26 @@ export const SelfhstPicker = ({ name, icon, onPicked }: Props): JSX.Element => {
 
           {selected && (
             <div className={classes.Options}>
-              <img
-                src={previewUrl(selected.reference, variant)}
-                alt={`${selected.name} icon preview`}
-                className={`${classes.LargePreview} ${classes[variant]}`}
-              />
+              {variant === 'auto' ? (
+                <div className={classes.Previews}>
+                  <img
+                    src={previewUrl(selected.reference, selected.light ? 'light' : 'standard')}
+                    alt={`${selected.name} icon on dark themes`}
+                    className={`${classes.LargePreview} ${classes.light}`}
+                  />
+                  <img
+                    src={previewUrl(selected.reference, selected.dark ? 'dark' : 'standard')}
+                    alt={`${selected.name} icon on light themes`}
+                    className={`${classes.LargePreview} ${classes.dark}`}
+                  />
+                </div>
+              ) : (
+                <img
+                  src={previewUrl(selected.reference, variant)}
+                  alt={`${selected.name} icon preview`}
+                  className={`${classes.LargePreview} ${classes[variant]}`}
+                />
+              )}
               <div className={classes.Choices}>
                 <strong>{selected.name}</strong>
                 <select

@@ -21,6 +21,7 @@ import {
   newBookmarkTemplate,
   normalizeUrl,
 } from '../../../utility';
+import { followsTheme, NO_THEMED_ICONS } from '../../../utility/themedIcon';
 
 interface Props {
   modalHandler: () => void;
@@ -230,7 +231,10 @@ export const BookmarksForm = ({
             id="icon"
             placeholder="book-open-outline"
             value={formData.icon}
-            onChange={(e) => inputChangeHandler(e)}
+            onChange={(e) => {
+              const icon = e.target.value;
+              setFormData((prev) => ({ ...prev, icon, ...NO_THEMED_ICONS }));
+            }}
           />
           <span>
             Use icon name from MDI or pass a valid URL.
@@ -242,12 +246,15 @@ export const BookmarksForm = ({
           <FetchIcon
             url={formData.url}
             icon={formData.icon}
-            onFetched={(icon) => setFormData((prev) => ({ ...prev, icon }))}
+            onFetched={(icon) =>
+              setFormData((prev) => ({ ...prev, icon, ...NO_THEMED_ICONS }))
+            }
           />
           <SelfhstPicker
             name={formData.name}
             icon={formData.icon}
-            onPicked={(icon) => setFormData((prev) => ({ ...prev, icon }))}
+            followsTheme={followsTheme(formData)}
+            onPicked={(picked) => setFormData((prev) => ({ ...prev, ...picked }))}
           />
           <span
             onClick={() => toggleUseCustomIcon(!useCustomIcon)}

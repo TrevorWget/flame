@@ -44,6 +44,7 @@ import {
   urlParser,
 } from '../../utility';
 import { categoryItems, Item, ItemsKey } from '../../utility/moveItem';
+import { themedIcon, useIsDarkTheme } from '../../utility/themedIcon';
 import { WIDE_CATEGORY_MIN_APPS } from '../Apps/AppCard/AppCard';
 import appCardClasses from '../Apps/AppCard/AppCard.module.css';
 import appGridClasses from '../Apps/AppGrid/AppGrid.module.css';
@@ -74,12 +75,14 @@ const containerId = (categoryId: number) => `category-${categoryId}`;
 const keepInPlace: SortingStrategy = () => null;
 
 const ItemIcon = ({ item, kind }: { item: Item; kind: ItemsKey }) => {
+  const isDark = useIsDarkTheme();
   if (!item.icon) return null;
 
   const css = kind === 'apps' ? appCardClasses : bookmarkCardClasses;
   const wrapperClass = kind === 'apps' ? css.AppIcon : css.BookmarkIcon;
   const svgClass = kind === 'apps' ? css.AppIconSvg : css.BookmarkIconSvg;
-  const { icon, name } = item;
+  const icon = themedIcon(item, isDark);
+  const { name } = item;
   const source = isUrl(icon) ? icon : `/uploads/${icon}`;
 
   return (

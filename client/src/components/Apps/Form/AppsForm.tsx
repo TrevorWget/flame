@@ -6,6 +6,7 @@ import { App, Category, NewApp } from '../../../interfaces';
 import { actionCreators } from '../../../store';
 import { State } from '../../../store/reducers';
 import { inputHandler, newAppTemplate, normalizeUrl } from '../../../utility';
+import { followsTheme, NO_THEMED_ICONS } from '../../../utility/themedIcon';
 import { Button, FetchIcon, InputGroup, ModalForm, SelfhstPicker } from '../../UI';
 import classes from './Form.module.css';
 
@@ -288,7 +289,10 @@ export const AppsForm = ({
             id="icon"
             placeholder="book-open-outline"
             value={formData.icon}
-            onChange={(e) => inputChangeHandler(e)}
+            onChange={(e) => {
+              const icon = e.target.value;
+              setFormData((prev) => ({ ...prev, icon, ...NO_THEMED_ICONS }));
+            }}
           />
           <span>
             Use icon name from MDI or pass a valid URL.
@@ -300,12 +304,15 @@ export const AppsForm = ({
           <FetchIcon
             url={formData.url}
             icon={formData.icon}
-            onFetched={(icon) => setFormData((prev) => ({ ...prev, icon }))}
+            onFetched={(icon) =>
+              setFormData((prev) => ({ ...prev, icon, ...NO_THEMED_ICONS }))
+            }
           />
           <SelfhstPicker
             name={formData.name}
             icon={formData.icon}
-            onPicked={(icon) => setFormData((prev) => ({ ...prev, icon }))}
+            followsTheme={followsTheme(formData)}
+            onPicked={(picked) => setFormData((prev) => ({ ...prev, ...picked }))}
           />
           <span
             onClick={() => toggleUseCustomIcon(!useCustomIcon)}

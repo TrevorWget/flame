@@ -5,6 +5,8 @@ export const newBookmarkTemplate: NewBookmark = {
   url: '',
   categoryId: -1,
   icon: '',
+  iconOnDark: null,
+  iconOnLight: null,
   isPublic: true,
 };
 

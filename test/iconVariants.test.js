@@ -35,14 +35,11 @@ const Bookmark = require('../models/Bookmark');
 const api = require('../api');
 const applyIntegrationApps = require('../controllers/apps/docker/applyIntegrationApps');
 const variantsMigration = require('../db/migrations/14_icon-theme-variants');
-const { UPLOADS_DIR } = require('../utils/favicon');
 const { getPasswordFingerprint } = require('../utils/password');
 const { getTokenVersion } = require('../utils/tokenVersion');
 
 // Migrations that ran before this feature
 const EARLIER_MIGRATIONS = /^(0\d|1[0-3])_.+\.js$/;
-
-const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 7, 7, 7, 7]);
 
 const AUTO = {
   icon: 'selfhst-jellyfin.svg',
@@ -60,7 +57,6 @@ const BOOKMARK_COLUMNS = 'id, name, url, categoryId, icon, isPublic';
 let before;
 let token;
 let categoryIds = {};
-const uploaded = [];
 
 test.before(async () => {
   await new Umzug({
@@ -114,10 +110,6 @@ test.before(async () => {
 });
 
 test.after(async () => {
-  for (const name of uploaded) {
-    fs.rmSync(join(UPLOADS_DIR, name), { force: true });
-  }
-
   await require('node-schedule').gracefulShutdown();
   await sequelize.close();
   process.chdir(repoRoot);
@@ -126,6 +118,22 @@ test.after(async () => {
 
 const authed = (method, path) =>
   request(api)[method](path).set('Authorization-Flame', `Bearer ${token}`);
+
+const CREATE = {
+  apps: require('../controllers/apps/createApp'),
+  bookmarks: require('../controllers/bookmarks/createBookmark'),
+};
+const UPDATE = {
+  apps: require('../controllers/apps/updateApp'),
+  bookmarks: require('../controllers/bookmarks/updateBookmark'),
+};
+
+/** Runs a controller and resolves with the JSON it responds with */
+const callController = (controller, req) =>
+  new Promise((resolve, reject) => {
+    const res = { status: () => res, json: (body) => resolve(JSON.parse(JSON.stringify(body))) };
+    controller(req, res, reject);
+  });
 
 test.describe('migration 14_icon-theme-variants', () => {
   test('keeps existing apps and bookmarks on their current icon', async () => {
@@ -236,17 +244,23 @@ for (const type of ['apps', 'bookmarks']) {
       });
     });
 
+    // Called directly, as the upload middleware writes to the shared data/uploads
     test('are cleared by an uploaded icon', async () => {
       const { body } = await create(AUTO);
+      const file = { filename: `${crypto.randomUUID()}.png` };
 
-      const res = await authed('put', `/api/${type}/${body.data.id}`)
-        .field('name', 'Jellyfin')
-        .attach('icon', PNG, 'icon.png');
-      assert.strictEqual(res.status, 200, JSON.stringify(res.body));
-      uploaded.push(res.body.data.icon);
+      const updated = await callController(UPDATE[type], {
+        params: { id: body.data.id },
+        body: { name: 'Jellyfin', iconOnDark: AUTO.iconOnDark },
+        file,
+      });
+      assert.deepStrictEqual(variants(updated.data), { icon: file.filename, ...NONE });
 
-      assert.match(res.body.data.icon, /^[0-9a-f-]{36}\.png$/);
-      assert.deepStrictEqual(variants(res.body.data), { icon: res.body.data.icon, ...NONE });
+      const created = await callController(CREATE[type], {
+        body: { name: 'Uploaded', url: 'https://u.lan', categoryId: categoryIds[type], ...AUTO },
+        file,
+      });
+      assert.deepStrictEqual(variants(created.data), { icon: file.filename, ...NONE });
     });
   });
 }

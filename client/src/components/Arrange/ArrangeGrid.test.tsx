@@ -185,6 +185,44 @@ describe('arranging apps', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('shows icons for the current theme while arranging', () => {
+    setup();
+    store.dispatch({
+      type: ActionType.getCategoriesSuccess,
+      payload: [
+        category(1, 'apps', [
+          {
+            ...app(1, 1),
+            icon: 'selfhst-jellyfin.webp',
+            iconOnDark: 'selfhst-jellyfin_light.webp',
+            iconOnLight: 'selfhst-jellyfin_dark.webp',
+          },
+        ]),
+      ],
+    });
+    const setTheme = (background: string) =>
+      act(() => {
+        store.dispatch({
+          type: ActionType.setTheme,
+          payload: { background, primary: '#888888', accent: '#6ee2ff' },
+        });
+      });
+
+    try {
+      setTheme('#f2f7ff');
+      renderPage(<Apps searching={false} />);
+      fireEvent.click(screen.getByText('Arrange Apps'));
+
+      const icon = () => screen.getByAltText('App 1 icon').getAttribute('src');
+      expect(icon()).toBe('/uploads/selfhst-jellyfin_dark.webp');
+
+      setTheme('#1a1a1a');
+      expect(icon()).toBe('/uploads/selfhst-jellyfin_light.webp');
+    } finally {
+      setTheme('#242b33');
+    }
+  });
+
   it('moves an app to another category with the keyboard', async () => {
     setup();
     renderPage(<Apps searching={false} />);

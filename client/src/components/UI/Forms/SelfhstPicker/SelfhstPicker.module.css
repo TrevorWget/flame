@@ -36,6 +36,11 @@
   margin: 0;
 }
 
+.Note {
+  margin: 0 0 4px;
+  opacity: 0.8;
+}
+
 .Panel {
   margin-top: 8px;
   padding: 10px;
@@ -115,6 +120,12 @@
   padding: 6px;
   border-radius: 6px;
   object-fit: contain;
+}
+
+.Previews {
+  display: flex;
+  flex: none;
+  gap: 6px;
 }
 
 /* Light icons are white and dark icons black, so preview them on a contrasting background */

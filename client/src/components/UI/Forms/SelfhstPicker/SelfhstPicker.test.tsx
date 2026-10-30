@@ -28,6 +28,12 @@ const icon = (name: string, reference: string, flags: Partial<SelfhstIcon> = {})
 
 const JELLYFIN = icon('Jellyfin', 'jellyfin');
 const GHOST = icon('Ghost', 'ghost', { svg: false, dark: false });
+const STEAM = icon('Steam', 'steam', { svg: false, light: false, dark: false });
+const JELLYFIN_AUTO = {
+  icon: 'selfhst-jellyfin.svg',
+  iconOnDark: 'selfhst-jellyfin_light.svg',
+  iconOnLight: 'selfhst-jellyfin_dark.svg',
+};
 
 const searchResult = (icons: SelfhstIcon[], extra = {}) => ({
   data: {
@@ -71,9 +77,9 @@ describe('SelfhstPicker', () => {
     mockedPost.mockReset();
   });
 
-  it('suggests the icon named like the app and stores it', async () => {
+  it('suggests the icon named like the app and stores it to follow the theme', async () => {
     serve({ suggestion: JELLYFIN });
-    mockedPost.mockResolvedValue({ data: { success: true, data: { icon: 'selfhst-jellyfin.svg' } } });
+    mockedPost.mockResolvedValue({ data: { success: true, data: JELLYFIN_AUTO } });
     const onPicked = renderPicker();
 
     expect(await screen.findByText('selfh.st has an icon for Jellyfin.')).toBeInTheDocument();
@@ -84,12 +90,97 @@ describe('SelfhstPicker', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Use it' }));
 
-    await waitFor(() => expect(onPicked).toHaveBeenCalledWith('selfhst-jellyfin.svg'));
+    await waitFor(() => expect(onPicked).toHaveBeenCalledWith(JELLYFIN_AUTO));
     expect(mockedPost).toHaveBeenCalledWith(
       '/api/icons/selfhst',
-      { reference: 'jellyfin', format: 'svg', variant: 'standard' },
+      { reference: 'jellyfin', format: 'svg', variant: 'auto' },
       { headers: { 'X-Flame-CSRF': '1' } }
     );
+  });
+
+  it('suggests the standard icon when there are no light and dark versions', async () => {
+    serve({ suggestion: STEAM });
+    mockedPost.mockResolvedValue({
+      data: { success: true, data: { icon: 'selfhst-steam.webp', iconOnDark: null, iconOnLight: null } },
+    });
+    renderPicker({ name: 'Steam' });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Use it' }));
+
+    await waitFor(() =>
+      expect(mockedPost).toHaveBeenCalledWith(
+        '/api/icons/selfhst',
+        { reference: 'steam', format: 'webp', variant: 'standard' },
+        { headers: { 'X-Flame-CSRF': '1' } }
+      )
+    );
+  });
+
+  it('offers to switch an icon picked before Automatic existed', async () => {
+    serve({ suggestion: JELLYFIN });
+    mockedPost.mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          icon: 'selfhst-jellyfin.png',
+          iconOnDark: 'selfhst-jellyfin_light.png',
+          iconOnLight: 'selfhst-jellyfin_dark.png',
+        },
+      },
+    });
+    const onPicked = renderPicker({ icon: 'selfhst-jellyfin_light.png' });
+
+    expect(await screen.findByText('Jellyfin has light and dark versions on selfh.st.')).toBeInTheDocument();
+    expect(mockedGet).toHaveBeenCalledWith('/api/icons/selfhst/suggest', {
+      params: { name: 'jellyfin' },
+      headers: { 'X-Flame-CSRF': '1' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to Automatic' }));
+
+    await waitFor(() =>
+      expect(onPicked).toHaveBeenCalledWith({
+        icon: 'selfhst-jellyfin.png',
+        iconOnDark: 'selfhst-jellyfin_light.png',
+        iconOnLight: 'selfhst-jellyfin_dark.png',
+      })
+    );
+    expect(mockedPost.mock.calls[0][1]).toEqual({
+      reference: 'jellyfin',
+      format: 'png',
+      variant: 'auto',
+    });
+  });
+
+  it('only offers Automatic for selfh.st icons that have light and dark versions', async () => {
+    for (const [stored, suggestion] of [
+      ['selfhst-steam.webp', STEAM],
+      // The suggestion is for another icon
+      ['selfhst-jelly.svg', JELLYFIN],
+      ['favicon-0123456789abcdef.png', JELLYFIN],
+    ] as const) {
+      mockedGet.mockReset();
+      serve({ suggestion });
+      const { unmount } = render(
+        <Provider store={store}>
+          <SelfhstPicker name="App" icon={stored} onPicked={vi.fn()} />
+        </Provider>
+      );
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      expect(screen.queryByRole('button', { name: 'Switch to Automatic' })).not.toBeInTheDocument();
+      unmount();
+    }
+  });
+
+  it('says when the icon already follows the theme', async () => {
+    serve({ suggestion: JELLYFIN });
+    renderPicker({ icon: 'selfhst-jellyfin.svg', followsTheme: true });
+
+    expect(screen.getByText(/This icon follows the theme/)).toBeInTheDocument();
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    expect(mockedGet).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Switch to Automatic' })).not.toBeInTheDocument();
   });
 
   it('does not suggest anything once an icon is set', async () => {
@@ -103,7 +194,12 @@ describe('SelfhstPicker', () => {
 
   it('searches, offers only the variants and formats an icon has, and stores the choice', async () => {
     serve();
-    mockedPost.mockResolvedValue({ data: { success: true, data: { icon: 'selfhst-ghost_light.webp' } } });
+    mockedPost.mockResolvedValue({
+      data: {
+        success: true,
+        data: { icon: 'selfhst-ghost_light.webp', iconOnDark: null, iconOnLight: null },
+      },
+    });
     const onPicked = renderPicker({ name: 'Ghost blog' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Browse selfh.st icons' }));
@@ -127,9 +223,20 @@ describe('SelfhstPicker', () => {
     const colours = screen.getByRole('combobox', { name: 'Icon colours' });
     const formats = screen.getByRole('combobox', { name: 'Icon format' });
     expect(within(colours).getAllByRole('option').map((o) => o.textContent)).toEqual([
+      'Automatic (light on dark themes, dark on light themes)',
       'Standard colours',
       'Light (for dark themes)',
     ]);
+    expect(colours).toHaveValue('auto');
+    // Ghost has no dark version, so light themes get the standard icon
+    expect(screen.getByAltText('Ghost icon on dark themes')).toHaveAttribute(
+      'src',
+      '/api/icons/selfhst/preview/ghost?variant=light'
+    );
+    expect(screen.getByAltText('Ghost icon on light themes')).toHaveAttribute(
+      'src',
+      '/api/icons/selfhst/preview/ghost'
+    );
     expect(within(formats).getAllByRole('option').map((o) => o.textContent)).toEqual([
       'WebP',
       'PNG',
@@ -144,7 +251,13 @@ describe('SelfhstPicker', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Use this icon' }));
 
-    await waitFor(() => expect(onPicked).toHaveBeenCalledWith('selfhst-ghost_light.webp'));
+    await waitFor(() =>
+      expect(onPicked).toHaveBeenCalledWith({
+        icon: 'selfhst-ghost_light.webp',
+        iconOnDark: null,
+        iconOnLight: null,
+      })
+    );
     expect(mockedPost.mock.calls[0][1]).toEqual({
       reference: 'ghost',
       format: 'webp',
@@ -229,9 +342,16 @@ describe('AppsForm selfh.st icons', () => {
     });
   });
 
-  it('puts the suggested icon into the icon field', async () => {
+  const fill = (label: string, name: string, value: string | number) =>
+    fireEvent.change(screen.getByLabelText(label), { target: { name, value } });
+
+  it('puts the suggested icon into the icon field and saves its light and dark versions', async () => {
     serve({ suggestion: JELLYFIN });
-    mockedPost.mockResolvedValue({ data: { success: true, data: { icon: 'selfhst-jellyfin.svg' } } });
+    mockedPost.mockImplementation(async (url: string) =>
+      url === '/api/icons/selfhst'
+        ? { data: { success: true, data: JELLYFIN_AUTO } }
+        : { data: { success: true, data: {} } }
+    );
 
     render(
       <Provider store={store}>
@@ -239,8 +359,10 @@ describe('AppsForm selfh.st icons', () => {
       </Provider>
     );
 
-    fireEvent.change(screen.getByLabelText('App name'), {
-      target: { name: 'name', value: 'Jellyfin' },
+    fill('App name', 'name', 'Jellyfin');
+    fill('Internal URL', 'url', 'http://jellyfin.lan');
+    fireEvent.change(screen.getByLabelText('App Category'), {
+      target: { name: 'categoryId', value: '1' },
     });
     fireEvent.click(await screen.findByRole('button', { name: 'Use it' }));
 
@@ -252,5 +374,59 @@ describe('AppsForm selfh.st icons', () => {
       '/uploads/selfhst-jellyfin.svg'
     );
     expect(screen.queryByText(/selfh.st has an icon/)).not.toBeInTheDocument();
+    expect(screen.getByText(/This icon follows the theme/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add new app' }));
+
+    await waitFor(() =>
+      expect(mockedPost).toHaveBeenCalledWith(
+        '/api/apps',
+        expect.objectContaining({ name: 'Jellyfin', ...JELLYFIN_AUTO }),
+        expect.anything()
+      )
+    );
+  });
+
+  it('typing another icon drops the light and dark versions', async () => {
+    const mockedPut = vi.mocked(axios.put);
+    mockedPut.mockReset();
+    mockedPut.mockResolvedValue({ data: { success: true, data: {} } });
+    serve();
+
+    const app = {
+      id: 7,
+      name: 'Jellyfin',
+      url: 'http://jellyfin.lan',
+      categoryId: 1,
+      ...JELLYFIN_AUTO,
+      isPublic: true,
+      description: '',
+      statusCheck: true,
+      statusUrl: null,
+      orderId: 1,
+      isPinned: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    render(
+      <Provider store={store}>
+        <AppsForm modalHandler={vi.fn()} app={app} />
+      </Provider>
+    );
+
+    expect(screen.getByText(/This icon follows the theme/)).toBeInTheDocument();
+    fill('App icon', 'icon', 'movie');
+    expect(screen.queryByText(/This icon follows the theme/)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Update app' }));
+
+    await waitFor(() =>
+      expect(mockedPut).toHaveBeenCalledWith(
+        '/api/apps/7',
+        expect.objectContaining({ icon: 'movie', iconOnDark: null, iconOnLight: null }),
+        expect.anything()
+      )
+    );
   });
 });
