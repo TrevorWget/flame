@@ -1,4 +1,5 @@
 const App = require('../../../models/App');
+const { clearStaleVariants } = require('../../../utils/iconVariants');
 
 // Creates or updates the apps an integration discovered and tags them with
 // `source`. With `unpinMissing`, apps previously synced from the same source
@@ -25,12 +26,12 @@ const applyIntegrationApps = async (
       const keepIcon =
         icon === 'custom' || (icon === defaultIcon && app.icon !== defaultIcon);
 
-      await app.update({
-        ...fields,
-        ...(keepIcon ? {} : { icon }),
-        source,
-        isPinned: true,
-      });
+      await app.update(
+        clearStaleVariants(
+          { ...fields, ...(keepIcon ? {} : { icon }), source, isPinned: true },
+          app
+        )
+      );
     } else {
       apps.push(
         await App.create({

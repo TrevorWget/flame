@@ -57,6 +57,9 @@ const url = z
 // MDI icon name, remote icon URL or uploaded file name
 const icon = z.string().trim().max(MAX_URL_LENGTH);
 
+// Icon shown instead of `icon` on dark or light themes; empty means "use `icon`"
+const iconVariant = icon.nullable().transform((value) => value || null);
+
 const reorderList = (key) =>
   z.strictObject({
     [key]: z
@@ -98,6 +101,7 @@ module.exports = {
   name,
   url,
   icon,
+  iconVariant,
   reorderList,
   emptyBody,
   writableFields,

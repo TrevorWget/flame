@@ -2,6 +2,7 @@ const asyncWrapper = require('../../middleware/asyncWrapper');
 const App = require('../../models/App');
 const ErrorResponse = require('../../utils/ErrorResponse');
 const { autoFetchIcon } = require('../../utils/autoFetchIcon');
+const { NO_VARIANTS, clearStaleVariants } = require('../../utils/iconVariants');
 const { runStatusChecks } = require('../../utils/statusChecks');
 
 // @desc      Update app
@@ -24,9 +25,9 @@ const updateApp = asyncWrapper(async (req, res, next) => {
   let body = { ...req.body };
 
   if (req.file) {
-    body.icon = req.file.filename;
+    body = { ...body, icon: req.file.filename, ...NO_VARIANTS };
   } else {
-    body = await autoFetchIcon(body, app);
+    body = clearStaleVariants(await autoFetchIcon(body, app), app);
   }
 
   app = await app.update(body);

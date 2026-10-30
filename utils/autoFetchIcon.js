@@ -1,7 +1,13 @@
 const loadConfig = require('./loadConfig');
 const { normalizeUrl } = require('./urlSchemes');
 const { fetchAndStoreIcon } = require('./favicon');
-const { defaultFormat, getIndex, storeSelfhstIcon, suggestIcon } = require('./selfhst');
+const {
+  defaultFormat,
+  getIndex,
+  storeSelfhstIconSet,
+  suggestIcon,
+} = require('./selfhst');
+const { NO_VARIANTS } = require('./iconVariants');
 const Logger = require('./Logger');
 const logger = new Logger();
 
@@ -29,7 +35,10 @@ const within = (promise, ms) => {
   ]).finally(() => clearTimeout(timer));
 };
 
-/** The selfh.st icon named like the app, stored locally, or null */
+/**
+ * The selfh.st icon named like the app with its theme versions
+ * ({ icon, iconOnDark, iconOnLight }), stored locally, or null
+ */
 const selfhstIconFor = async (name, timeoutMs) => {
   if (typeof name !== 'string' || !name.trim()) return null;
 
@@ -41,7 +50,7 @@ const selfhstIconFor = async (name, timeoutMs) => {
     const icon = index && suggestIcon(index, name);
     if (!icon) return null;
 
-    return await storeSelfhstIcon(icon.reference, {
+    return await storeSelfhstIconSet(icon.reference, {
       format: defaultFormat(icon),
       timeoutMs: Math.max(timeoutMs - (Date.now() - started), 1),
     });
@@ -54,7 +63,8 @@ const selfhstIconFor = async (name, timeoutMs) => {
 /**
  * With the autoFetchIcons setting on, fills in the icon of an app or bookmark
  * that would otherwise be saved without one: the selfh.st icon matching its
- * name first if preferSelfhstIcons is on, then the site's favicon. On updates
+ * name first if preferSelfhstIcons is on (following the theme when it has
+ * light and dark versions), then the site's favicon. On updates
  * (`existing` given) this only happens when the request touches the URL or
  * icon, so pinning or reordering never triggers a fetch. Failures keep the
  * item as it was.
@@ -74,7 +84,7 @@ const autoFetchIcon = async (body, existing = null) => {
     const name = 'name' in body ? body.name : existing && existing.name;
     const selfhst = await selfhstIconFor(name, AUTO_FETCH_TIMEOUT_MS);
 
-    if (selfhst) return { ...body, icon: selfhst };
+    if (selfhst) return { ...body, ...selfhst };
   }
 
   const url = iconSourceUrl(
@@ -90,7 +100,7 @@ const autoFetchIcon = async (body, existing = null) => {
       timeoutMs,
     });
 
-    return { ...body, icon: fetched };
+    return { ...body, icon: fetched, ...NO_VARIANTS };
   } catch (err) {
     logger.log(`No icon fetched for ${url}: ${err.message}`, 'WARN');
     return body;

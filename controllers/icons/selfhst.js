@@ -6,8 +6,10 @@ const {
   searchIcons,
   suggestIcon,
   storeSelfhstIcon,
+  storeSelfhstIconSet,
   getPreview,
 } = require('../../utils/selfhst');
+const { NO_VARIANTS } = require('../../utils/iconVariants');
 
 // Other download failures are 422 like /api/icons/fetch, so their message
 // reaches the user (messages of 5xx responses are hidden)
@@ -103,17 +105,23 @@ const previewSelfhst = asyncWrapper(async (req, res, next) => {
 // @access    Private
 const storeSelfhst = asyncWrapper(async (req, res, next) => {
   const { reference, format, variant } = req.body;
-  let icon;
+  let data;
 
   try {
-    icon = await storeSelfhstIcon(reference, { format, variant });
+    data =
+      variant === 'auto'
+        ? await storeSelfhstIconSet(reference, { format })
+        : {
+            icon: await storeSelfhstIcon(reference, { format, variant }),
+            ...NO_VARIANTS,
+          };
   } catch (err) {
     return next(toResponse(err));
   }
 
   res.status(200).json({
     success: true,
-    data: { icon },
+    data,
   });
 });
 

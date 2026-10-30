@@ -90,7 +90,9 @@ const snapshot = async () => ({
   apps: await rows(
     'SELECT id, name, url, icon, isPinned, isPublic, orderId, description, createdAt FROM apps ORDER BY id'
   ),
-  bookmarks: await rows('SELECT * FROM bookmarks ORDER BY id'),
+  bookmarks: await rows(
+    'SELECT id, name, url, categoryId, icon, isPublic, orderId, createdAt, updatedAt FROM bookmarks ORDER BY id'
+  ),
   categories: await rows(
     'SELECT id, name, isPinned, orderId, isPublic, createdAt FROM categories ORDER BY id'
   ),

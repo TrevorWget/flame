@@ -1,8 +1,9 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
+import { ActionType } from '../../../store/action-types';
 import { store } from '../../../store/store';
 import { App, Category } from '../../../interfaces';
 import { AppCard } from './AppCard';
@@ -73,5 +74,44 @@ describe('AppCard URLs', () => {
 
     expect(link('Empty').getAttribute('href')).toBe('http://empty.lan:8080');
     expect(screen.getByText('empty.lan:8080')).toBeInTheDocument();
+  });
+});
+
+describe('AppCard icons', () => {
+  const setTheme = (background: string, primary: string) =>
+    act(() => {
+      store.dispatch({
+        type: ActionType.setTheme,
+        payload: { background, primary, accent: '#6ee2ff' },
+      });
+    });
+
+  afterEach(() => setTheme('#242b33', '#effbff'));
+
+  it('switch between the light and dark versions with the theme, without a reload', () => {
+    setTheme('#242b33', '#effbff');
+    renderCard([
+      app('Jellyfin', {
+        icon: 'selfhst-jellyfin.webp',
+        iconOnDark: 'selfhst-jellyfin_light.webp',
+        iconOnLight: 'selfhst-jellyfin_dark.webp',
+      }),
+      app('Ghost', { icon: 'selfhst-ghost.webp', iconOnDark: 'selfhst-ghost_light.webp' }),
+      app('Older', { icon: 'selfhst-plex_light.webp' }),
+    ]);
+    const src = (name: string) => screen.getByAltText(`${name} icon`).getAttribute('src');
+
+    expect(src('Jellyfin')).toBe('/uploads/selfhst-jellyfin_light.webp');
+    expect(src('Ghost')).toBe('/uploads/selfhst-ghost_light.webp');
+    expect(src('Older')).toBe('/uploads/selfhst-plex_light.webp');
+
+    setTheme('#ffffff', '#222222');
+    expect(src('Jellyfin')).toBe('/uploads/selfhst-jellyfin_dark.webp');
+    // No dark version, so the standard icon
+    expect(src('Ghost')).toBe('/uploads/selfhst-ghost.webp');
+    expect(src('Older')).toBe('/uploads/selfhst-plex_light.webp');
+
+    setTheme('#1a1a1a', '#fffdea');
+    expect(src('Jellyfin')).toBe('/uploads/selfhst-jellyfin_light.webp');
   });
 });

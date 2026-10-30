@@ -14,6 +14,7 @@ import {
   urlParser,
 } from '../../../utility';
 import { resolveAppUrl } from '../../../utility/appUrl';
+import { themedIcon, useIsDarkTheme } from '../../../utility/themedIcon';
 import { useCollapsibleCategory } from '../../Home/CollapsibleCategory/CollapsibleCategory';
 import { Icon, SvgIcon } from '../../UI';
 import { useAppLayout } from '../AppGrid/useAppLayout';
@@ -34,7 +35,8 @@ interface Props {
 export const WIDE_CATEGORY_MIN_APPS = 9;
 
 const AppIcon = ({ app, isTile }: { app: App; isTile: boolean }) => {
-  const { icon, name } = app;
+  const icon = themedIcon(app, useIsDarkTheme());
+  const { name } = app;
 
   if (!icon) {
     return isTile ? (

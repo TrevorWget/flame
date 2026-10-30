@@ -458,6 +458,39 @@ const storeSelfhstIcon = async (
   return request;
 };
 
+/**
+ * Stores an icon with its light version (for dark themes) and dark version
+ * (for light themes). A version selfh.st doesn't have, or that can't be
+ * downloaded, is null, so the dashboard shows the standard icon instead.
+ * Files already in data/uploads are reused like by storeSelfhstIcon.
+ */
+const storeSelfhstIconSet = async (reference, { format = 'svg', timeoutMs = 10000 } = {}) => {
+  checkRequest(reference, format, 'standard');
+
+  const index = await getIndex({ wait: false });
+  const entry = index && index.byReference.get(reference);
+
+  const variant = async (name) => {
+    if (entry && !entry[name]) return null;
+
+    try {
+      return await storeSelfhstIcon(reference, { format, variant: name, timeoutMs });
+    } catch (err) {
+      if (!(err instanceof FetchError)) throw err;
+      logger.log(`No ${name} version of ${reference}: ${err.message}`, 'WARN');
+      return null;
+    }
+  };
+
+  const [icon, iconOnDark, iconOnLight] = await Promise.all([
+    storeSelfhstIcon(reference, { format, timeoutMs }),
+    variant('light'),
+    variant('dark'),
+  ]);
+
+  return { icon, iconOnDark, iconOnLight };
+};
+
 const previews = new Map();
 let previewBytes = 0;
 
@@ -539,6 +572,7 @@ module.exports = {
   defaultFormat,
   iconFilename,
   storeSelfhstIcon,
+  storeSelfhstIconSet,
   getPreview,
   configureSelfhst,
 };

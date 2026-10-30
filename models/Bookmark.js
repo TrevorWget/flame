@@ -20,6 +20,17 @@ const Bookmark = sequelize.define(
       type: DataTypes.STRING,
       defaultValue: '',
     },
+    // Shown instead of `icon` on dark / light themes when set
+    iconOnDark: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+    },
+    iconOnLight: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+    },
     isPublic: {
       type: DataTypes.INTEGER,
       allowNull: true,

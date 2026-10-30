@@ -49,7 +49,11 @@ const INDEX = [
   { Name: 'Jellyfin', Reference: 'jellyfin', SVG: 'Yes', PNG: 'Yes', WebP: 'Yes', Light: 'Yes', Dark: 'Yes', Category: 'Self-Hosted', Tags: 'Streaming' },
   { Name: 'Home Assistant', Reference: 'home-assistant', SVG: 'Yes', PNG: 'Yes', WebP: 'Yes', Light: 'No', Dark: 'No', Category: 'Self-Hosted', Tags: '' },
   { Name: 'Steam', Reference: 'steam', SVG: 'No', PNG: 'Yes', WebP: 'Yes', Light: 'No', Dark: 'No', Category: 'Gaming', Tags: '' },
+  // Listed with a dark version that the CDN doesn't have
+  { Name: 'Ghost', Reference: 'ghost', SVG: 'Yes', PNG: 'No', WebP: 'No', Light: 'Yes', Dark: 'Yes', Category: 'Self-Hosted', Tags: '' },
 ];
+const LIGHT_SVG = SVG.replace('<circle', '<circle fill="#fff"');
+const DARK_SVG = SVG.replace('<circle', '<circle fill="#000"');
 
 const token = jwt.sign(
   { app: 'flame', pwd: getPasswordFingerprint(), ver: getTokenVersion() },
@@ -92,6 +96,10 @@ test.before(async () => {
     const files = {
       '/index.json': ['application/json', JSON.stringify(INDEX)],
       '/svg/jellyfin.svg': ['image/svg+xml', SVG],
+      '/svg/jellyfin-light.svg': ['image/svg+xml', LIGHT_SVG],
+      '/svg/jellyfin-dark.svg': ['image/svg+xml', DARK_SVG],
+      '/svg/ghost.svg': ['image/svg+xml', SVG],
+      '/svg/ghost-light.svg': ['image/svg+xml', LIGHT_SVG],
       '/svg/home-assistant.svg': ['image/svg+xml', SVG],
       '/webp/jellyfin.webp': ['image/webp', WEBP],
       '/webp/jellyfin-light.webp': ['image/webp', WEBP],
@@ -231,7 +239,11 @@ test.describe('selfh.st routes', () => {
       format: 'svg',
     });
     assert.strictEqual(res.status, 200, JSON.stringify(res.body));
-    assert.strictEqual(res.body.data.icon, 'selfhst-jellyfin.svg');
+    assert.deepStrictEqual(res.body.data, {
+      icon: 'selfhst-jellyfin.svg',
+      iconOnDark: null,
+      iconOnLight: null,
+    });
     assert.match(fs.readFileSync(join(uploadsDir, 'selfhst-jellyfin.svg'), 'utf-8'), /<circle/);
 
     const unavailable = await authed('post', '/api/icons/selfhst').send({
@@ -246,6 +258,69 @@ test.describe('selfh.st routes', () => {
       format: 'png',
     });
     assert.strictEqual(unknown.status, 404);
+  });
+
+  test('store an icon that follows the theme', async () => {
+    const store = (body) => authed('post', '/api/icons/selfhst').send({ variant: 'auto', ...body });
+    const read = (name) => fs.readFileSync(join(uploadsDir, name), 'utf-8');
+
+    const res = await store({ reference: 'jellyfin', format: 'svg' });
+    assert.strictEqual(res.status, 200, JSON.stringify(res.body));
+    // The white "light" version goes on dark themes, the black "dark" one on light themes
+    assert.deepStrictEqual(res.body.data, {
+      icon: 'selfhst-jellyfin.svg',
+      iconOnDark: 'selfhst-jellyfin_light.svg',
+      iconOnLight: 'selfhst-jellyfin_dark.svg',
+    });
+    assert.match(read('selfhst-jellyfin_light.svg'), /#fff/);
+    assert.match(read('selfhst-jellyfin_dark.svg'), /#000/);
+
+    // A version selfh.st lists but can't serve falls back to the standard icon
+    const ghost = await store({ reference: 'ghost', format: 'svg' });
+    assert.strictEqual(ghost.status, 200, JSON.stringify(ghost.body));
+    assert.deepStrictEqual(ghost.body.data, {
+      icon: 'selfhst-ghost.svg',
+      iconOnDark: 'selfhst-ghost_light.svg',
+      iconOnLight: null,
+    });
+
+    // Without light and dark versions, only the standard icon is downloaded
+    const steam = await store({ reference: 'steam', format: 'webp' });
+    assert.deepStrictEqual(steam.body.data, {
+      icon: 'selfhst-steam.webp',
+      iconOnDark: null,
+      iconOnLight: null,
+    });
+    assert.ok(!cdnHits['/webp/steam-light.webp'] && !cdnHits['/webp/steam-dark.webp']);
+
+    const unavailable = await store({ reference: 'steam', format: 'svg' });
+    assert.strictEqual(unavailable.status, 400);
+  });
+
+  test('reuse light and dark files that are already stored', async () => {
+    const hits = { ...cdnHits };
+
+    // Picked as a separate version before Automatic existed
+    fs.writeFileSync(join(uploadsDir, 'selfhst-ghost_dark.svg'), DARK_SVG);
+
+    const res = await authed('post', '/api/icons/selfhst').send({
+      reference: 'ghost',
+      format: 'svg',
+      variant: 'auto',
+    });
+    assert.deepStrictEqual(res.body.data, {
+      icon: 'selfhst-ghost.svg',
+      iconOnDark: 'selfhst-ghost_light.svg',
+      iconOnLight: 'selfhst-ghost_dark.svg',
+    });
+
+    const again = await authed('post', '/api/icons/selfhst').send({
+      reference: 'jellyfin',
+      format: 'svg',
+      variant: 'auto',
+    });
+    assert.strictEqual(again.body.data.iconOnLight, 'selfhst-jellyfin_dark.svg');
+    assert.deepStrictEqual(cdnHits, hits);
   });
 
   test('report an unreachable index', async () => {
@@ -288,14 +363,32 @@ test.describe('preferSelfhstIcons', () => {
     const app = await create('apps', { name: 'Jellyfin', url: `${cdnUrl()}/`, icon: '' });
     assert.strictEqual(app.status, 201, JSON.stringify(app.body));
     assert.strictEqual(app.body.data.icon, 'selfhst-jellyfin.svg');
+    assert.strictEqual(app.body.data.iconOnDark, 'selfhst-jellyfin_light.svg');
+    assert.strictEqual(app.body.data.iconOnLight, 'selfhst-jellyfin_dark.svg');
+
+    const ghost = await create('bookmarks', { name: 'Ghost', url: 'https://ghost.lan', icon: '' });
+    assert.strictEqual(ghost.body.data.iconOnDark, 'selfhst-ghost_light.svg');
 
     // No SVG, and the URL has no favicon to fetch
     const bookmark = await create('bookmarks', { name: 'Steam', url: 'steam://run/570', icon: '' });
     assert.strictEqual(bookmark.status, 201);
     assert.strictEqual(bookmark.body.data.icon, 'selfhst-steam.webp');
+    assert.strictEqual(bookmark.body.data.iconOnDark, null);
+    assert.strictEqual(bookmark.body.data.iconOnLight, null);
 
     const other = await create('apps', { name: 'Sonarr', url: `${cdnUrl()}/`, icon: '' });
     assert.match(other.body.data.icon, FAVICON);
+    assert.strictEqual(other.body.data.iconOnDark, null);
+
+    // Clearing the icon of an app that follows the theme fetches the favicon instead
+    const cleared = await authed('put', `/api/apps/${app.body.data.id}`).send({
+      name: 'Sonarr',
+      icon: '',
+    });
+    assert.strictEqual(cleared.status, 200, JSON.stringify(cleared.body));
+    assert.match(cleared.body.data.icon, FAVICON);
+    assert.strictEqual(cleared.body.data.iconOnDark, null);
+    assert.strictEqual(cleared.body.data.iconOnLight, null);
 
     const chosen = await create('apps', { name: 'Jellyfin', url: `${cdnUrl()}/`, icon: 'movie' });
     assert.strictEqual(chosen.body.data.icon, 'movie');

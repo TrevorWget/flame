@@ -319,13 +319,20 @@ Next to the icon field of the app and bookmark forms, **Fetch icon from site** a
 
 - **Fetch icons for apps and bookmarks saved without one** (off by default): saving an app or bookmark with an empty icon field and an http(s) URL fetches its icon. Saving waits for up to 5 seconds and keeps the item without an icon if none is found.
 - **Allow fetching icons from private network addresses** (off by default): the server refuses to fetch from loopback, private (`10.x`, `172.16-31.x`, `192.168.x`, `100.64.x`), link-local (`169.254.x`, `fe80::`) and unique-local IPv6 addresses unless this is on, so turn it on for self-hosted apps such as `http://server.local:8096`. Self-signed certificates are accepted from those addresses. Multicast, `0.0.0.0` and similar addresses are always refused.
-- **Prefer selfh.st icons when fetching icons** (off by default): when icons are fetched automatically, the [selfh.st](https://selfh.st/icons) icon whose name matches the app or bookmark name ("Home Assistant" finds `home-assistant`) is used first, as SVG when there is one, otherwise WebP. Items without a match get the site's favicon as before. This also works for non-web URLs such as `steam://`.
+- **Prefer selfh.st icons when fetching icons** (off by default): when icons are fetched automatically, the [selfh.st](https://selfh.st/icons) icon whose name matches the app or bookmark name ("Home Assistant" finds `home-assistant`) is used first, as SVG when there is one, otherwise WebP, set to follow the theme (see [selfh.st icons](#selfhst-icons)) when it has light and dark versions. Items without a match get the site's favicon as before. This also works for non-web URLs such as `steam://`.
 
 Only `http` and `https` URLs are fetched; every redirect is checked again, downloads are limited to 1 MB and 10 seconds, and only PNG, JPEG, ICO, WebP and (sanitized) SVG files are kept. Hostnames are resolved by the Flame server, so `.local` (mDNS) names only work if the server or container can resolve them; use an IP address otherwise.
 
 ### selfh.st icons
 
-**Browse selfh.st icons**, under the icon field of the app and bookmark forms, searches the [selfh.st icon collection](https://selfh.st/icons) (about 3,000 logos of self-hosted and other apps) by name and tag. Pick an icon, then its colours (standard, light for dark themes, or dark for light themes, when the icon has them) and format (SVG, WebP or PNG), and click **Use this icon**. While the icon field is empty, the form also suggests the icon whose name matches the app name.
+**Browse selfh.st icons**, under the icon field of the app and bookmark forms, searches the [selfh.st icon collection](https://selfh.st/icons) (about 3,000 logos of self-hosted and other apps) by name and tag. Pick an icon, then its colours and format (SVG, WebP or PNG), and click **Use this icon**. While the icon field is empty, the form also suggests the icon whose name matches the app name.
+
+The colours are:
+
+- **Automatic** (the default when the icon has light and dark versions): Flame stores the standard, light and dark versions, and shows the light (white) version on dark themes and the dark (black) version on light themes. A theme counts as dark when white stands out more than black on its background colour, so this works for built-in, custom and edited themes, and the icons switch as soon as the theme changes, including with automatic light/dark switching. If the icon has only one of the versions, the standard icon is shown on the other kind of theme.
+- **Standard colours**, **Light (for dark themes)** or **Dark (for light themes)**: always that version, whatever the theme.
+
+Apps and bookmarks follow the theme on the home page, in search results, on /applications and /bookmarks, and while arranging. Typing another icon, fetching one from the site or uploading one replaces the Automatic icon. Icons picked before Automatic existed keep showing as they are; when editing one that has light and dark versions, the form offers **Switch to Automatic**, which reuses the files that are already stored.
 
 The Flame server does all the downloading, from public addresses only and with the same limits and checks as fetched favicons, so the browser never loads anything from the CDN:
 

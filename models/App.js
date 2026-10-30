@@ -21,6 +21,17 @@ const App = sequelize.define(
       allowNull: false,
       defaultValue: 'cancel',
     },
+    // Shown instead of `icon` on dark / light themes when set
+    iconOnDark: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+    },
+    iconOnLight: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+    },
     isPinned: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,

@@ -13,6 +13,8 @@ interface Props {
   url: string;
   // Current value of the icon field
   icon: string;
+  // Version of the icon shown on the current theme, if it follows the theme
+  previewIcon?: string;
   onFetched: (icon: string) => void;
 }
 
@@ -20,14 +22,19 @@ interface Props {
  * Lets the server download the site's favicon (or the icon URL typed into the
  * icon field) into Flame's local icon cache, and previews the current icon
  */
-export const FetchIcon = ({ url, icon, onFetched }: Props): JSX.Element => {
+export const FetchIcon = ({
+  url,
+  icon,
+  previewIcon = icon,
+  onFetched,
+}: Props): JSX.Element => {
   const dispatch = useDispatch();
   const { createNotification } = bindActionCreators(actionCreators, dispatch);
   const [fetching, setFetching] = useState(false);
 
   const fromIconUrl = isUrl(icon.trim());
   const source = fromIconUrl ? icon.trim() : url.trim();
-  const showPreview = isImage(icon) || isSvg(icon);
+  const showPreview = isImage(previewIcon) || isSvg(previewIcon);
 
   const fetchIcon = async () => {
     if (!source) {
@@ -64,7 +71,7 @@ export const FetchIcon = ({ url, icon, onFetched }: Props): JSX.Element => {
     <div className={classes.FetchIcon}>
       {showPreview && (
         <img
-          src={isUrl(icon) ? icon : `/uploads/${icon}`}
+          src={isUrl(previewIcon) ? previewIcon : `/uploads/${previewIcon}`}
           alt="Current icon"
           className={classes.Preview}
         />

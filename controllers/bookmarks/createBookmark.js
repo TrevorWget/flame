@@ -1,6 +1,7 @@
 const asyncWrapper = require('../../middleware/asyncWrapper');
 const Bookmark = require('../../models/Bookmark');
 const { autoFetchIcon } = require('../../utils/autoFetchIcon');
+const { NO_VARIANTS } = require('../../utils/iconVariants');
 
 // @desc      Create new bookmark
 // @route     POST /api/bookmarks
@@ -9,7 +10,7 @@ const createBookmark = asyncWrapper(async (req, res, next) => {
   let body = { ...req.body };
 
   if (req.file) {
-    body.icon = req.file.filename;
+    body = { ...body, icon: req.file.filename, ...NO_VARIANTS };
   } else {
     body = await autoFetchIcon(body);
   }

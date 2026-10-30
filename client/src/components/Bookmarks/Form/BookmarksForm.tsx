@@ -21,6 +21,12 @@ import {
   newBookmarkTemplate,
   normalizeUrl,
 } from '../../../utility';
+import {
+  followsTheme,
+  NO_THEMED_ICONS,
+  themedIcon,
+  useIsDarkTheme,
+} from '../../../utility/themedIcon';
 
 interface Props {
   modalHandler: () => void;
@@ -33,6 +39,7 @@ export const BookmarksForm = ({
 }: Props): JSX.Element => {
   const { categories } = useSelector((state: State) => state.bookmarks);
   const { config } = useSelector((state: State) => state.config);
+  const isDark = useIsDarkTheme();
 
   const dispatch = useDispatch();
   const { addBookmark, updateBookmark, createNotification } =
@@ -230,7 +237,10 @@ export const BookmarksForm = ({
             id="icon"
             placeholder="book-open-outline"
             value={formData.icon}
-            onChange={(e) => inputChangeHandler(e)}
+            onChange={(e) => {
+              const icon = e.target.value;
+              setFormData((prev) => ({ ...prev, icon, ...NO_THEMED_ICONS }));
+            }}
           />
           <span>
             Use icon name from MDI or pass a valid URL.
@@ -242,12 +252,16 @@ export const BookmarksForm = ({
           <FetchIcon
             url={formData.url}
             icon={formData.icon}
-            onFetched={(icon) => setFormData((prev) => ({ ...prev, icon }))}
+            previewIcon={themedIcon(formData, isDark)}
+            onFetched={(icon) =>
+              setFormData((prev) => ({ ...prev, icon, ...NO_THEMED_ICONS }))
+            }
           />
           <SelfhstPicker
             name={formData.name}
             icon={formData.icon}
-            onPicked={(icon) => setFormData((prev) => ({ ...prev, icon }))}
+            followsTheme={followsTheme(formData)}
+            onPicked={(picked) => setFormData((prev) => ({ ...prev, ...picked }))}
           />
           <span
             onClick={() => toggleUseCustomIcon(!useCustomIcon)}
