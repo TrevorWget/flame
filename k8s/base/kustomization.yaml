@@ -3,7 +3,15 @@ kind: Kustomization
 namespace: flame
 resources:
   - namespace.yaml
+  - pvc.yaml
   - deployment.yaml
   - service.yaml
   - ingress.yaml
   - rbac.yaml
+# Placeholder only. Flame rejects "change_me" and keeps login disabled until the
+# secret is replaced, e.g. from an overlay with `behavior: replace`. The name gets
+# a content hash, so changing the password restarts the pod.
+secretGenerator:
+  - name: flame
+    literals:
+      - password=change_me

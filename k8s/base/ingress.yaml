@@ -5,7 +5,7 @@ metadata:
   name: flame
 spec:
   rules:
-  - host: flame.cluster.local
+  - host: flame.example.com
     http:
       paths:
       - path: /

@@ -3,7 +3,13 @@ kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: flame
+  labels:
+    app: flame
 spec:
+  replicas: 1
+  # SQLite on a ReadWriteOnce volume: never run two pods at once
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: flame
@@ -14,15 +20,40 @@ spec:
     spec:
       serviceAccountName: flame
       securityContext:
+        # The image runs as node (1000:1000); fsGroup makes the volume writable for it
         fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: flame
-          image: shokohsc/flame
+          image: ghcr.io/trevorwget/flame:latest
+          env:
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: flame
+                  key: password
           ports:
             - name: http
               containerPort: 5005
               protocol: TCP
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+          securityContext:
+            allowPrivilegeEscalation: false
           readinessProbe:
             httpGet:
               path: /
               port: http
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: flame-data
