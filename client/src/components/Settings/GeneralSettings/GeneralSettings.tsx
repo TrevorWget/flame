@@ -211,9 +211,11 @@ export const GeneralSettings = (): JSX.Element => {
                 <option value={0}>False</option>
               </select>
               <span>
-                Apps found by the Docker integration are up while their
-                container runs and isn't unhealthy, instead of getting an HTTP
-                check. Reads GET /containers/json from the Docker host
+                Apps whose container is found (by its flame.name label, or a
+                container or Compose service named like the app) are up while
+                it runs and isn't unhealthy. Other apps, and apps with a check
+                URL, get the HTTP check. Reads GET /containers/json from the
+                Docker host
               </span>
             </InputGroup>
           </Fragment>

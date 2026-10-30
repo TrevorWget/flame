@@ -35,7 +35,7 @@ const {
   getStatuses,
   checkHttp,
   containerStatus,
-  containersByAppName,
+  containerFinder,
 } = require('../utils/statusChecks');
 const { getPasswordFingerprint } = require('../utils/password');
 const { getTokenVersion } = require('../utils/tokenVersion');
@@ -69,9 +69,19 @@ const appServer = (req, res) => {
 
 const container = (name, State, Status) => ({
   Id: name,
+  Names: [`/${name.toLowerCase()}-container`],
   State,
   Status,
   Labels: { 'flame.type': 'application', 'flame.name': name },
+});
+
+// A container without flame labels, like most containers next to manual apps
+const plainContainer = (name, State, Status, service) => ({
+  Id: name,
+  Names: [`/${name}`],
+  State,
+  Status,
+  Labels: service ? { 'com.docker.compose.service': service } : {},
 });
 
 let site;
@@ -102,6 +112,10 @@ test.before(async () => {
         container('Sonarr', 'running', 'Up 2 hours (healthy)'),
         container('Radarr', 'exited', 'Exited (0) 3 minutes ago'),
         container('Lidarr', 'running', 'Up 5 minutes (unhealthy)'),
+        plainContainer('qbittorrent', 'running', 'Up 3 hours', 'qbittorrent'),
+        plainContainer('yams-digarr-1', 'exited', 'Exited (1) 2 hours ago', 'digarr'),
+        plainContainer('immich-db', 'running', 'Up 1 day', 'db'),
+        plainContainer('paperless-db', 'running', 'Up 1 day', 'db'),
       ])
     );
   });
@@ -153,6 +167,13 @@ test.before(async () => {
       source: 'docker',
       categoryId: media.id,
     },
+    // Manual apps, like on a host whose mDNS name the Flame container can't
+    // resolve: the container state must be used instead of a failing HTTP check
+    { name: 'qBittorrent', url: 'orbit.invalid:8081', categoryId: media.id },
+    { name: 'Digarr', url: 'orbit.invalid:6868', categoryId: media.id },
+    // No container of that name, and the "db" service is ambiguous
+    { name: 'Miniflux', url: url('/204'), categoryId: media.id },
+    { name: 'DB', url: url('/200'), categoryId: media.id },
   ]);
 
   apps = Object.fromEntries(created.map((app) => [app.name, app.id]));
@@ -235,28 +256,41 @@ test.describe('container states', () => {
       status: 'down',
       detail: 'Container paused',
     });
-    assert.deepStrictEqual(containerStatus(undefined), {
-      status: 'down',
-      detail: 'Container not found',
-    });
   });
 
-  test('apps are matched by flame.name and running containers win', () => {
+  test('flame.name labels match first and running containers win', () => {
     const multi = {
+      Names: ['/media'],
       State: 'running',
       Labels: { 'flame.name': 'Plex;Tautulli' },
     };
-    const stopped = { State: 'exited', Labels: { 'flame.name': 'Plex' } };
-    const byName = containersByAppName([
-      stopped,
-      multi,
-      { State: 'running', Labels: {} },
-      { State: 'running' },
-    ]);
+    const stopped = { Names: ['/plex-old'], State: 'exited', Labels: { 'flame.name': 'Plex' } };
+    const named = { Names: ['/plex'], State: 'exited', Labels: {} };
+    const find = containerFinder([stopped, multi, named, { State: 'running' }]);
 
-    assert.strictEqual(byName.get('Plex'), multi);
-    assert.strictEqual(byName.get('Tautulli'), multi);
-    assert.strictEqual(byName.size, 2);
+    assert.strictEqual(find({ name: 'Plex' }), multi);
+    assert.strictEqual(find({ name: 'Tautulli' }), multi);
+  });
+
+  test('other apps match a container or unique Compose service name', () => {
+    const sabnzbd = { Names: ['/sabnzbd'], State: 'running', Labels: {} };
+    const digarr = {
+      Names: ['/yams-digarr-1'],
+      State: 'running',
+      Labels: { 'com.docker.compose.service': 'digarr' },
+    };
+    const db = (name) => ({
+      Names: [`/${name}`],
+      State: 'running',
+      Labels: { 'com.docker.compose.service': 'db' },
+    });
+    const find = containerFinder([sabnzbd, digarr, db('a-db'), db('b-db')]);
+
+    assert.strictEqual(find({ name: 'SABnzbd' }), sabnzbd);
+    assert.strictEqual(find({ name: 'Digarr' }), digarr);
+    assert.strictEqual(find({ name: 'yams digarr 1' }), digarr);
+    assert.strictEqual(find({ name: 'db' }), null);
+    assert.strictEqual(find({ name: 'Miniflux' }), null);
   });
 });
 
@@ -279,8 +313,13 @@ test.describe('GET /api/apps/status', () => {
       Sonarr: 'up: Container running (healthy)',
       Radarr: 'down: Container exited',
       Lidarr: 'down: Container unhealthy',
-      Gone: 'down: Container not found',
+      // A Docker app whose container is gone falls back to the HTTP check
+      Gone: 'up: HTTP 200',
       DockerCustomUrl: 'down: HTTP 503',
+      qBittorrent: 'up: Container running',
+      Digarr: 'down: Container exited',
+      Miniflux: 'up: HTTP 204',
+      DB: 'up: HTTP 200',
     });
 
     // Stopped containers are only visible with all=1
@@ -323,7 +362,7 @@ test.describe('GET /api/apps/status', () => {
     assert.strictEqual(after.get(apps.Broken).since, before.get(apps.Broken).since);
   });
 
-  test('an unreachable Docker API leaves Docker apps unknown', async () => {
+  test('an unreachable Docker API falls back to HTTP checks', async () => {
     writeConfig({
       statusChecks: true,
       statusCheckDocker: true,
@@ -331,12 +370,11 @@ test.describe('GET /api/apps/status', () => {
     });
     await runStatusChecks();
 
-    const names = Object.keys(summary((await getStatus(true)).body.data.statuses));
-    assert.ok(names.includes('Up'));
-    assert.ok(names.includes('DockerCustomUrl'));
-    for (const name of ['Sonarr', 'Radarr', 'Lidarr', 'Gone']) {
-      assert.ok(!names.includes(name), name);
-    }
+    const statuses = summary((await getStatus(true)).body.data.statuses);
+    assert.strictEqual(statuses.Login, 'up: HTTP 401');
+    assert.strictEqual(statuses.Sonarr, 'down: HTTP 503');
+    assert.strictEqual(statuses.Radarr, 'up: HTTP 200');
+    assert.match(statuses.qBittorrent, /^down: (Host not found|Timed out)/);
   });
 
   test('without container states Docker apps get an HTTP check', async () => {
