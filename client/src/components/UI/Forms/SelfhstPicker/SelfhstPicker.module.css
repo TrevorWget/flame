@@ -1,0 +1,176 @@
+.SelfhstPicker {
+  margin: 4px 0;
+  font-size: 12px;
+  color: var(--color-primary);
+}
+
+.Link {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--color-primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.Link:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.Suggestion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.Suggestion img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.Suggestion p {
+  margin: 0;
+}
+
+.Panel {
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid var(--color-primary);
+  border-radius: 4px;
+}
+
+.Status {
+  margin: 0 0 8px;
+  min-height: 1em;
+  opacity: 0.8;
+}
+
+.Grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.Tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 8px 4px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  font: inherit;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.Tile:hover,
+.Tile:focus-visible {
+  border-color: var(--color-primary);
+}
+
+.Tile[aria-pressed='true'] {
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.Tile img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.TileName {
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.Options {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-primary);
+}
+
+.LargePreview {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  padding: 6px;
+  border-radius: 6px;
+  object-fit: contain;
+}
+
+/* Light icons are white and dark icons black, so preview them on a contrasting background */
+.standard {
+  background: transparent;
+}
+
+.light {
+  background: #1f2328;
+}
+
+.dark {
+  background: #f2f3f5;
+}
+
+.Choices {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.Choices strong {
+  width: 100%;
+  font-size: 14px;
+}
+
+.Choices select {
+  width: auto;
+  flex: 1 1 150px;
+  margin: 0;
+  padding: 6px 8px;
+}
+
+.UseButton {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  background: var(--color-accent);
+  color: var(--color-background);
+  font: inherit;
+  cursor: pointer;
+}
+
+.UseButton:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.Credit {
+  margin: 10px 0 0;
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.Credit a {
+  color: var(--color-accent);
+}

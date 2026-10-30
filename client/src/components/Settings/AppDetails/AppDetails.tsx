@@ -52,6 +52,30 @@ export const AppDetails = (): JSX.Element => {
           </div>
         </Fragment>
       )}
+
+      <hr className={classes.separator} />
+
+      <div>
+        <SettingsHeadline text="Credits" />
+        <p className={classes.text}>
+          App and bookmark icons picked from{' '}
+          <a href="https://selfh.st/icons" target="_blank" rel="noreferrer">
+            selfh.st/icons
+          </a>{' '}
+          are by selfh.st and licensed under{' '}
+          <a
+            href="https://creativecommons.org/licenses/by/4.0/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            CC BY 4.0
+          </a>
+          . Flame stores a copy of each icon you pick and sanitizes SVG files,
+          which can change their markup. Logos are trademarks of their
+          respective owners, are used only to identify their apps, and do not
+          imply endorsement.
+        </p>
+      </div>
     </Fragment>
   );
 };

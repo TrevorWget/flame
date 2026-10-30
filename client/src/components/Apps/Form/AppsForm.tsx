@@ -6,7 +6,7 @@ import { App, Category, NewApp } from '../../../interfaces';
 import { actionCreators } from '../../../store';
 import { State } from '../../../store/reducers';
 import { inputHandler, newAppTemplate, normalizeUrl } from '../../../utility';
-import { Button, FetchIcon, InputGroup, ModalForm } from '../../UI';
+import { Button, FetchIcon, InputGroup, ModalForm, SelfhstPicker } from '../../UI';
 import classes from './Form.module.css';
 
 // Redux
@@ -301,6 +301,11 @@ export const AppsForm = ({
             url={formData.url}
             icon={formData.icon}
             onFetched={(icon) => setFormData((prev) => ({ ...prev, icon }))}
+          />
+          <SelfhstPicker
+            name={formData.name}
+            icon={formData.icon}
+            onPicked={(icon) => setFormData((prev) => ({ ...prev, icon }))}
           />
           <span
             onClick={() => toggleUseCustomIcon(!useCustomIcon)}
