@@ -68,7 +68,7 @@ const PREVIEW_CATEGORY: Category = {
     previewApp(-1, 'Jellyfin', 'filmstrip', { description: 'Movies and shows' }),
     previewApp(-2, 'Sonarr', 'television-classic'),
     previewApp(-3, 'Home Assistant', 'home-assistant'),
-    previewApp(-4, 'Router', 'router-wireless', { url: '192.168.1.1' }),
+    previewApp(-4, 'Router', 'router-wireless', { url: '192.0.2.1' }),
   ],
 };
 

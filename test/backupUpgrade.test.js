@@ -184,7 +184,7 @@ const buildUpstreamDB = async () => {
     await insert('apps', {
       name: `App ${i + 1}`,
       url:
-        i % 2 ? `orbit.local:${9000 + i}` : `https://app-${i + 1}.example.com`,
+        i % 2 ? `nas.local:${9000 + i}` : `https://app-${i + 1}.example.com`,
       icon: 'docker',
       isPinned: i === 4 ? 0 : 1,
       orderId: i,
@@ -310,7 +310,7 @@ test("a backup with only the first format's required fields restores with defaul
         { id: 1, name: 'Home', type: 'apps' },
         { id: 2, name: 'Reading', type: 'bookmarks' },
       ],
-      apps: [{ id: 1, name: 'Router', url: '192.168.1.1', categoryId: 1 }],
+      apps: [{ id: 1, name: 'Router', url: '192.0.2.1', categoryId: 1 }],
       bookmarks: [
         { id: 1, name: 'News', url: 'https://news.example.com', categoryId: 2 },
       ],

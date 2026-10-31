@@ -148,7 +148,7 @@ const buildUpstreamDB = async () => {
       name,
       url:
         i % 2
-          ? `orbit.local:${9000 + i}`
+          ? `nas.local:${9000 + i}`
           : `https://${name.toLowerCase().replace(' ', '-')}.example.com`,
       icon: 'docker',
       isPinned: UNPINNED_APPS.includes(name) ? 0 : 1,

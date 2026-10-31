@@ -9,7 +9,7 @@ describe('isUrl', () => {
       'http://localhost:8080/icon.svg',
       'http://localhost/icon.png',
       'http://nas:5000/logo.ico',
-      'http://192.168.1.2/icon.webp',
+      'http://192.0.2.10/icon.webp',
       'https://[::1]:3000/icon.svg',
       'HTTPS://Example.com/icon.png',
     ]) {

@@ -75,7 +75,7 @@ test.before(async () => {
   [{ id: categoryId }] = await rows("SELECT id FROM categories WHERE name = 'Media'");
 
   for (const [name, url, source] of [
-    ['Jellyfin', 'http://192.168.1.2:8096', null],
+    ['Jellyfin', 'http://192.0.2.10:8096', null],
     ['Sonarr', 'sonarr.lan:8989', 'docker'],
   ]) {
     await sequelize.query(
@@ -121,7 +121,7 @@ test.describe('migration 13_app-external-url', () => {
     assert.deepStrictEqual(
       await rows('SELECT name, url, externalUrl, preferredUrl FROM apps ORDER BY id'),
       [
-        { name: 'Jellyfin', url: 'http://192.168.1.2:8096', externalUrl: '', preferredUrl: 'internal' },
+        { name: 'Jellyfin', url: 'http://192.0.2.10:8096', externalUrl: '', preferredUrl: 'internal' },
         { name: 'Sonarr', url: 'sonarr.lan:8989', externalUrl: '', preferredUrl: 'internal' },
       ]
     );
@@ -148,7 +148,7 @@ test.describe('migration 13_app-external-url', () => {
     assert.strictEqual(res.status, 200);
 
     const jellyfin = res.body.data.find((a) => a.name === 'Jellyfin');
-    assert.strictEqual(jellyfin.url, 'http://192.168.1.2:8096');
+    assert.strictEqual(jellyfin.url, 'http://192.0.2.10:8096');
     assert.strictEqual(jellyfin.externalUrl, '');
     assert.strictEqual(jellyfin.preferredUrl, 'internal');
   });
@@ -167,13 +167,13 @@ test.describe('external URL validation', () => {
 
     const json = await authed('post', '/api/apps').send({
       name: 'Radarr',
-      url: 'http://192.168.1.2:7878',
+      url: 'http://192.0.2.10:7878',
       externalUrl: 'https://radarr.example.com',
       preferredUrl: 'external',
       categoryId,
     });
     assert.strictEqual(json.status, 201, JSON.stringify(json.body));
-    assert.strictEqual(json.body.data.url, 'http://192.168.1.2:7878');
+    assert.strictEqual(json.body.data.url, 'http://192.0.2.10:7878');
     assert.strictEqual(json.body.data.externalUrl, 'https://radarr.example.com');
     assert.strictEqual(json.body.data.preferredUrl, 'external');
 
@@ -231,7 +231,7 @@ test.describe('external URL validation', () => {
       preferredUrl: 'external',
     });
     assert.strictEqual(switched.status, 200, JSON.stringify(switched.body));
-    assert.strictEqual(switched.body.data.url, 'http://192.168.1.2:8096');
+    assert.strictEqual(switched.body.data.url, 'http://192.0.2.10:8096');
     assert.strictEqual(switched.body.data.externalUrl, 'https://jellyfin.example.com');
     assert.strictEqual(switched.body.data.preferredUrl, 'external');
 
